@@ -37,7 +37,7 @@
 .status-card {
   padding: var(--space-4);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, #fff, #f5efe6);
+  background: var(--surface);
   border: 1px solid var(--line);
 }
 
@@ -55,8 +55,8 @@
 
 .inline-note {
   padding: var(--space-3) var(--space-4);
-  border-left: 4px solid var(--accent);
-  background: rgba(31, 92, 85, 0.08);
+  border-left: 4px solid var(--primary);
+  background: rgba(166, 26, 26, 0.05);
   border-radius: var(--radius-sm);
 }
 

@@ -6,9 +6,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background:
-    radial-gradient(circle at top right, rgba(142, 59, 31, 0.12), transparent 30%),
-    linear-gradient(180deg, #f8f2e9 0%, #f2eadf 100%);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
 }
@@ -45,11 +43,12 @@ button {
 
 .sidebar {
   padding: var(--space-6);
-  background: linear-gradient(180deg, rgba(47, 36, 25, 0.98), rgba(73, 46, 27, 0.96));
-  color: #f5e9d8;
+  background: linear-gradient(180deg, var(--primary-dark), var(--primary));
+  color: #ffffff;
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
 }
 
 .sidebar__title {
@@ -60,7 +59,8 @@ button {
 
 .sidebar__subtitle {
   margin: 0 0 var(--space-6);
-  color: rgba(245, 233, 216, 0.72);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
 }
 
 .sidebar nav {

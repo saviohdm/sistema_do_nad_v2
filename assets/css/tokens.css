@@ -1,20 +1,39 @@
 :root {
-  --bg: #f5f1e8;
-  --surface: #fffdfa;
-  --surface-alt: #efe6d7;
-  --line: #d6c7b3;
-  --text: #2f2419;
-  --muted: #6a5a49;
-  --primary: #8e3b1f;
-  --primary-strong: #6f2610;
-  --accent: #1f5c55;
+  /* Paleta Institucional NAD */
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --surface-alt: #f5f5f5;
+  --line: #d9d9d9;
+  --border-color: #d9d9d9;
+
+  /* Textos */
+  --text: #1a1a1a;
+  --text-secondary: #2b2b2b;
+  --muted: #8c8c8c;
+
+  /* Cores Primárias */
+  --primary: #a61a1a;
+  --primary-dark: #7e1f1f;
+  --primary-hover: #8f1414;
+  --primary-strong: #7e1f1f;
+
+  /* Cores de Estado */
+  --accent: #8f1414;
   --success: #2d6a4f;
-  --warning: #ad7c18;
-  --danger: #982b1c;
-  --shadow: 0 14px 40px rgba(65, 39, 14, 0.08);
-  --radius-sm: 10px;
-  --radius-md: 18px;
-  --radius-lg: 28px;
+  --warning: #d97706;
+  --danger: #a61a1a;
+
+  /* Sombras */
+  --shadow: 0 2px 8px rgba(26, 26, 26, 0.08);
+  --shadow-lg: 0 8px 24px rgba(26, 26, 26, 0.12);
+
+  /* Raios de Borda */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius: 8px;
+
+  /* Espaçamentos */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -22,6 +41,8 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
+
+  /* Tipografia */
   --font-display: "Georgia", "Times New Roman", serif;
-  --font-body: "Trebuchet MS", "Segoe UI", sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
