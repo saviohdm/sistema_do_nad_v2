@@ -1,0 +1,27 @@
+:root {
+  --bg: #f5f1e8;
+  --surface: #fffdfa;
+  --surface-alt: #efe6d7;
+  --line: #d6c7b3;
+  --text: #2f2419;
+  --muted: #6a5a49;
+  --primary: #8e3b1f;
+  --primary-strong: #6f2610;
+  --accent: #1f5c55;
+  --success: #2d6a4f;
+  --warning: #ad7c18;
+  --danger: #982b1c;
+  --shadow: 0 14px 40px rgba(65, 39, 14, 0.08);
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --font-display: "Georgia", "Times New Roman", serif;
+  --font-body: "Trebuchet MS", "Segoe UI", sans-serif;
+}

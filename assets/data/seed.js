@@ -1,0 +1,251 @@
+import {
+  Labels,
+  SituacaoJuizo,
+  StatusFluxo,
+  TipoConclusao,
+  TipoHistorico,
+  TipoProvidencia,
+} from "../js/domain/enums.js";
+
+const now = "2026-04-15T10:00:00Z";
+
+const createEvent = (id, tipo, usuario, extras = {}) => ({
+  id,
+  tipo,
+  data: extras.data || now,
+  usuario,
+  ...extras,
+});
+
+export const seedState = {
+  proposicoes: [
+    {
+      id: "prop-001",
+      numero: "PROP-2026-0001",
+      tipo: "Determinação",
+      unidade: "Procuradoria-Geral de Justiça",
+      membro: "Dra. Helena Rocha",
+      descricao: "Instituir rotina formal de controle de prazos e ciência eletrônica.",
+      prioridade: "alta",
+      statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
+      juizoAtual: null,
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [],
+      diligencias: [],
+      historico: [
+        createEvent("hist-1", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Proposição criada a partir da migração do SCI.",
+        }),
+      ],
+    },
+    {
+      id: "prop-002",
+      numero: "PROP-2026-0002",
+      tipo: "Recomendação",
+      unidade: "Promotoria de Justiça Regional",
+      membro: "Dr. Mauro Nascimento",
+      descricao: "Adequar o fluxo interno de registro de atendimento ao cidadão.",
+      prioridade: "normal",
+      statusFluxo: StatusFluxo.AGUARDANDO_COMPROVACAO,
+      juizoAtual: null,
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [],
+      diligencias: [
+        {
+          id: "dil-002",
+          descricao: "Solicitar comprovação documental da implantação do novo fluxo.",
+          prazo: "2026-05-03",
+          status: "aberta",
+          criadaEm: "2026-04-10T11:00:00Z",
+        },
+      ],
+      historico: [
+        createEvent("hist-2", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Proposição criada e encaminhada para diligência.",
+        }),
+        createEvent("hist-3", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
+          descricao: "Diligência criada com prazo para o correicionado.",
+          prazoComprovacao: "2026-05-03",
+          diligenciaId: "dil-002",
+        }),
+      ],
+    },
+    {
+      id: "prop-003",
+      numero: "PROP-2026-0003",
+      tipo: "Determinação",
+      unidade: "Procuradoria de Justiça Especializada",
+      membro: "Dra. Beatriz Lima",
+      descricao: "Formalizar protocolo de atendimento de demandas urgentes.",
+      prioridade: "alta",
+      statusFluxo: StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
+      juizoAtual: null,
+      avaliacaoVigenteId: "hist-6",
+      pendenciasSecretaria: [],
+      diligencias: [
+        {
+          id: "dil-003",
+          descricao: "Comprovar a edição da ordem de serviço e capacitação da equipe.",
+          prazo: "2026-04-11",
+          status: "comprovada",
+          criadaEm: "2026-03-20T09:00:00Z",
+          comprovadaEm: "2026-04-08T13:00:00Z",
+        },
+      ],
+      historico: [
+        createEvent("hist-4", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
+          descricao: "Diligência inicial criada.",
+          prazoComprovacao: "2026-04-11",
+          diligenciaId: "dil-003",
+        }),
+        createEvent("hist-5", TipoHistorico.COMPROVACAO, "Correicionado", {
+          descricao: "Comprovação apresentada com anexos e notas internas.",
+        }),
+        createEvent("hist-6", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
+          descricao: "Avaliação técnica submetida ao Corregedor.",
+          juizo: {
+            situacao: SituacaoJuizo.CONCLUIDA,
+            tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
+            existeProvidenciaSecretaria: true,
+            tipoProvidencia: TipoProvidencia.COCI,
+            observacoes: "Ainda falta consolidar a rotina nas unidades descentralizadas.",
+          },
+        }),
+      ],
+    },
+    {
+      id: "prop-004",
+      numero: "PROP-2026-0004",
+      tipo: "Determinação",
+      unidade: "Centro de Apoio Operacional",
+      membro: "Dr. Paulo Veiga",
+      descricao: "Consolidar política de backup e redundância documental.",
+      prioridade: "normal",
+      statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
+      juizoAtual: {
+        situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+      },
+      avaliacaoVigenteId: "hist-10",
+      pendenciasSecretaria: [],
+      diligencias: [
+        {
+          id: "dil-004",
+          descricao: "Esclarecer escopo dos servidores cobertos pela política.",
+          prazo: "2026-04-28",
+          status: "aberta",
+          criadaEm: "2026-04-14T15:00:00Z",
+        },
+      ],
+      historico: [
+        createEvent("hist-7", TipoHistorico.COMPROVACAO, "Correicionado", {
+          descricao: "Comprovação inicial apresentada.",
+        }),
+        createEvent("hist-8", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
+          descricao: "Avaliação técnica indicando carência de informações.",
+          juizo: {
+            situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+            observacoes: "Não há evidência suficiente sobre a replicação da política.",
+          },
+        }),
+        createEvent("hist-9", TipoHistorico.DECISAO, "Corregedor Nacional", {
+          modo: "deferimento",
+          descricao: "Decisão homologando a necessidade de novas informações.",
+          juizo: {
+            situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+          },
+        }),
+        createEvent("hist-10", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
+          descricao: "Nova diligência aberta para complementar instrução.",
+          prazoComprovacao: "2026-04-28",
+          diligenciaId: "dil-004",
+        }),
+      ],
+    },
+    {
+      id: "prop-005",
+      numero: "PROP-2026-0005",
+      tipo: "Recomendação",
+      unidade: "Promotoria da Capital",
+      membro: "Dra. Elisa Torres",
+      descricao: "Padronizar resposta institucional a pedidos reiterados.",
+      prioridade: "alta",
+      statusFluxo: StatusFluxo.CONCLUIDA,
+      juizoAtual: {
+        situacao: SituacaoJuizo.CONCLUIDA,
+        tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
+        existeProvidenciaSecretaria: true,
+        tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
+        observacoes: "A medida não foi implantada no prazo definido.",
+      },
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [
+        {
+          id: "pend-005",
+          tipo: "cumprimento_providencia",
+          tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
+          descricao: Labels.tipoProvidencia[TipoProvidencia.CORREGEDORIA_LOCAL],
+          status: "pendente",
+          dataCriacao: "2026-04-12T10:30:00Z",
+          dataCumprimento: null,
+          observacoes: null,
+        },
+      ],
+      diligencias: [],
+      historico: [
+        createEvent("hist-11", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
+          descricao: "Avaliação submetida.",
+          juizo: {
+            situacao: SituacaoJuizo.CONCLUIDA,
+            tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
+            existeProvidenciaSecretaria: true,
+            tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
+          },
+        }),
+        createEvent("hist-12", TipoHistorico.DECISAO, "Corregedor Nacional", {
+          modo: "deferimento",
+          descricao: "Decisão homologando a avaliação do membro auxiliar.",
+          juizo: {
+            situacao: SituacaoJuizo.CONCLUIDA,
+            tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
+            existeProvidenciaSecretaria: true,
+            tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
+          },
+        }),
+        createEvent("hist-13", TipoHistorico.CIENTIFICACAO, "Secretaria Processual da CN", {
+          descricao: "Email de cientificação enviado ao correicionado.",
+        }),
+      ],
+    },
+    {
+      id: "prop-006",
+      numero: "PROP-2026-0006",
+      tipo: "Determinação",
+      unidade: "Grupo de Atuação Especial",
+      membro: "Dr. Renato Barreto",
+      descricao: "Instituir trilha de auditoria mínima para redistribuição de feitos.",
+      prioridade: "normal",
+      statusFluxo: StatusFluxo.CONCLUIDA,
+      juizoAtual: {
+        situacao: SituacaoJuizo.CONCLUIDA,
+        tipoConclusao: TipoConclusao.CUMPRIDA,
+        existeProvidenciaSecretaria: false,
+      },
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [],
+      diligencias: [],
+      historico: [
+        createEvent("hist-14", TipoHistorico.AVALIACAO_COM_FORCA_DE_DECISAO, "Corregedor Nacional", {
+          descricao: "Corregedor Nacional avaliou diretamente sem avaliação vigente.",
+          juizo: {
+            situacao: SituacaoJuizo.CONCLUIDA,
+            tipoConclusao: TipoConclusao.CUMPRIDA,
+            existeProvidenciaSecretaria: false,
+          },
+        }),
+        createEvent("hist-15", TipoHistorico.CIENTIFICACAO, "Secretaria Processual da CN", {
+          descricao: "Correicionado cientificado da conclusão.",
+        }),
+      ],
+    },
+  ],
+};

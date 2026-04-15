@@ -1,0 +1,53 @@
+const PERSONA_KEY = "nad-persona-atual";
+
+export const PERSONAS = {
+  CORREGEDOR: "Corregedor Nacional",
+  MEMBRO: "Membro Auxiliar da CN",
+  SECRETARIA: "Secretaria Processual da CN",
+  CORREICIONADO: "Correicionado",
+};
+
+const PERMISSIONS = {
+  [PERSONAS.CORREGEDOR]: [
+    "criar_proposicao",
+    "editar_proposicao",
+    "apagar_proposicao",
+    "deferir_avaliacao",
+    "indeferir_avaliacao",
+    "remover_avaliacao",
+    "avaliacao_com_forca_decisao",
+  ],
+  [PERSONAS.MEMBRO]: ["avaliar_como_membro"],
+  [PERSONAS.SECRETARIA]: [
+    "criar_diligencia",
+    "registrar_cientificacao",
+    "cumprir_pendencia_secretaria",
+  ],
+  [PERSONAS.CORREICIONADO]: ["registrar_comprovacao"],
+};
+
+export const setCurrentPersona = (persona) => {
+  localStorage.setItem(PERSONA_KEY, persona);
+};
+
+export const getCurrentPersona = () => {
+  return localStorage.getItem(PERSONA_KEY) || null;
+};
+
+export const clearPersona = () => {
+  localStorage.removeItem(PERSONA_KEY);
+};
+
+export const hasPermission = (action) => {
+  const persona = getCurrentPersona();
+  if (!persona) return false;
+  return PERMISSIONS[persona]?.includes(action) || false;
+};
+
+export const requireAuth = () => {
+  if (!getCurrentPersona()) {
+    window.location.href = "/pages/login.html";
+    return false;
+  }
+  return true;
+};

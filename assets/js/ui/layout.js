@@ -1,0 +1,72 @@
+import { getCurrentPersona, hasPermission } from "../app/auth.js";
+
+const baseNavItems = [
+  { href: "dashboard.html", label: "Dashboard" },
+  { href: "proposicoes-lista.html", label: "Proposições" },
+  { href: "proposicoes-criar.html", label: "Criar Proposição", permission: "criar_proposicao" },
+  { href: "proposicao-detalhe.html?id=prop-003", label: "Detalhe da proposição" },
+  { href: "diligencias.html", label: "Diligências" },
+  { href: "pendencias-secretaria.html", label: "Pendências da Secretaria" },
+];
+
+const getFilteredNavItems = () => {
+  return baseNavItems.filter((item) => !item.permission || hasPermission(item.permission));
+};
+
+export const renderPersonaBadge = () => {
+  const persona = getCurrentPersona();
+  if (!persona) return "";
+
+  return `
+    <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+        <div style="min-width: 0;">
+          <div style="font-size: 0.75rem; color: var(--text-muted);">Logado como:</div>
+          <div style="font-weight: 600; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis;">${persona}</div>
+        </div>
+        <button
+          class="button button--small"
+          style="flex-shrink: 0;"
+          onclick="localStorage.clear(); window.location.href='/pages/login.html';"
+        >
+          Trocar
+        </button>
+      </div>
+    </div>
+  `;
+};
+
+export const renderAppShell = ({ activePage, title, subtitle, content, actions = "" }) => {
+  const navItems = getFilteredNavItems();
+
+  return `
+    <div class="app-shell">
+      <aside class="sidebar">
+        ${renderPersonaBadge()}
+        <p class="sidebar__title">NAD</p>
+        <p class="sidebar__subtitle">Protótipo front-end para validar fluxo, decisão e pendências.</p>
+        <nav>
+          ${navItems
+            .map(
+              (item) => `
+                <a class="nav-link ${item.href.includes(activePage) ? "is-active" : ""}" href="${item.href}">
+                  ${item.label}
+                </a>
+              `,
+            )
+            .join("")}
+        </nav>
+      </aside>
+      <main class="page">
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">${title}</h1>
+            <p class="page-subtitle">${subtitle}</p>
+          </div>
+          ${actions ? `<div class="toolbar">${actions}</div>` : ""}
+        </header>
+        ${content}
+      </main>
+    </div>
+  `;
+};
