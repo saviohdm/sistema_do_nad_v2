@@ -45,11 +45,27 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
 
 ### Secretaria Processual da CN
 
-1. A Secretaria recebe da CN a proposição encaminhada para tramitação.
-2. A Secretaria pratica `CRIAR DILIGÊNCIA`.
-3. A Secretaria cientifica o correicionado por e-mail quanto à diligência ou à decisão já concluída.
-4. Quando a decisão da CN indicar `necessita mais informações`, a Secretaria cria nova diligência para reabrir a instrução.
-5. Quando houver providência adicional vinculada a decisão de `não cumprida` ou `parcialmente cumprida`, a Secretaria recebe uma pendência paralela para informar o cumprimento dessa providência.
+  1. A Secretaria recebe da CN a proposição encaminhada para tramitação.
+  2. A Secretaria pratica `CRIAR DILIGÊNCIA`.
+  3. A Secretaria cientifica o correicionado por e-mail quanto à diligência ou à
+  decisão já concluída.
+  4. Quando a decisão da CN indicar `necessita mais informações`, a Secretaria cria
+  nova diligência para reabrir a instrução.
+  5. Quando houver providência adicional vinculada a decisão de `não cumprida` ou
+  `parcialmente cumprida`, a Secretaria recebe uma pendência paralela de
+  providência.
+  6. Essa pendência funciona como mecanismo de controle interno da Secretaria
+  Processual e da Corregedoria Nacional.
+  7. O cumprimento da providência ocorre integralmente fora do sistema.
+  8. No sistema, a Secretaria apenas registra:
+     `data de cumprimento` e
+     `observações`.
+  9. O objetivo do sistema, nesse ponto, é somente controlar quais providências
+  ainda estão pendentes e quando cada uma foi informada como cumprida.
+  10. As providências poderão ser, em regra:
+      `encaminhamento de informações à Corregedoria local`,
+      `encaminhamento de informações à COCI` ou
+      `outras providências`.
 
 ### Correicionado
 

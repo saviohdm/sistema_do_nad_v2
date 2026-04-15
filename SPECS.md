@@ -93,9 +93,29 @@ O juízo de valor da Corregedoria Nacional possui duas camadas obrigatórias.
   - a proposição segue para `CIENTIFICAR`; e
   - em paralelo, o sistema cria uma pendência para a `Secretaria Processual da CN` informar o cumprimento da providência
 
+### Controle de providências da Secretaria Processual
+
+  - A pendência paralela da Secretaria Processual constitui apenas um mecanismo de
+  controle administrativo.
+  - A providência é cumprida fora do sistema.
+  - O sistema não executa a providência, não automatiza seu fluxo e não condiciona a
+  conclusão principal da proposição ao seu processamento interno.
+  - O sistema apenas permite que a Secretaria informe:
+    - a `data de cumprimento`; e
+    - um pequeno campo de `observações`
+  - O objetivo é permitir à Secretaria Processual e à Corregedoria Nacional
+  visualizar:
+    - quais providências ainda estão pendentes; e
+    - quais já foram informadas como cumpridas
+  - Os tipos mais comuns de providência são:
+    - `encaminhamento de informações à Corregedoria local`
+    - `encaminhamento de informações à COCI`
+    - `outras providências`
+
 ## Histórico da proposição
 
-Todos os eventos relevantes devem compor o histórico da proposição, com preservação de trilha de auditoria.
+- Todos os eventos relevantes devem compor o histórico da proposição, com preservação de trilha de auditoria.
+- O registro de cumprimento de pendência da Secretaria Processual deve gerar evento simples de histórico, com o tipo de providência, a data de cumprimento e as observações informadas.
 
 ### Tipos mínimos de histórico
 
@@ -162,11 +182,15 @@ Todos os eventos relevantes devem compor o histórico da proposição, com prese
     "existeProvidenciaSecretaria": true
   },
   "avaliacaoVigenteId": "ObjectId|null",
-  "pendenciasSecretaria": [
+   "pendenciasSecretaria": [
     {
       "tipo": "cumprimento_providencia",
-      "descricao": "Informar cumprimento da providência definida na decisão",
-      "status": "pendente"
+      "tipoProvidencia": "encaminhamento_corregedoria_local",
+      "descricao": "Encaminhamento de informações à Corregedoria local",
+      "status": "pendente",
+      "dataCriacao": "2024-11-21T10:00:00Z",
+      "dataCumprimento": null,
+      "observacoes": null
     }
   ],
   "historico": [
