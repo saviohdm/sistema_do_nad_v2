@@ -18,15 +18,15 @@ export const renderPersonaBadge = () => {
   if (!persona) return "";
 
   return `
-    <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem;">
+    <div style="padding: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 1rem;">
       <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
         <div style="min-width: 0;">
-          <div style="font-size: 0.75rem; color: var(--text-muted);">Logado como:</div>
-          <div style="font-weight: 600; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis;">${persona}</div>
+          <div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Logado como:</div>
+          <div style="font-weight: 600; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; color: #ffffff;">${persona}</div>
         </div>
         <button
           class="button button--small"
-          style="flex-shrink: 0;"
+          style="flex-shrink: 0; background: rgba(255, 255, 255, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3);"
           onclick="localStorage.clear(); window.location.href='/pages/login.html';"
         >
           Trocar
