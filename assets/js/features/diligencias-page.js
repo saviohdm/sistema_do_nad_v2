@@ -15,7 +15,7 @@ const render = () => {
     activePage: "diligencias",
     title: "Diligências",
     subtitle:
-      "Visão operacional da Secretaria Processual. Aqui o protótipo permite criar novas diligências e acompanhar o ciclo de comprovação.",
+      "Visão operacional da Secretaria Processual para criar diligências, acompanhar prazos e controlar o ciclo de comprovação.",
     actions: baseActions,
     content: `
       <section class="stack">

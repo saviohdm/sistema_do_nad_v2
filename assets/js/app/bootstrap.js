@@ -16,7 +16,7 @@ export const mountPage = ({ activePage, title, subtitle, content, actions }) => 
 
 export const baseActions = `
   <button class="button button--secondary" data-reset-state type="button">
-    Resetar massa fake
+    Restaurar dados iniciais
   </button>
 `;
 

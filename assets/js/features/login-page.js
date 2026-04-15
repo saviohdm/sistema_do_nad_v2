@@ -5,8 +5,8 @@ const render = () => {
   app.innerHTML = `
     <div style="max-width: 400px; margin: 100px auto; padding: 2rem;">
       <div class="panel stack">
-        <h1 class="panel__title">Sistema NAD - Protótipo</h1>
-        <p>Selecione a persona para acessar o sistema:</p>
+        <h1 class="panel__title">Sistema NAD</h1>
+        <p>Selecione o perfil de acesso:</p>
         <form id="login-form" class="stack">
           <div class="field">
             <label for="persona">Persona</label>

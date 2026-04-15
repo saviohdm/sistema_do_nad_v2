@@ -1,6 +1,6 @@
 import { seedState } from "../../data/seed.js";
 
-const STORAGE_KEY = "nad-prototipo-state-v1";
+const STORAGE_KEY = "nad-sistema-state-v2";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 

@@ -14,7 +14,7 @@ const render = () => {
   mountPage({
     activePage: "proposicoes-criar",
     title: "Criar Nova Proposição",
-    subtitle: "Preencha os dados da proposição. Você pode salvar como rascunho ou criar e encaminhar diretamente para a Secretaria.",
+    subtitle: "Preencha os dados da proposição e os metadados da correição de origem. Você pode salvar como rascunho ou criar e encaminhar diretamente para a Secretaria.",
     actions: baseActions,
     content: `
       <form id="form-criar-proposicao" class="panel stack">
@@ -57,6 +57,60 @@ const render = () => {
                     placeholder="Descreva a proposição..."></textarea>
         </div>
 
+        <h3 class="panel__title">Dados da Correição Vinculada</h3>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="numeroElo">Número ELO *</label>
+            <input type="text" id="numeroElo" name="numeroElo" required
+                   placeholder="Ex: 1234567-89.2026.1.01.0001" />
+          </div>
+
+          <div class="field">
+            <label for="ramoMP">Ramo do MP *</label>
+            <input type="text" id="ramoMP" name="ramoMP" required
+                   placeholder="Ex: MPBA" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="ramoMPNome">Nome do Ramo do MP *</label>
+          <input type="text" id="ramoMPNome" name="ramoMPNome" required
+                 placeholder="Ex: Ministério Público do Estado da Bahia" />
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="tematica">Temática *</label>
+            <input type="text" id="tematica" name="tematica" required
+                   placeholder="Ex: Gestão administrativa e fluxos internos" />
+          </div>
+
+          <div class="field">
+            <label for="uf">UF *</label>
+            <input type="text" id="uf" name="uf" required
+                   placeholder="Ex: BA" />
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="dataInicioCorreicao">Data de início da correição *</label>
+            <input type="date" id="dataInicioCorreicao" name="dataInicioCorreicao" required />
+          </div>
+
+          <div class="field">
+            <label for="dataFimCorreicao">Data de fim da correição *</label>
+            <input type="date" id="dataFimCorreicao" name="dataFimCorreicao" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="observacoesGerais">Observações gerais</label>
+          <textarea id="observacoesGerais" name="observacoesGerais" rows="4"
+                    placeholder="Informe observações complementares da correição ou do encaminhamento."></textarea>
+        </div>
+
         <div class="button-row">
           <button type="button" class="button button--secondary" id="btn-cancelar">
             Cancelar
@@ -88,6 +142,17 @@ const render = () => {
       membro: data.get("membro"),
       descricao: data.get("descricao"),
       prioridade: data.get("prioridade"),
+      numeroElo: data.get("numeroElo"),
+      ramoMP: data.get("ramoMP"),
+      ramoMPNome: data.get("ramoMPNome"),
+      tematica: data.get("tematica"),
+      uf: String(data.get("uf") || "")
+        .split(",")
+        .map((item) => item.trim().toUpperCase())
+        .filter(Boolean),
+      dataInicioCorreicao: data.get("dataInicioCorreicao"),
+      dataFimCorreicao: data.get("dataFimCorreicao"),
+      observacoesGerais: data.get("observacoesGerais"),
     };
 
     let novaProposicaoId;

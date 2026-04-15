@@ -147,7 +147,7 @@ const render = () => {
     mountPage({
       activePage: "proposicao-detalhe",
       title: "Proposição não encontrada",
-      subtitle: "O identificador informado não existe na massa fake.",
+      subtitle: "O identificador informado não existe na base carregada.",
       actions: baseActions,
       content: `<div class="empty-state">Abra uma proposição válida pela página de lista.</div>`,
     });
@@ -160,10 +160,17 @@ const render = () => {
 
   const meta = [
     { label: "Número", value: proposicao.numero },
+    { label: "Número ELO", value: proposicao.numeroElo },
     { label: "Tipo", value: proposicao.tipo },
     { label: "Prioridade", value: proposicao.prioridade },
     { label: "Membro", value: proposicao.membro },
     { label: "Unidade", value: proposicao.unidade },
+    { label: "Ramo do MP", value: proposicao.ramoMP },
+    { label: "Nome do ramo", value: proposicao.ramoMPNome },
+    { label: "Temática", value: proposicao.tematica },
+    { label: "UF", value: proposicao.uf?.join(", ") },
+    { label: "Início da correição", value: formatDate(proposicao.dataInicioCorreicao) },
+    { label: "Fim da correição", value: formatDate(proposicao.dataFimCorreicao) },
     {
       label: "Avaliação vigente",
       value: avaliacaoVigente ? formatDate(avaliacaoVigente.data) : "Não há",
@@ -174,7 +181,7 @@ const render = () => {
     activePage: "proposicao-detalhe",
     title: "Detalhe da proposição",
     subtitle:
-      "Página central do protótipo. Aqui estão a leitura completa do caso, o histórico e as ações condicionadas pelas regras de domínio.",
+      "Painel completo do caso, com histórico, diligências, pendências da Secretaria e ações condicionadas às regras de domínio.",
     actions: `${baseActions}<a class="button button--ghost" href="proposicoes-lista.html">Voltar à lista</a>`,
     content: `
       <section class="stack">
@@ -194,6 +201,10 @@ const render = () => {
               <div class="status-card">
                 <span class="muted">Conclusão</span>
                 <strong>${proposicao.juizoAtual?.tipoConclusao ? Labels.tipoConclusao[proposicao.juizoAtual.tipoConclusao] : "—"}</strong>
+              </div>
+              <div class="status-card">
+                <span class="muted">Observações gerais</span>
+                <strong>${proposicao.observacoesGerais || "Sem observações complementares."}</strong>
               </div>
             </div>
           </div>

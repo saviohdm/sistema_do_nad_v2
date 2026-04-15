@@ -131,12 +131,30 @@ export const markPropositionDeleted = (proposicao) => {
     tipo: TipoHistorico.APAGAMENTO_PROPOSICAO,
     data: new Date().toISOString(),
     usuario: "Corregedor Nacional",
-    descricao: "Proposição apagada e encerrada no protótipo.",
+    descricao: "Proposição apagada e encerrada pela Corregedoria Nacional.",
   });
   return proposicao;
 };
 
-export const criarProposicao = (state, { tipo, unidade, membro, descricao, prioridade, correicaoId }) => {
+export const criarProposicao = (
+  state,
+  {
+    tipo,
+    unidade,
+    membro,
+    descricao,
+    prioridade,
+    correicaoId,
+    numeroElo,
+    ramoMP,
+    ramoMPNome,
+    tematica,
+    uf,
+    dataInicioCorreicao,
+    dataFimCorreicao,
+    observacoesGerais,
+  },
+) => {
   const numero = `PROP-${String(state.proposicoes.length + 1).padStart(4, "0")}`;
 
   const novaProposicao = {
@@ -148,6 +166,14 @@ export const criarProposicao = (state, { tipo, unidade, membro, descricao, prior
     membro,
     descricao,
     prioridade: prioridade || "normal",
+    numeroElo: numeroElo || "",
+    ramoMP: ramoMP || "",
+    ramoMPNome: ramoMPNome || "",
+    tematica: tematica || "",
+    uf: uf || [],
+    dataInicioCorreicao: dataInicioCorreicao || "",
+    dataFimCorreicao: dataFimCorreicao || "",
+    observacoesGerais: observacoesGerais || "",
     statusFluxo: StatusFluxo.RASCUNHO_CN,
     juizoAtual: null,
     avaliacaoVigenteId: null,

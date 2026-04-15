@@ -44,7 +44,7 @@ export const renderAppShell = ({ activePage, title, subtitle, content, actions =
       <aside class="sidebar">
         ${renderPersonaBadge()}
         <p class="sidebar__title">NAD</p>
-        <p class="sidebar__subtitle">Protótipo front-end para validar fluxo, decisão e pendências.</p>
+        <p class="sidebar__subtitle">Gestão de proposições, diligências, decisões e pendências da Secretaria Processual.</p>
         <nav>
           ${navItems
             .map(

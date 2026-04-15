@@ -12,17 +12,17 @@ const comPendencia = findPropWithPendingProvidence(currentState);
 
 mountPage({
   activePage: "dashboard",
-  title: "Dashboard do protótipo",
+  title: "Dashboard",
   subtitle:
     "Visão geral das proposições, do núcleo decisório do Corregedor Nacional e das pendências paralelas da Secretaria Processual.",
   actions: baseActions,
   content: `
     <section class="stack">
       <article class="hero-card">
-        <h2>Protótipo do fluxo de proposições do NAD</h2>
+        <h2>Fluxo de proposições do NAD</h2>
         <p>
-          Esta versão valida a separação entre avaliação técnica, decisão do Corregedor,
-          reabertura por necessidade de informações e controle paralelo de providências da Secretaria.
+          Painel consolidado das proposições originadas da correição, com tramitação por diligência,
+          avaliação técnica, decisão do Corregedor e controle paralelo de providências da Secretaria.
         </p>
       </article>
 
@@ -61,7 +61,7 @@ mountPage({
             }
           </section>
           <section class="panel">
-            <h3 class="panel__title">Atalhos do protótipo</h3>
+            <h3 class="panel__title">Atalhos operacionais</h3>
             <div class="button-row">
               <a class="button" href="proposicoes-lista.html">Ir para proposições</a>
               <a class="button button--secondary" href="pendencias-secretaria.html">Abrir pendências</a>
