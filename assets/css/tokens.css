@@ -23,12 +23,16 @@
   --warning: #d97706;
   --danger: #a61a1a;
 
-  /* Paleta de Gráficos */
+  /* Paleta de Gráficos — institucional sóbria */
   --chart-1: #a61a1a;
-  --chart-2: #2d6a4f;
-  --chart-3: #d97706;
-  --chart-4: #3b6fa0;
-  --chart-inactive: #b0b0b0;
+  --chart-2: #5b3a9c;
+  --chart-3: #3b6fa0;
+  --chart-4: #6b7280;
+  --chart-inactive: #d1d5db;
+
+  /* Dimensões de Gráficos */
+  --chart-viz-size: 180px;
+  --chart-legend-width: 200px;
 
   /* Superfícies Alternativas */
   --surface-warm: #faf6f5;

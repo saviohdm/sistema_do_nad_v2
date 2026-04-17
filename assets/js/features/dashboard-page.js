@@ -11,9 +11,7 @@ import {
   listProposicoes,
 } from "../domain/proposicoes.js";
 import {
-  renderMetricSection,
-  renderDonutStatCard,
-  renderPieChart,
+  renderChartCard,
   renderProposicaoTable,
   renderRamoMPTable,
   renderStatCard,
@@ -68,43 +66,41 @@ const buildCorregedorContent = () => {
   const pendentesCN = countPendentesDoCorregedor(currentState);
   const pendentesPersona = countPendentesPorPersona(currentState);
 
-  const acervoCards = [
-    renderDonutStatCard("Proposições", {
-      ativas: proposicoes.ativas,
-      inativas: proposicoes.inativas,
-    }),
-    renderDonutStatCard("Correições", {
-      ativas: correicoes.ativas,
-      inativas: correicoes.inativas,
-    }),
-  ].join("");
-
-  const pendentesCNPie = renderPieChart(
-    "Pendentes de ação do Corregedor Nacional",
+  const proposicoesCard = renderChartCard(
+    "Proposições",
     [
-      { label: "Validação", value: pendentesCN.pendentesValidacao, color: "var(--warning)" },
-      { label: "Decisão", value: pendentesCN.pendentesDecisao, color: "var(--primary)" },
-      { label: "Diligência", value: pendentesCN.pendentesDiligencia, color: "var(--success)" },
+      { label: "Ativas", value: proposicoes.ativas, color: "var(--chart-1)" },
+      { label: "Inativas", value: proposicoes.inativas, color: "var(--chart-inactive)" },
     ],
-    {
-      subtitle:
-        "Validação: proposições em rascunho aguardando liberação. Decisão: último movimento é avaliação do membro auxiliar. Diligência: validadas e ainda sem avaliação do membro.",
-      cardClass: "pie-card--attention",
-    },
+    { showPercent: false },
   );
 
-  const pendentesPersonaPie = renderPieChart(
+  const correicoesCard = renderChartCard(
+    "Correições",
+    [
+      { label: "Ativas", value: correicoes.ativas, color: "var(--chart-1)" },
+      { label: "Inativas", value: correicoes.inativas, color: "var(--chart-inactive)" },
+    ],
+    { showPercent: false },
+  );
+
+  const pendentesCNCard = renderChartCard(
+    "Pendentes de ação do Corregedor Nacional",
+    [
+      { label: "Validação", value: pendentesCN.pendentesValidacao, color: "var(--chart-1)" },
+      { label: "Decisão", value: pendentesCN.pendentesDecisao, color: "var(--chart-2)" },
+      { label: "Diligência", value: pendentesCN.pendentesDiligencia, color: "var(--chart-3)" },
+    ],
+  );
+
+  const pendentesPersonaCard = renderChartCard(
     "Proposições ativas por persona responsável",
     [
-      { label: "Corregedoria Nacional", value: pendentesPersona.corregedoria, color: "var(--primary)" },
-      { label: "Secretaria Processual", value: pendentesPersona.secretaria, color: "var(--warning)" },
-      { label: "Correicionado", value: pendentesPersona.correicionado, color: "var(--success)" },
+      { label: "Corregedoria Nacional", value: pendentesPersona.corregedoria, color: "var(--chart-1)" },
+      { label: "Secretaria Processual", value: pendentesPersona.secretaria, color: "var(--chart-2)" },
+      { label: "Correicionado", value: pendentesPersona.correicionado, color: "var(--chart-3)" },
       { label: "Membro Auxiliar", value: pendentesPersona.membroAuxiliar, color: "var(--chart-4)" },
     ],
-    {
-      subtitle:
-        "Uma mesma proposição pode aparecer em mais de uma persona quando há pendências em paralelo.",
-    },
   );
 
   return `
@@ -117,15 +113,21 @@ const buildCorregedorContent = () => {
         </p>
       </article>
 
-      ${renderMetricSection("Visão geral do acervo", acervoCards, {
-        subtitle:
-          "Proposição inativa: cientificada ou apagada, com todas as providências da Secretaria concluídas. Correição inativa: todas as suas proposições inativas.",
-      })}
-
-      <div class="pie-pair">
-        ${pendentesCNPie}
-        ${pendentesPersonaPie}
-      </div>
+      <section class="metric-section">
+        <header class="metric-section__header">
+          <h3 class="panel__title">Visão analítica</h3>
+          <p class="muted">
+            Acervo ativo e inativo à esquerda; filas de ação e distribuição por persona à direita.
+            Proposição inativa: cientificada ou apagada, com todas as providências da Secretaria concluídas.
+          </p>
+        </header>
+        <div class="dashboard-charts-grid">
+          ${proposicoesCard}
+          ${correicoesCard}
+          ${pendentesCNCard}
+          ${pendentesPersonaCard}
+        </div>
+      </section>
 
       <section class="metric-section">
         <header class="metric-section__header">
