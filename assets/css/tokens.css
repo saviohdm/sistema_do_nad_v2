@@ -23,6 +23,16 @@
   --warning: #d97706;
   --danger: #a61a1a;
 
+  /* Paleta de Gráficos */
+  --chart-1: #a61a1a;
+  --chart-2: #2d6a4f;
+  --chart-3: #d97706;
+  --chart-4: #3b6fa0;
+  --chart-inactive: #b0b0b0;
+
+  /* Superfícies Alternativas */
+  --surface-warm: #faf6f5;
+
   /* Sombras */
   --shadow: 0 2px 8px rgba(26, 26, 26, 0.08);
   --shadow-lg: 0 8px 24px rgba(26, 26, 26, 0.12);

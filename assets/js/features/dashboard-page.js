@@ -12,10 +12,11 @@ import {
 } from "../domain/proposicoes.js";
 import {
   renderMetricSection,
+  renderDonutStatCard,
+  renderPieChart,
   renderProposicaoTable,
   renderRamoMPTable,
   renderStatCard,
-  renderStatCardSplit,
 } from "../ui/components.js";
 
 requireAuth();
@@ -68,28 +69,43 @@ const buildCorregedorContent = () => {
   const pendentesPersona = countPendentesPorPersona(currentState);
 
   const acervoCards = [
-    renderStatCardSplit("Proposições", {
+    renderDonutStatCard("Proposições", {
       ativas: proposicoes.ativas,
       inativas: proposicoes.inativas,
     }),
-    renderStatCardSplit("Correições", {
+    renderDonutStatCard("Correições", {
       ativas: correicoes.ativas,
       inativas: correicoes.inativas,
     }),
   ].join("");
 
-  const pendentesCNCards = [
-    renderStatCard("Pendentes de validação", pendentesCN.pendentesValidacao),
-    renderStatCard("Pendentes de decisão", pendentesCN.pendentesDecisao),
-    renderStatCard("Pendentes de diligência", pendentesCN.pendentesDiligencia),
-  ].join("");
+  const pendentesCNPie = renderPieChart(
+    "Pendentes de ação do Corregedor Nacional",
+    [
+      { label: "Validação", value: pendentesCN.pendentesValidacao, color: "var(--warning)" },
+      { label: "Decisão", value: pendentesCN.pendentesDecisao, color: "var(--primary)" },
+      { label: "Diligência", value: pendentesCN.pendentesDiligencia, color: "var(--success)" },
+    ],
+    {
+      subtitle:
+        "Validação: proposições em rascunho aguardando liberação. Decisão: último movimento é avaliação do membro auxiliar. Diligência: validadas e ainda sem avaliação do membro.",
+      cardClass: "pie-card--attention",
+    },
+  );
 
-  const pendentesPersonaCards = [
-    renderStatCard("Corregedoria Nacional", pendentesPersona.corregedoria),
-    renderStatCard("Secretaria Processual", pendentesPersona.secretaria),
-    renderStatCard("Correicionado", pendentesPersona.correicionado),
-    renderStatCard("Membro Auxiliar", pendentesPersona.membroAuxiliar),
-  ].join("");
+  const pendentesPersonaPie = renderPieChart(
+    "Proposições ativas por persona responsável",
+    [
+      { label: "Corregedoria Nacional", value: pendentesPersona.corregedoria, color: "var(--primary)" },
+      { label: "Secretaria Processual", value: pendentesPersona.secretaria, color: "var(--warning)" },
+      { label: "Correicionado", value: pendentesPersona.correicionado, color: "var(--success)" },
+      { label: "Membro Auxiliar", value: pendentesPersona.membroAuxiliar, color: "var(--chart-4)" },
+    ],
+    {
+      subtitle:
+        "Uma mesma proposição pode aparecer em mais de uma persona quando há pendências em paralelo.",
+    },
+  );
 
   return `
     <section class="stack">
@@ -106,36 +122,17 @@ const buildCorregedorContent = () => {
           "Proposição inativa: cientificada ou apagada, com todas as providências da Secretaria concluídas. Correição inativa: todas as suas proposições inativas.",
       })}
 
+      <div class="pie-pair">
+        ${pendentesCNPie}
+        ${pendentesPersonaPie}
+      </div>
+
       <section class="metric-section">
         <header class="metric-section__header">
           <h3 class="panel__title">Proposições por ramo do MP</h3>
           <p class="muted">Distribuição entre ativas e inativas em cada ramo.</p>
         </header>
         ${renderRamoMPTable(porRamo)}
-      </section>
-
-      ${renderMetricSection("Pendentes de ação do Corregedor Nacional", pendentesCNCards, {
-        subtitle:
-          "Validação: proposições em rascunho aguardando liberação. Decisão: último movimento é avaliação do membro auxiliar. Diligência: validadas e ainda sem avaliação do membro.",
-      })}
-
-      ${renderMetricSection(
-        "Proposições ativas por persona responsável",
-        pendentesPersonaCards,
-        {
-          subtitle:
-            "Uma mesma proposição pode aparecer em mais de uma persona quando há pendências em paralelo.",
-        },
-      )}
-
-      <section class="page-grid page-grid--two">
-        <div class="stack">
-          ${renderProposicaoTable(recentes)}
-        </div>
-        <div class="stack">
-          ${pendenciasPanel}
-          ${atalhosPanel}
-        </div>
       </section>
     </section>
   `;

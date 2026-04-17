@@ -31,21 +31,127 @@ export const renderStatCard = (label, value) => `
   </article>
 `;
 
-export const renderStatCardSplit = (label, { ativas, inativas }) => `
-  <article class="stat-card stat-card--split">
-    <span class="stat-card__label">${label}</span>
-    <div class="stat-card__split">
-      <div class="stat-card__split-item">
-        <span class="stat-card__split-value">${ativas}</span>
-        <span class="stat-card__split-caption">ativas</span>
+export const renderDonutStatCard = (label, { ativas, inativas }) => {
+  const total = ativas + inativas;
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const activeRatio = total ? ativas / total : 0;
+  const activeLength = total ? Math.max(activeRatio * circumference, 0) : 0;
+  const inactiveLength = total ? Math.max(circumference - activeLength, 0) : 0;
+  const dashActive = total ? `${activeLength} ${circumference - activeLength}` : `0 ${circumference}`;
+  const dashInactive = total ? `${inactiveLength} ${circumference - inactiveLength}` : `0 ${circumference}`;
+  const inactiveOffset = total ? -activeLength : 0;
+  const description = `${label}: ${ativas} ativas e ${inativas} inativas, total de ${total}.`;
+
+  return `
+    <article class="stat-card stat-card--donut">
+      <span class="stat-card__label">${label}</span>
+      <div class="stat-card__donut-layout">
+        <div class="stat-card__chart">
+          <svg
+            class="stat-card__donut"
+            viewBox="0 0 120 120"
+            role="img"
+            aria-label="${description}"
+          >
+            <circle class="stat-card__donut-track" cx="60" cy="60" r="${radius}"></circle>
+            <circle
+              class="stat-card__donut-segment stat-card__donut-segment--ativas"
+              cx="60"
+              cy="60"
+              r="${radius}"
+              stroke-dasharray="${dashActive}"
+            ></circle>
+            <circle
+              class="stat-card__donut-segment stat-card__donut-segment--inativas"
+              cx="60"
+              cy="60"
+              r="${radius}"
+              stroke-dasharray="${dashInactive}"
+              stroke-dashoffset="${inactiveOffset}"
+            ></circle>
+          </svg>
+          <div class="stat-card__donut-center" aria-hidden="true">
+            <span class="stat-card__donut-total">${total}</span>
+            <span class="stat-card__donut-caption">total</span>
+          </div>
+        </div>
+        <div class="stat-card__legend">
+          <div class="stat-card__legend-item">
+            <span class="stat-card__legend-dot stat-card__legend-dot--ativas"></span>
+            <div>
+              <span class="stat-card__legend-value">${ativas}</span>
+              <span class="stat-card__legend-label">ativas</span>
+            </div>
+          </div>
+          <div class="stat-card__legend-item">
+            <span class="stat-card__legend-dot stat-card__legend-dot--inativas"></span>
+            <div>
+              <span class="stat-card__legend-value">${inativas}</span>
+              <span class="stat-card__legend-label">inativas</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="stat-card__split-item">
-        <span class="stat-card__split-value">${inativas}</span>
-        <span class="stat-card__split-caption">inativas</span>
+    </article>
+  `;
+};
+
+export const renderPieChart = (title, slices, { subtitle, cardClass } = {}) => {
+  const total = slices.reduce((s, d) => s + d.value, 0);
+  const radius = 50;
+  const cx = 60, cy = 60;
+  let cumulative = 0;
+
+  const paths = total === 0
+    ? `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="var(--surface-alt)" />`
+    : slices.map((slice) => {
+        const ratio = slice.value / total;
+        const startAngle = cumulative * 2 * Math.PI - Math.PI / 2;
+        cumulative += ratio;
+        const endAngle = cumulative * 2 * Math.PI - Math.PI / 2;
+        const largeArc = ratio > 0.5 ? 1 : 0;
+        const x1 = cx + radius * Math.cos(startAngle);
+        const y1 = cy + radius * Math.sin(startAngle);
+        const x2 = cx + radius * Math.cos(endAngle);
+        const y2 = cy + radius * Math.sin(endAngle);
+        if (ratio === 0) return "";
+        if (ratio >= 1) return `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${slice.color}" />`;
+        return `<path d="M${cx},${cy} L${x1},${y1} A${radius},${radius} 0 ${largeArc} 1 ${x2},${y2} Z" fill="${slice.color}" />`;
+      }).join("");
+
+  const legend = slices.map((s) => {
+    const pct = total ? Math.round((s.value / total) * 100) : 0;
+    return `
+      <div class="pie-legend__item">
+        <span class="pie-legend__dot" style="background:${s.color}"></span>
+        <div>
+          <span class="pie-legend__value">${s.value}</span>
+          <span class="pie-legend__label">${s.label} (${pct}%)</span>
+        </div>
+      </div>`;
+  }).join("");
+
+  return `
+    <section class="metric-section">
+      <header class="metric-section__header">
+        <h3 class="panel__title">${title}</h3>
+        ${subtitle ? `<p class="muted">${subtitle}</p>` : ""}
+      </header>
+      <div class="pie-card${cardClass ? ` ${cardClass}` : ""}">
+        <div class="pie-card__chart">
+          <svg viewBox="0 0 120 120" role="img" aria-label="${title}: total ${total}">
+            ${paths}
+          </svg>
+          <div class="pie-card__center">
+            <span class="pie-card__total">${total}</span>
+            <span class="pie-card__caption">total</span>
+          </div>
+        </div>
+        <div class="pie-legend">${legend}</div>
       </div>
-    </div>
-  </article>
-`;
+    </section>`;
+};
 
 export const renderMetricSection = (title, cardsHtml, { subtitle } = {}) => `
   <section class="metric-section">
