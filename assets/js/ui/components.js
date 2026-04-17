@@ -31,6 +31,70 @@ export const renderStatCard = (label, value) => `
   </article>
 `;
 
+export const renderStatCardSplit = (label, { ativas, inativas }) => `
+  <article class="stat-card stat-card--split">
+    <span class="stat-card__label">${label}</span>
+    <div class="stat-card__split">
+      <div class="stat-card__split-item">
+        <span class="stat-card__split-value">${ativas}</span>
+        <span class="stat-card__split-caption">ativas</span>
+      </div>
+      <div class="stat-card__split-item">
+        <span class="stat-card__split-value">${inativas}</span>
+        <span class="stat-card__split-caption">inativas</span>
+      </div>
+    </div>
+  </article>
+`;
+
+export const renderMetricSection = (title, cardsHtml, { subtitle } = {}) => `
+  <section class="metric-section">
+    <header class="metric-section__header">
+      <h3 class="panel__title">${title}</h3>
+      ${subtitle ? `<p class="muted">${subtitle}</p>` : ""}
+    </header>
+    <div class="stats-grid">${cardsHtml}</div>
+  </section>
+`;
+
+export const renderRamoMPTable = (linhas) => `
+  <div class="panel">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Ramo do MP</th>
+            <th>Ativas</th>
+            <th>Inativas</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${
+            linhas.length
+              ? linhas
+                  .map(
+                    (linha) => `
+                      <tr>
+                        <td>
+                          <strong>${linha.ramoMP}</strong>
+                          <div class="muted">${linha.ramoMPNome}</div>
+                        </td>
+                        <td>${linha.ativas}</td>
+                        <td>${linha.inativas}</td>
+                        <td>${linha.ativas + linha.inativas}</td>
+                      </tr>
+                    `,
+                  )
+                  .join("")
+              : `<tr><td colspan="4"><div class="empty-state">Sem proposições registradas.</div></td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+`;
+
 export const renderProposicaoTable = (proposicoes) => `
   <div class="panel">
     <div class="table-wrap">

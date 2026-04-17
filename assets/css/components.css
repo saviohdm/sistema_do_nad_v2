@@ -74,6 +74,47 @@
   color: var(--muted);
 }
 
+.stat-card--split {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stat-card__split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.stat-card__split-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card__split-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.stat-card__split-caption {
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metric-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.metric-section__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

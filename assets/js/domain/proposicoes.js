@@ -178,6 +178,116 @@ export const findPropWithPendingProvidence = (state) =>
     proposicao.pendenciasSecretaria.some((item) => item.status === "pendente"),
   );
 
+const hasEvent = (proposicao, tipo) =>
+  proposicao.historico.some((event) => event.tipo === tipo);
+
+const hasPendenciaSecretariaAberta = (proposicao) =>
+  proposicao.pendenciasSecretaria.some((item) => item.status === "pendente");
+
+export const isProposicaoInativa = (proposicao) => {
+  const cicloEncerrado =
+    hasEvent(proposicao, TipoHistorico.CIENTIFICACAO) ||
+    hasEvent(proposicao, TipoHistorico.APAGAMENTO_PROPOSICAO);
+  const pendenciasResolvidas = proposicao.pendenciasSecretaria.every(
+    (item) => item.status === "cumprida",
+  );
+  return cicloEncerrado && pendenciasResolvidas;
+};
+
+export const isProposicaoAtiva = (proposicao) => !isProposicaoInativa(proposicao);
+
+export const countProposicoesPorAtividade = (state) => {
+  const proposicoes = listProposicoes(state);
+  const ativas = proposicoes.filter(isProposicaoAtiva).length;
+  return {
+    total: proposicoes.length,
+    ativas,
+    inativas: proposicoes.length - ativas,
+  };
+};
+
+const correicaoKey = (proposicao) =>
+  proposicao.correicaoId ||
+  `correicao:${proposicao.numeroElo || proposicao.ramoMP || "sem-id"}`;
+
+export const countCorreicoesPorAtividade = (state) => {
+  const porCorreicao = new Map();
+  listProposicoes(state).forEach((proposicao) => {
+    const key = correicaoKey(proposicao);
+    const bucket = porCorreicao.get(key) || [];
+    bucket.push(proposicao);
+    porCorreicao.set(key, bucket);
+  });
+  let ativas = 0;
+  let inativas = 0;
+  porCorreicao.forEach((props) => {
+    if (props.every(isProposicaoInativa)) {
+      inativas += 1;
+    } else {
+      ativas += 1;
+    }
+  });
+  return { total: porCorreicao.size, ativas, inativas };
+};
+
+export const countProposicoesPorRamoMP = (state) => {
+  const map = new Map();
+  listProposicoes(state).forEach((proposicao) => {
+    const key = proposicao.ramoMP || "Sem ramo";
+    const entry =
+      map.get(key) || {
+        ramoMP: key,
+        ramoMPNome: proposicao.ramoMPNome || key,
+        ativas: 0,
+        inativas: 0,
+      };
+    if (isProposicaoInativa(proposicao)) {
+      entry.inativas += 1;
+    } else {
+      entry.ativas += 1;
+    }
+    map.set(key, entry);
+  });
+  return Array.from(map.values()).sort(
+    (a, b) => b.ativas + b.inativas - (a.ativas + a.inativas),
+  );
+};
+
+export const countPendentesDoCorregedor = (state) => {
+  const ativas = listProposicoes(state).filter(isProposicaoAtiva);
+  const intermediarios = [
+    StatusFluxo.AGUARDANDO_SECRETARIA,
+    StatusFluxo.AGUARDANDO_COMPROVACAO,
+    StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
+  ];
+  return {
+    pendentesValidacao: ativas.filter((p) => p.statusFluxo === StatusFluxo.RASCUNHO_CN).length,
+    pendentesDecisao: ativas.filter(
+      (p) => p.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
+    ).length,
+    pendentesDiligencia: ativas.filter((p) => intermediarios.includes(p.statusFluxo)).length,
+  };
+};
+
+export const countPendentesPorPersona = (state) => {
+  const ativas = listProposicoes(state).filter(isProposicaoAtiva);
+  return {
+    corregedoria: ativas.filter((p) =>
+      [StatusFluxo.RASCUNHO_CN, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR].includes(p.statusFluxo),
+    ).length,
+    secretaria: ativas.filter(
+      (p) =>
+        p.statusFluxo === StatusFluxo.AGUARDANDO_SECRETARIA ||
+        (p.statusFluxo === StatusFluxo.CONCLUIDA && !hasEvent(p, TipoHistorico.CIENTIFICACAO)) ||
+        hasPendenciaSecretariaAberta(p),
+    ).length,
+    correicionado: ativas.filter((p) => p.statusFluxo === StatusFluxo.AGUARDANDO_COMPROVACAO)
+      .length,
+    membroAuxiliar: ativas.filter((p) => p.statusFluxo === StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO)
+      .length,
+  };
+};
+
 export const markPropositionDeleted = (proposicao) => {
   proposicao.statusFluxo = StatusFluxo.CONCLUIDA;
   proposicao.juizoAtual = {

@@ -1,22 +1,149 @@
-import { requireAuth } from "../app/auth.js";
+import { getCurrentPersona, PERSONAS, requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
-import { findPropWithPendingProvidence, getDashboardSummary, listProposicoes } from "../domain/proposicoes.js";
-import { renderProposicaoTable, renderStatCard } from "../ui/components.js";
+import {
+  countCorreicoesPorAtividade,
+  countPendentesDoCorregedor,
+  countPendentesPorPersona,
+  countProposicoesPorAtividade,
+  countProposicoesPorRamoMP,
+  findPropWithPendingProvidence,
+  getDashboardSummary,
+  listProposicoes,
+} from "../domain/proposicoes.js";
+import {
+  renderMetricSection,
+  renderProposicaoTable,
+  renderRamoMPTable,
+  renderStatCard,
+  renderStatCardSplit,
+} from "../ui/components.js";
 
 requireAuth();
 
 const currentState = state();
-const summary = getDashboardSummary(currentState);
+const persona = getCurrentPersona();
 const recentes = listProposicoes(currentState).slice(0, 4);
 const comPendencia = findPropWithPendingProvidence(currentState);
 
-mountPage({
-  activePage: "dashboard",
-  title: "Dashboard",
-  subtitle:
-    "Visão geral das proposições, do núcleo decisório do Corregedor Nacional e das pendências paralelas da Secretaria Processual.",
-  actions: baseActions,
-  content: `
+const pendenciasPanel = `
+  <section class="panel">
+    <h3 class="panel__title">Pendências abertas da Secretaria</h3>
+    ${
+      comPendencia.length
+        ? `
+          <div class="stack">
+            ${comPendencia
+              .map(
+                (item) => `
+                  <a class="status-card" href="proposicao-detalhe.html?id=${item.id}">
+                    <strong>${item.numero}</strong>
+                    <span>${item.unidade}</span>
+                  </a>
+                `,
+              )
+              .join("")}
+          </div>
+        `
+        : `<div class="empty-state">Nenhuma pendência aberta no momento.</div>`
+    }
+  </section>
+`;
+
+const atalhosPanel = `
+  <section class="panel">
+    <h3 class="panel__title">Atalhos operacionais</h3>
+    <div class="button-row">
+      <a class="button" href="proposicoes-lista.html">Ir para proposições</a>
+      <a class="button button--secondary" href="pendencias-secretaria.html">Abrir pendências</a>
+      <a class="button button--ghost" href="proposicao-detalhe.html?id=prop-003">Abrir caso com avaliação pendente</a>
+    </div>
+  </section>
+`;
+
+const buildCorregedorContent = () => {
+  const proposicoes = countProposicoesPorAtividade(currentState);
+  const correicoes = countCorreicoesPorAtividade(currentState);
+  const porRamo = countProposicoesPorRamoMP(currentState);
+  const pendentesCN = countPendentesDoCorregedor(currentState);
+  const pendentesPersona = countPendentesPorPersona(currentState);
+
+  const acervoCards = [
+    renderStatCardSplit("Proposições", {
+      ativas: proposicoes.ativas,
+      inativas: proposicoes.inativas,
+    }),
+    renderStatCardSplit("Correições", {
+      ativas: correicoes.ativas,
+      inativas: correicoes.inativas,
+    }),
+  ].join("");
+
+  const pendentesCNCards = [
+    renderStatCard("Pendentes de validação", pendentesCN.pendentesValidacao),
+    renderStatCard("Pendentes de decisão", pendentesCN.pendentesDecisao),
+    renderStatCard("Pendentes de diligência", pendentesCN.pendentesDiligencia),
+  ].join("");
+
+  const pendentesPersonaCards = [
+    renderStatCard("Corregedoria Nacional", pendentesPersona.corregedoria),
+    renderStatCard("Secretaria Processual", pendentesPersona.secretaria),
+    renderStatCard("Correicionado", pendentesPersona.correicionado),
+    renderStatCard("Membro Auxiliar", pendentesPersona.membroAuxiliar),
+  ].join("");
+
+  return `
+    <section class="stack">
+      <article class="hero-card">
+        <h2>Painel do Corregedor Nacional</h2>
+        <p>
+          Visão consolidada do acervo de proposições e correições, com destaque para as filas
+          que dependem de ação direta da Corregedoria Nacional.
+        </p>
+      </article>
+
+      ${renderMetricSection("Visão geral do acervo", acervoCards, {
+        subtitle:
+          "Proposição inativa: cientificada ou apagada, com todas as providências da Secretaria concluídas. Correição inativa: todas as suas proposições inativas.",
+      })}
+
+      <section class="metric-section">
+        <header class="metric-section__header">
+          <h3 class="panel__title">Proposições por ramo do MP</h3>
+          <p class="muted">Distribuição entre ativas e inativas em cada ramo.</p>
+        </header>
+        ${renderRamoMPTable(porRamo)}
+      </section>
+
+      ${renderMetricSection("Pendentes de ação do Corregedor Nacional", pendentesCNCards, {
+        subtitle:
+          "Validação: proposições em rascunho aguardando liberação. Decisão: último movimento é avaliação do membro auxiliar. Diligência: validadas e ainda sem avaliação do membro.",
+      })}
+
+      ${renderMetricSection(
+        "Proposições ativas por persona responsável",
+        pendentesPersonaCards,
+        {
+          subtitle:
+            "Uma mesma proposição pode aparecer em mais de uma persona quando há pendências em paralelo.",
+        },
+      )}
+
+      <section class="page-grid page-grid--two">
+        <div class="stack">
+          ${renderProposicaoTable(recentes)}
+        </div>
+        <div class="stack">
+          ${pendenciasPanel}
+          ${atalhosPanel}
+        </div>
+      </section>
+    </section>
+  `;
+};
+
+const buildDefaultContent = () => {
+  const summary = getDashboardSummary(currentState);
+  return `
     <section class="stack">
       <article class="hero-card">
         <h2>Fluxo de proposições do NAD</h2>
@@ -39,37 +166,22 @@ mountPage({
           ${renderProposicaoTable(recentes)}
         </div>
         <div class="stack">
-          <section class="panel">
-            <h3 class="panel__title">Pendências abertas da Secretaria</h3>
-            ${
-              comPendencia.length
-                ? `
-                  <div class="stack">
-                    ${comPendencia
-                      .map(
-                        (item) => `
-                          <a class="status-card" href="proposicao-detalhe.html?id=${item.id}">
-                            <strong>${item.numero}</strong>
-                            <span>${item.unidade}</span>
-                          </a>
-                        `,
-                      )
-                      .join("")}
-                  </div>
-                `
-                : `<div class="empty-state">Nenhuma pendência aberta no momento.</div>`
-            }
-          </section>
-          <section class="panel">
-            <h3 class="panel__title">Atalhos operacionais</h3>
-            <div class="button-row">
-              <a class="button" href="proposicoes-lista.html">Ir para proposições</a>
-              <a class="button button--secondary" href="pendencias-secretaria.html">Abrir pendências</a>
-              <a class="button button--ghost" href="proposicao-detalhe.html?id=prop-003">Abrir caso com avaliação pendente</a>
-            </div>
-          </section>
+          ${pendenciasPanel}
+          ${atalhosPanel}
         </div>
       </section>
     </section>
-  `,
+  `;
+};
+
+const isCorregedor = persona === PERSONAS.CORREGEDOR;
+
+mountPage({
+  activePage: "dashboard",
+  title: "Dashboard",
+  subtitle: isCorregedor
+    ? "Painel analítico do Corregedor Nacional: acervo, filas e pendências por persona."
+    : "Visão geral das proposições, do núcleo decisório do Corregedor Nacional e das pendências paralelas da Secretaria Processual.",
+  actions: baseActions,
+  content: isCorregedor ? buildCorregedorContent() : buildDefaultContent(),
 });
