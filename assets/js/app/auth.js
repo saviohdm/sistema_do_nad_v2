@@ -17,7 +17,7 @@ const PERMISSIONS = {
     "remover_avaliacao",
     "avaliacao_com_forca_decisao",
   ],
-  [PERSONAS.MEMBRO]: ["avaliar_como_membro"],
+  [PERSONAS.MEMBRO]: ["avaliar_como_membro", "ver_fila_membro_auxiliar"],
   [PERSONAS.SECRETARIA]: [
     "criar_diligencia",
     "registrar_cientificacao",

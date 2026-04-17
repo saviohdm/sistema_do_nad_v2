@@ -2,6 +2,7 @@ import { getCurrentPersona, hasPermission } from "../app/auth.js";
 
 const baseNavItems = [
   { href: "dashboard.html", label: "Dashboard" },
+  { href: "membro-auxiliar.html", label: "Minha fila", permission: "ver_fila_membro_auxiliar" },
   { href: "proposicoes-lista.html", label: "Proposições" },
   { href: "proposicoes-criar.html", label: "Criar Proposição", permission: "criar_proposicao" },
   { href: "proposicao-detalhe.html?id=prop-003", label: "Detalhe da proposição" },

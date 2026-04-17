@@ -139,6 +139,18 @@
   background: var(--surface-alt);
 }
 
+.table--hover tbody tr[data-nav-ramo],
+.table--hover tbody tr[data-nav-unidade],
+.table--hover tbody tr[data-nav-correicao] {
+  cursor: pointer;
+}
+
+.table .numeric,
+.table th.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .button-row,
 .toolbar {
   display: flex;

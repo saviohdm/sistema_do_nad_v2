@@ -1,7 +1,7 @@
 import { requireAuth, getCurrentPersona } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
-import { formatDate, queryParam } from "../app/utils.js";
+import { formatDate, formatDateTime, queryParam } from "../app/utils.js";
 
 requireAuth();
 import {
@@ -20,15 +20,41 @@ import {
   getProposicaoById,
 } from "../domain/proposicoes.js";
 import {
+  obterRascunhoAvaliacao,
+  removerRascunhoAvaliacao,
+  salvarRascunhoAvaliacao,
+} from "../domain/rascunhos-avaliacao.js";
+import {
   renderDiligenciasCards,
   renderMetaList,
   renderPendenciasCards,
   renderProposicaoHero,
   renderTimeline,
 } from "../ui/components.js";
-import { readJuizoForm, renderJuizoForm } from "../ui/forms.js";
+import { lerJuizoParcial, readJuizoForm, renderJuizoForm } from "../ui/forms.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
+const veioDaFilaMembro = queryParam("fromMembro") === "1";
+
+const voltarParaFilaMembro = () => {
+  const filtrosSalvos = sessionStorage.getItem("nad-membro-auxiliar-filtros");
+  let query = "";
+  if (filtrosSalvos) {
+    try {
+      const filtros = JSON.parse(filtrosSalvos);
+      const params = new URLSearchParams();
+      Object.entries(filtros).forEach(([key, value]) => {
+        if (value === true) params.set(key, "1");
+        else if (value) params.set(key, String(value));
+      });
+      const q = params.toString();
+      if (q) query = `?${q}`;
+    } catch {
+      query = "";
+    }
+  }
+  window.location.href = `/pages/membro-auxiliar.html${query}`;
+};
 
 const bindHandlers = (proposicao) => {
   document.querySelector("#form-comprovacao")?.addEventListener("submit", (event) => {
@@ -67,8 +93,26 @@ const bindHandlers = (proposicao) => {
       salvarAvaliacaoMembro(item, juizo);
       return draft;
     });
+    removerRascunhoAvaliacao(proposicao.id);
+    if (veioDaFilaMembro) {
+      voltarParaFilaMembro();
+      return;
+    }
     render();
   });
+
+  document
+    .querySelector("#form-avaliacao-membro [data-action='salvar-rascunho']")
+    ?.addEventListener("click", () => {
+      const form = document.querySelector("#form-avaliacao-membro");
+      const juizoParcial = lerJuizoParcial(form);
+      const payload = salvarRascunhoAvaliacao(proposicao.id, juizoParcial);
+      const feedback = form.querySelector("[data-role='rascunho-feedback']");
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.textContent = `Rascunho salvo às ${formatDateTime(payload.savedAt)}.`;
+      }
+    });
 
   document.querySelector("[data-action='deferir-avaliacao']")?.addEventListener("click", () => {
     mutateState((draft) => {
@@ -182,7 +226,7 @@ const render = () => {
     title: "Detalhe da proposição",
     subtitle:
       "Painel completo do caso, com histórico, diligências, pendências da Secretaria e ações condicionadas às regras de domínio.",
-    actions: `${baseActions}<a class="button button--ghost" href="proposicoes-lista.html">Voltar à lista</a>`,
+    actions: `${baseActions}${veioDaFilaMembro ? `<a class="button button--ghost" href="membro-auxiliar.html">Voltar à fila</a>` : `<a class="button button--ghost" href="proposicoes-lista.html">Voltar à lista</a>`}`,
     content: `
       <section class="stack">
         ${renderProposicaoHero(proposicao)}
@@ -278,6 +322,8 @@ const render = () => {
                     formId: "form-avaliacao-membro",
                     title: "Avaliação do membro auxiliar",
                     submitLabel: "Salvar avaliação",
+                    initialJuizo: obterRascunhoAvaliacao(proposicao.id)?.juizo || null,
+                    includeRascunho: true,
                   })
                 : ""
             }

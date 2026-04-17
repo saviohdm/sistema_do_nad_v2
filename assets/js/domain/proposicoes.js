@@ -6,6 +6,66 @@ export const listProposicoes = (state) => [...state.proposicoes];
 export const getProposicaoById = (state, id) =>
   state.proposicoes.find((proposicao) => proposicao.id === id) || null;
 
+export const listProposicoesParaAvaliar = (state) =>
+  listProposicoes(state).filter(
+    (proposicao) => proposicao.statusFluxo === StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
+  );
+
+const aggregateBy = (items, keyFn, extraFn = () => ({})) => {
+  const map = new Map();
+  items.forEach((item) => {
+    const key = keyFn(item);
+    if (!key) return;
+    const entry = map.get(key) || { total: 0, ...extraFn(item) };
+    entry.total += 1;
+    map.set(key, entry);
+  });
+  return Array.from(map.entries())
+    .map(([key, entry]) => ({ key, ...entry }))
+    .sort((a, b) => b.total - a.total);
+};
+
+export const groupByRamoMP = (proposicoes) =>
+  aggregateBy(
+    proposicoes,
+    (p) => p.ramoMP,
+    (p) => ({ ramoMP: p.ramoMP, ramoMPNome: p.ramoMPNome || p.ramoMP }),
+  );
+
+export const groupByUnidade = (proposicoes) =>
+  aggregateBy(
+    proposicoes,
+    (p) => p.unidade,
+    (p) => ({ unidade: p.unidade }),
+  );
+
+export const groupByCorreicao = (proposicoes) =>
+  aggregateBy(
+    proposicoes,
+    (p) => p.correicaoId || `correicao:${p.numeroElo || p.ramoMP || "sem-id"}`,
+    (p) => ({
+      correicaoId: p.correicaoId || null,
+      ramoMP: p.ramoMP,
+      ramoMPNome: p.ramoMPNome,
+      dataInicioCorreicao: p.dataInicioCorreicao,
+      dataFimCorreicao: p.dataFimCorreicao,
+    }),
+  );
+
+export const filtrarProposicoes = (proposicoes, filtros = {}) => {
+  const { ramoMP, unidade, correicaoId, prioridade, tematica, uf, idsComRascunho } = filtros;
+  return proposicoes.filter((p) => {
+    if (ramoMP && p.ramoMP !== ramoMP) return false;
+    if (unidade && p.unidade !== unidade) return false;
+    if (correicaoId && p.correicaoId !== correicaoId) return false;
+    if (prioridade && p.prioridade !== prioridade) return false;
+    if (tematica && p.tematica !== tematica) return false;
+    if (uf && !(p.uf || []).includes(uf)) return false;
+    if (idsComRascunho && !idsComRascunho.includes(p.id)) return false;
+    return true;
+  });
+};
+
 export const getAvaliacaoVigente = (proposicao) =>
   proposicao.historico.find((event) => event.id === proposicao.avaliacaoVigenteId) || null;
 
