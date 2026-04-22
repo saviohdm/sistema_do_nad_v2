@@ -87,6 +87,7 @@ const buildCorregedorContent = () => {
   const pendentesCNCard = renderChartCard(
     "Pendentes de ação do Corregedor Nacional",
     [
+      { label: "Referendo", value: pendentesCN.pendentesReferendo, color: "var(--chart-4)" },
       { label: "Validação", value: pendentesCN.pendentesValidacao, color: "var(--chart-1)" },
       { label: "Decisão", value: pendentesCN.pendentesDecisao, color: "var(--chart-2)" },
       { label: "Diligência", value: pendentesCN.pendentesDiligencia, color: "var(--chart-3)" },
@@ -154,6 +155,7 @@ const buildDefaultContent = () => {
 
       <section class="stats-grid">
         ${renderStatCard("Proposições totais", summary.total)}
+        ${renderStatCard("Aguardando referendo", summary.aguardandoReferendo)}
         ${renderStatCard("Aguardando decisão", summary.aguardandoDecisao)}
         ${renderStatCard("Dependem da Secretaria", summary.necessitaSecretaria)}
         ${renderStatCard("Concluídas", summary.concluidas)}

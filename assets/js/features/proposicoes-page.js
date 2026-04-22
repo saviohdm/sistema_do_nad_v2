@@ -41,6 +41,10 @@ const render = (filtro = null) => {
             <button class="button ${!filtro ? "button--primary" : "button--secondary"}" data-filter="">
               Todas (${todasProposicoes.length})
             </button>
+            <button class="button ${filtro === StatusFluxo.AGUARDANDO_REFERENDO_CNMP ? "button--primary" : "button--secondary"}"
+                    data-filter="${StatusFluxo.AGUARDANDO_REFERENDO_CNMP}">
+              Aguardando Referendo
+            </button>
             <button class="button ${filtro === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR ? "button--primary" : "button--secondary"}"
                     data-filter="${StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR}">
               Aguardando Decisão

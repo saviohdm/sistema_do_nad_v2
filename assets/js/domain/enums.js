@@ -1,4 +1,5 @@
 export const StatusFluxo = {
+  AGUARDANDO_REFERENDO_CNMP: "aguardando_referendo_cnmp",
   RASCUNHO_CN: "rascunho_cn",
   AGUARDANDO_SECRETARIA: "aguardando_secretaria",
   AGUARDANDO_COMPROVACAO: "aguardando_comprovacao",
@@ -30,6 +31,8 @@ export const TipoHistorico = {
   CRIACAO: "criacao",
   EDICAO: "edicao",
   APAGAMENTO_PROPOSICAO: "apagamento_proposicao",
+  REFERENDO_CNMP: "referendo_cnmp",
+  RELATORIO_FINAL_GERADO: "relatorio_final_gerado",
   CRIACAO_DILIGENCIA: "criacao_diligencia",
   COMPROVACAO: "comprovacao",
   AVALIACAO_MEMBRO_AUXILIAR: "avaliacao_membro_auxiliar",
@@ -42,6 +45,7 @@ export const TipoHistorico = {
 
 export const Labels = {
   statusFluxo: {
+    [StatusFluxo.AGUARDANDO_REFERENDO_CNMP]: "Aguardando referendo do CNMP",
     [StatusFluxo.RASCUNHO_CN]: "Rascunho da CN",
     [StatusFluxo.AGUARDANDO_SECRETARIA]: "Aguardando Secretaria",
     [StatusFluxo.AGUARDANDO_COMPROVACAO]: "Aguardando comprovação",

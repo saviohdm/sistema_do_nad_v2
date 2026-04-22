@@ -11,6 +11,16 @@ export const listProposicoesParaAvaliar = (state) =>
     (proposicao) => proposicao.statusFluxo === StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
   );
 
+export const listProposicoesAguardandoReferendo = (state) =>
+  listProposicoes(state).filter(
+    (proposicao) => proposicao.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
+  );
+
+export const listProposicoesAguardandoDecisao = (state) =>
+  listProposicoes(state).filter(
+    (proposicao) => proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
+  );
+
 const aggregateBy = (items, keyFn, extraFn = () => ({})) => {
   const map = new Map();
   items.forEach((item) => {
@@ -52,6 +62,20 @@ export const groupByCorreicao = (proposicoes) =>
     }),
   );
 
+export const listCorreicoesAguardandoReferendo = (state) =>
+  groupByCorreicao(listProposicoesAguardandoReferendo(state));
+
+export const correicaoEstaReferendada = (state, correicaoId) => {
+  if (!correicaoId) return false;
+  const proposicoesDaCorreicao = listProposicoes(state).filter(
+    (p) => p.correicaoId === correicaoId,
+  );
+  if (proposicoesDaCorreicao.length === 0) return false;
+  return proposicoesDaCorreicao.some(
+    (p) => p.statusFluxo !== StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
+  );
+};
+
 export const filtrarProposicoes = (proposicoes, filtros = {}) => {
   const { ramoMP, unidade, correicaoId, prioridade, tematica, uf, idsComRascunho } = filtros;
   return proposicoes.filter((p) => {
@@ -76,6 +100,9 @@ export const getDashboardSummary = (state) => {
   const proposicoes = listProposicoes(state);
   return {
     total: proposicoes.length,
+    aguardandoReferendo: proposicoes.filter(
+      (item) => item.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
+    ).length,
     aguardandoDecisao: proposicoes.filter(
       (item) => item.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
     ).length,
@@ -91,6 +118,7 @@ export const getDashboardSummary = (state) => {
 
 export const getStatusBadgeTone = (status) =>
   ({
+    [StatusFluxo.AGUARDANDO_REFERENDO_CNMP]: "neutral",
     [StatusFluxo.RASCUNHO_CN]: "neutral",
     [StatusFluxo.AGUARDANDO_SECRETARIA]: "warning",
     [StatusFluxo.AGUARDANDO_COMPROVACAO]: "warning",
@@ -109,6 +137,8 @@ export const getJuizoBadgeTone = (juizo) => {
 
 export const getAvailableActions = (proposicao) => {
   const avaliacaoVigente = getAvaliacaoVigente(proposicao);
+  const emReferendo = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
+  const emDecisao = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
 
   return {
     podeCriarDiligencia: [
@@ -119,9 +149,12 @@ export const getAvailableActions = (proposicao) => {
     podeAvaliarComoMembro:
       proposicao.statusFluxo === StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO ||
       proposicao.statusFluxo === StatusFluxo.AGUARDANDO_COMPROVACAO,
-    podeDecidir: Boolean(avaliacaoVigente),
-    podeRemoverAvaliacao: Boolean(avaliacaoVigente),
-    podeAvaliarDiretamente: !avaliacaoVigente,
+    podeDecidir: emDecisao && Boolean(avaliacaoVigente),
+    podeRemoverAvaliacao: emDecisao && Boolean(avaliacaoVigente),
+    podeAvaliarDiretamente: emDecisao && !avaliacaoVigente,
+    podeEditarProposicao: emReferendo,
+    podeApagarProposicao: emReferendo,
+    podeGerarRelatorioFinal: emReferendo,
   };
 };
 
@@ -140,6 +173,9 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeDecidir: false,
       podeRemoverAvaliacao: false,
       podeAvaliarDiretamente: false,
+      podeEditarProposicao: false,
+      podeApagarProposicao: false,
+      podeGerarRelatorioFinal: false,
     },
     "Secretaria Processual da CN": {
       podeCriarDiligencia: baseActions.podeCriarDiligencia,
@@ -148,6 +184,9 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeDecidir: false,
       podeRemoverAvaliacao: false,
       podeAvaliarDiretamente: false,
+      podeEditarProposicao: false,
+      podeApagarProposicao: false,
+      podeGerarRelatorioFinal: false,
     },
     Correicionado: {
       podeCriarDiligencia: false,
@@ -156,6 +195,9 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeDecidir: false,
       podeRemoverAvaliacao: false,
       podeAvaliarDiretamente: false,
+      podeEditarProposicao: false,
+      podeApagarProposicao: false,
+      podeGerarRelatorioFinal: false,
     },
   };
 
@@ -261,6 +303,9 @@ export const countPendentesDoCorregedor = (state) => {
     StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
   ];
   return {
+    pendentesReferendo: ativas.filter(
+      (p) => p.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
+    ).length,
     pendentesValidacao: ativas.filter((p) => p.statusFluxo === StatusFluxo.RASCUNHO_CN).length,
     pendentesDecisao: ativas.filter(
       (p) => p.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
@@ -273,7 +318,11 @@ export const countPendentesPorPersona = (state) => {
   const ativas = listProposicoes(state).filter(isProposicaoAtiva);
   return {
     corregedoria: ativas.filter((p) =>
-      [StatusFluxo.RASCUNHO_CN, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR].includes(p.statusFluxo),
+      [
+        StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
+        StatusFluxo.RASCUNHO_CN,
+        StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
+      ].includes(p.statusFluxo),
     ).length,
     secretaria: ativas.filter(
       (p) =>
@@ -326,11 +375,16 @@ export const criarProposicao = (
   },
 ) => {
   const numero = `PROP-${String(state.proposicoes.length + 1).padStart(4, "0")}`;
+  const correicaoIdFinal = correicaoId || "corr-001";
+  const correicaoJaReferendada = correicaoEstaReferendada(state, correicaoIdFinal);
+  const statusInicial = correicaoJaReferendada
+    ? StatusFluxo.AGUARDANDO_SECRETARIA
+    : StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
 
   const novaProposicao = {
     id: `prop-${crypto.randomUUID().slice(0, 8)}`,
     numero,
-    correicaoId: correicaoId || "corr-001",
+    correicaoId: correicaoIdFinal,
     tipo,
     unidade,
     membro,
@@ -344,7 +398,7 @@ export const criarProposicao = (
     dataInicioCorreicao: dataInicioCorreicao || "",
     dataFimCorreicao: dataFimCorreicao || "",
     observacoesGerais: observacoesGerais || "",
-    statusFluxo: StatusFluxo.RASCUNHO_CN,
+    statusFluxo: statusInicial,
     juizoAtual: null,
     avaliacaoVigenteId: null,
     diligencias: [],
@@ -355,12 +409,68 @@ export const criarProposicao = (
   appendHistory(
     novaProposicao,
     buildHistoryEvent(TipoHistorico.CRIACAO, "Corregedor Nacional", {
-      descricao: "Proposição criada pela Corregedoria Nacional.",
+      descricao: correicaoJaReferendada
+        ? "Proposição criada em correição já referendada; encaminhada diretamente à Secretaria Processual."
+        : "Proposição criada pela Corregedoria Nacional.",
     }),
   );
 
   state.proposicoes.push(novaProposicao);
   return novaProposicao;
+};
+
+export const editarProposicao = (proposicao, camposEditaveis) => {
+  const camposPermitidos = [
+    "tipo",
+    "unidade",
+    "membro",
+    "descricao",
+    "prioridade",
+    "numeroElo",
+    "ramoMP",
+    "ramoMPNome",
+    "tematica",
+    "uf",
+    "dataInicioCorreicao",
+    "dataFimCorreicao",
+    "observacoesGerais",
+    "correicaoId",
+  ];
+  camposPermitidos.forEach((campo) => {
+    if (camposEditaveis[campo] !== undefined) {
+      proposicao[campo] = camposEditaveis[campo];
+    }
+  });
+  appendHistory(
+    proposicao,
+    buildHistoryEvent(TipoHistorico.EDICAO, "Corregedor Nacional", {
+      descricao: "Proposição editada pela Corregedoria Nacional.",
+    }),
+  );
+  return proposicao;
+};
+
+export const referendarCorreicao = (state, correicaoId, usuario = "Corregedor Nacional") => {
+  if (!correicaoId) return 0;
+  let afetadas = 0;
+  state.proposicoes.forEach((proposicao) => {
+    if (
+      proposicao.correicaoId === correicaoId &&
+      proposicao.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP
+    ) {
+      proposicao.statusFluxo = StatusFluxo.AGUARDANDO_SECRETARIA;
+      appendHistory(
+        proposicao,
+        buildHistoryEvent(TipoHistorico.REFERENDO_CNMP, usuario, {
+          descricao:
+            "Correição referendada pelo CNMP; proposição encaminhada à Secretaria Processual.",
+          correicaoId,
+        }),
+      );
+      afetadas += 1;
+    }
+  });
+  return afetadas;
 };
 
 export const encaminharParaSecretaria = (proposicao) => {

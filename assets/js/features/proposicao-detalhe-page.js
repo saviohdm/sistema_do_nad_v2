@@ -18,6 +18,7 @@ import {
   getAvailableActions,
   getAvailableActionsByPersona,
   getProposicaoById,
+  markPropositionDeleted,
 } from "../domain/proposicoes.js";
 import {
   obterRascunhoAvaliacao,
@@ -37,9 +38,13 @@ import {
   readJuizoForm,
   renderJuizoForm,
 } from "../ui/forms.js";
+import { openRelatorioFinalModal } from "../ui/modal.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
 const veioDaFilaMembro = queryParam("fromMembro") === "1";
+const fromCorregedor = queryParam("fromCorregedor");
+const veioDaFilaReferendo = fromCorregedor === "referendo";
+const veioDaFilaDecisao = fromCorregedor === "decisao";
 
 const voltarParaFilaMembro = () => {
   const filtrosSalvos = sessionStorage.getItem("nad-membro-auxiliar-filtros");
@@ -59,6 +64,24 @@ const voltarParaFilaMembro = () => {
     }
   }
   window.location.href = `/pages/membro-auxiliar.html${query}`;
+};
+
+const voltarParaFilaCorregedor = (qual) => {
+  const page = qual === "decisao" ? "corregedor-decisao.html" : "corregedor-referendo.html";
+  window.location.href = `/pages/${page}`;
+};
+
+const botaoVoltar = () => {
+  if (veioDaFilaMembro) {
+    return `<a class="button button--ghost" href="membro-auxiliar.html">Voltar à fila</a>`;
+  }
+  if (veioDaFilaReferendo) {
+    return `<a class="button button--ghost" href="corregedor-referendo.html">Voltar à fila de referendo</a>`;
+  }
+  if (veioDaFilaDecisao) {
+    return `<a class="button button--ghost" href="corregedor-decisao.html">Voltar à fila de decisão</a>`;
+  }
+  return `<a class="button button--ghost" href="proposicoes-lista.html">Voltar à lista</a>`;
 };
 
 const bindHandlers = (proposicao) => {
@@ -187,6 +210,40 @@ const bindHandlers = (proposicao) => {
     });
   });
 
+  document
+    .querySelector("[data-action='apagar-proposicao']")
+    ?.addEventListener("click", () => {
+      if (!window.confirm(`Apagar a proposição ${proposicao.numero}? Esta ação encerra o ciclo da proposição.`)) {
+        return;
+      }
+      mutateState((draft) => {
+        const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+        if (item) markPropositionDeleted(item);
+        return draft;
+      });
+      if (veioDaFilaReferendo) {
+        voltarParaFilaCorregedor("referendo");
+        return;
+      }
+      render();
+    });
+
+  document
+    .querySelector("[data-action='gerar-relatorio-final']")
+    ?.addEventListener("click", () => {
+      const currentState = state();
+      const proposicoesDaCorreicao = currentState.proposicoes.filter(
+        (p) =>
+          p.correicaoId === proposicao.correicaoId &&
+          p.statusFluxo === "aguardando_referendo_cnmp",
+      );
+      openRelatorioFinalModal({
+        correicaoId: proposicao.correicaoId,
+        ramoMP: proposicao.ramoMPNome || proposicao.ramoMP,
+        proposicoes: proposicoesDaCorreicao,
+      });
+    });
+
   ["form-avaliacao-membro", "form-decisao-corregedor", "form-avaliacao-direta"].forEach((id) => {
     const form = document.querySelector(`#${id}`);
     if (!form) return;
@@ -242,7 +299,7 @@ const render = () => {
     title: "Detalhe da proposição",
     subtitle:
       "Painel completo do caso, com histórico, diligências, pendências da Secretaria e ações condicionadas às regras de domínio.",
-    actions: `${baseActions}${veioDaFilaMembro ? `<a class="button button--ghost" href="membro-auxiliar.html">Voltar à fila</a>` : `<a class="button button--ghost" href="proposicoes-lista.html">Voltar à lista</a>`}`,
+    actions: `${baseActions}${botaoVoltar()}`,
     content: `
       <section class="stack">
         ${renderProposicaoHero(proposicao)}
@@ -294,6 +351,40 @@ const render = () => {
           </div>
 
           <div class="stack">
+            ${
+              available.podeEditarProposicao ||
+              available.podeApagarProposicao ||
+              available.podeGerarRelatorioFinal
+                ? `
+                  <section class="panel stack">
+                    <h3 class="panel__title">Ações da Corregedoria (referendo)</h3>
+                    <p class="inline-note">
+                      Esta proposição aguarda referendo do CNMP. Você pode editar os dados,
+                      apagá-la ou gerar um preview do relatório final enquanto ela não é encaminhada
+                      à Secretaria Processual.
+                    </p>
+                    <div class="button-row">
+                      ${
+                        available.podeEditarProposicao
+                          ? `<a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar proposição</a>`
+                          : ""
+                      }
+                      ${
+                        available.podeGerarRelatorioFinal
+                          ? `<button class="button button--ghost" type="button" data-action="gerar-relatorio-final">Gerar relatório final</button>`
+                          : ""
+                      }
+                      ${
+                        available.podeApagarProposicao
+                          ? `<button class="button button--danger" type="button" data-action="apagar-proposicao">Apagar proposição</button>`
+                          : ""
+                      }
+                    </div>
+                  </section>
+                `
+                : ""
+            }
+
             ${
               available.podeCriarDiligencia
                 ? `

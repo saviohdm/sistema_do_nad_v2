@@ -31,6 +31,15 @@ const PERSONA_MENU_OVERRIDES = {
     { href: "dashboard.html", label: "Dashboard" },
     { href: "membro-auxiliar.html", label: "Minha fila" },
   ],
+  [PERSONAS.CORREGEDOR]: [
+    { href: "dashboard.html", label: "Dashboard" },
+    { href: "corregedor-referendo.html", label: "Aguardando referendo do CNMP" },
+    { href: "corregedor-decisao.html", label: "Aguardando decisão" },
+    { href: "proposicoes-lista.html", label: "Proposições" },
+    { href: "proposicoes-criar.html", label: "Criar proposição" },
+    { href: "diligencias.html", label: "Diligências" },
+    { href: "pendencias-secretaria.html", label: "Pendências da Secretaria" },
+  ],
 };
 
 export const getMenuOverrideForCurrentPersona = () => {
