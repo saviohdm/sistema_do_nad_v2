@@ -1,4 +1,4 @@
-import { getCurrentPersona, hasPermission } from "../app/auth.js";
+import { getCurrentPersona, hasPermission, getMenuOverrideForCurrentPersona } from "../app/auth.js";
 
 const baseNavItems = [
   { href: "dashboard.html", label: "Dashboard" },
@@ -10,7 +10,9 @@ const baseNavItems = [
   { href: "pendencias-secretaria.html", label: "Pendências da Secretaria" },
 ];
 
-const getFilteredNavItems = () => {
+const getNavItemsForCurrentPersona = () => {
+  const override = getMenuOverrideForCurrentPersona();
+  if (override) return override;
   return baseNavItems.filter((item) => !item.permission || hasPermission(item.permission));
 };
 
@@ -38,7 +40,7 @@ export const renderPersonaBadge = () => {
 };
 
 export const renderAppShell = ({ activePage, title, subtitle, content, actions = "" }) => {
-  const navItems = getFilteredNavItems();
+  const navItems = getNavItemsForCurrentPersona();
 
   return `
     <div class="app-shell">

@@ -26,6 +26,18 @@ const PERMISSIONS = {
   [PERSONAS.CORREICIONADO]: ["registrar_comprovacao"],
 };
 
+const PERSONA_MENU_OVERRIDES = {
+  [PERSONAS.MEMBRO]: [
+    { href: "dashboard.html", label: "Dashboard" },
+    { href: "membro-auxiliar.html", label: "Minha fila" },
+  ],
+};
+
+export const getMenuOverrideForCurrentPersona = () => {
+  const persona = getCurrentPersona();
+  return PERSONA_MENU_OVERRIDES[persona] || null;
+};
+
 export const setCurrentPersona = (persona) => {
   localStorage.setItem(PERSONA_KEY, persona);
 };
