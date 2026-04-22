@@ -81,7 +81,7 @@ export const renderJuizoForm = ({
         </div>
       </div>
       <div class="field">
-        <label for="${formId}-observacoes">Observações</label>
+        <label for="${formId}-observacoes">Avaliação</label>
         <textarea id="${formId}-observacoes" name="observacoes">${observacoesValue}</textarea>
       </div>
       <div class="button-row">
@@ -100,6 +100,29 @@ export const renderJuizoForm = ({
       <p class="inline-note" data-role="rascunho-feedback" hidden></p>
     </form>
   `;
+};
+
+export const aplicarRegrasJuizoForm = (form) => {
+  const situacaoSel = form.querySelector('[name="situacao"]');
+  const tipoConclusaoSel = form.querySelector('[name="tipoConclusao"]');
+  const existeProvSel = form.querySelector('[name="existeProvidenciaSecretaria"]');
+  const tipoProvSel = form.querySelector('[name="tipoProvidencia"]');
+  if (!situacaoSel || !tipoConclusaoSel || !existeProvSel || !tipoProvSel) return;
+
+  const conclusaoAtiva = situacaoSel.value === SituacaoJuizo.CONCLUIDA;
+  tipoConclusaoSel.disabled = !conclusaoAtiva;
+  if (!conclusaoAtiva) tipoConclusaoSel.value = "";
+
+  const cabeProvidencia =
+    conclusaoAtiva &&
+    (tipoConclusaoSel.value === TipoConclusao.PARCIALMENTE_CUMPRIDA ||
+      tipoConclusaoSel.value === TipoConclusao.NAO_CUMPRIDA);
+  existeProvSel.disabled = !cabeProvidencia;
+  if (!cabeProvidencia) existeProvSel.value = "false";
+
+  const providenciaAtiva = cabeProvidencia && existeProvSel.value === "true";
+  tipoProvSel.disabled = !providenciaAtiva;
+  if (!providenciaAtiva) tipoProvSel.value = "";
 };
 
 export const readJuizoForm = (form) => {
