@@ -432,6 +432,14 @@
   border-color: var(--primary);
 }
 
+.field input:disabled,
+.field textarea:disabled,
+.field select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--surface-muted, var(--surface));
+}
+
 .field textarea {
   min-height: 96px;
   resize: vertical;

@@ -31,7 +31,12 @@ import {
   renderProposicaoHero,
   renderTimeline,
 } from "../ui/components.js";
-import { lerJuizoParcial, readJuizoForm, renderJuizoForm } from "../ui/forms.js";
+import {
+  aplicarRegrasJuizoForm,
+  lerJuizoParcial,
+  readJuizoForm,
+  renderJuizoForm,
+} from "../ui/forms.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
 const veioDaFilaMembro = queryParam("fromMembro") === "1";
@@ -179,6 +184,17 @@ const bindHandlers = (proposicao) => {
         return draft;
       });
       render();
+    });
+  });
+
+  ["form-avaliacao-membro", "form-decisao-corregedor", "form-avaliacao-direta"].forEach((id) => {
+    const form = document.querySelector(`#${id}`);
+    if (!form) return;
+    aplicarRegrasJuizoForm(form);
+    form.addEventListener("change", (event) => {
+      if (["situacao", "tipoConclusao", "existeProvidenciaSecretaria"].includes(event.target.name)) {
+        aplicarRegrasJuizoForm(form);
+      }
     });
   });
 };
