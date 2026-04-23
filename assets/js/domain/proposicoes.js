@@ -314,6 +314,21 @@ export const countPendentesDoCorregedor = (state) => {
   };
 };
 
+const pertenceAFilaSecretaria = (proposicao) => {
+  // Fila 1: aguardando criação de diligência
+  if (proposicao.statusFluxo === StatusFluxo.AGUARDANDO_SECRETARIA) return true;
+  // Fila 2: juízo conclusivo ainda sem ciência registrada
+  if (
+    proposicao.juizoAtual?.situacao === SituacaoJuizo.CONCLUIDA &&
+    !hasEvent(proposicao, TipoHistorico.CIENTIFICACAO)
+  ) {
+    return true;
+  }
+  // Fila 3: providência pendente em paralelo
+  if (hasPendenciaSecretariaAberta(proposicao)) return true;
+  return false;
+};
+
 export const countPendentesPorPersona = (state) => {
   const ativas = listProposicoes(state).filter(isProposicaoAtiva);
   return {
@@ -324,12 +339,7 @@ export const countPendentesPorPersona = (state) => {
         StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
       ].includes(p.statusFluxo),
     ).length,
-    secretaria: ativas.filter(
-      (p) =>
-        p.statusFluxo === StatusFluxo.AGUARDANDO_SECRETARIA ||
-        (p.statusFluxo === StatusFluxo.CONCLUIDA && !hasEvent(p, TipoHistorico.CIENTIFICACAO)) ||
-        hasPendenciaSecretariaAberta(p),
-    ).length,
+    secretaria: ativas.filter(pertenceAFilaSecretaria).length,
     correicionado: ativas.filter((p) => p.statusFluxo === StatusFluxo.AGUARDANDO_COMPROVACAO)
       .length,
     membroAuxiliar: ativas.filter((p) => p.statusFluxo === StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO)

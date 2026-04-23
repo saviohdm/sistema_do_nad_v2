@@ -34,13 +34,6 @@ const finalizarOuRetornar = (proposicao, eventType, usuario, juizo, descricao, m
     });
   }
 
-  appendHistory(
-    proposicao,
-    buildHistoryEvent(TipoHistorico.CIENTIFICACAO, "Secretaria Processual da CN", {
-      descricao: "Correicionado cientificado da decisão conclusiva.",
-    }),
-  );
-
   return proposicao;
 };
 
