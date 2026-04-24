@@ -77,7 +77,33 @@ export const correicaoEstaReferendada = (state, correicaoId) => {
 };
 
 export const filtrarProposicoes = (proposicoes, filtros = {}) => {
-  const { ramoMP, unidade, correicaoId, prioridade, tematica, uf, idsComRascunho } = filtros;
+  const {
+    ramoMP,
+    unidade,
+    correicaoId,
+    prioridade,
+    tematica,
+    uf,
+    idsComRascunho,
+    textoBusca,
+    statusFluxo,
+    situacaoJuizo,
+    tipoConclusao,
+    tipo,
+    membro,
+    dataInicioDe,
+    dataFimAte,
+    comDiligenciasAbertas,
+    comPendenciasSecretaria,
+  } = filtros;
+
+  const termo = typeof textoBusca === "string" ? textoBusca.trim().toLowerCase() : "";
+  const statusList = Array.isArray(statusFluxo)
+    ? statusFluxo.filter(Boolean)
+    : statusFluxo
+      ? [statusFluxo]
+      : [];
+
   return proposicoes.filter((p) => {
     if (ramoMP && p.ramoMP !== ramoMP) return false;
     if (unidade && p.unidade !== unidade) return false;
@@ -86,6 +112,28 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     if (tematica && p.tematica !== tematica) return false;
     if (uf && !(p.uf || []).includes(uf)) return false;
     if (idsComRascunho && !idsComRascunho.includes(p.id)) return false;
+    if (tipo && p.tipo !== tipo) return false;
+    if (membro && p.membro !== membro) return false;
+    if (statusList.length > 0 && !statusList.includes(p.statusFluxo)) return false;
+    if (situacaoJuizo) {
+      if (situacaoJuizo === "sem_juizo") {
+        if (p.juizoAtual) return false;
+      } else if (p.juizoAtual?.situacao !== situacaoJuizo) {
+        return false;
+      }
+    }
+    if (tipoConclusao && p.juizoAtual?.tipoConclusao !== tipoConclusao) return false;
+    if (dataInicioDe && (!p.dataInicioCorreicao || p.dataInicioCorreicao < dataInicioDe)) return false;
+    if (dataFimAte && (!p.dataFimCorreicao || p.dataFimCorreicao > dataFimAte)) return false;
+    if (comDiligenciasAbertas && !(p.diligencias || []).some((d) => d.status === "aberta")) return false;
+    if (comPendenciasSecretaria && !(p.pendenciasSecretaria || []).some((x) => x.status === "pendente")) return false;
+    if (termo) {
+      const haystack = [p.numero, p.numeroElo, p.descricao, p.observacoesGerais]
+        .filter(Boolean)
+        .join(" \u0001 ")
+        .toLowerCase();
+      if (!haystack.includes(termo)) return false;
+    }
     return true;
   });
 };

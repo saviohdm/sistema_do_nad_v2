@@ -30,12 +30,13 @@ const PERSONA_MENU_OVERRIDES = {
   [PERSONAS.MEMBRO]: [
     { href: "dashboard.html", label: "Dashboard" },
     { href: "membro-auxiliar.html", label: "Minha fila" },
+    { href: "proposicoes-lista.html", label: "Consulta" },
   ],
   [PERSONAS.CORREGEDOR]: [
     { href: "dashboard.html", label: "Dashboard" },
     { href: "corregedor-referendo.html", label: "Aguardando referendo do CNMP" },
     { href: "corregedor-decisao.html", label: "Aguardando decisão" },
-    { href: "proposicoes-lista.html", label: "Proposições" },
+    { href: "proposicoes-lista.html", label: "Consulta" },
     { href: "proposicoes-criar.html", label: "Criar proposição" },
     { href: "diligencias.html", label: "Diligências" },
   ],
@@ -44,6 +45,7 @@ const PERSONA_MENU_OVERRIDES = {
     { href: "secretaria-diligencia.html", label: "Aguardando diligência" },
     { href: "secretaria-ciencia.html", label: "Aguardando ciência" },
     { href: "secretaria-providencia.html", label: "Pendências de providência" },
+    { href: "proposicoes-lista.html", label: "Consulta" },
   ],
 };
 
