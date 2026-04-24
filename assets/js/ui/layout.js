@@ -7,7 +7,6 @@ const baseNavItems = [
   { href: "proposicoes-criar.html", label: "Criar Proposição", permission: "criar_proposicao" },
   { href: "proposicao-detalhe.html?id=prop-003", label: "Detalhe da proposição" },
   { href: "diligencias.html", label: "Diligências" },
-  { href: "pendencias-secretaria.html", label: "Painel da Secretaria" },
 ];
 
 const getNavItemsForCurrentPersona = () => {

@@ -38,7 +38,12 @@ const PERSONA_MENU_OVERRIDES = {
     { href: "proposicoes-lista.html", label: "Proposições" },
     { href: "proposicoes-criar.html", label: "Criar proposição" },
     { href: "diligencias.html", label: "Diligências" },
-    { href: "pendencias-secretaria.html", label: "Pendências da Secretaria" },
+  ],
+  [PERSONAS.SECRETARIA]: [
+    { href: "dashboard.html", label: "Dashboard" },
+    { href: "secretaria-diligencia.html", label: "Aguardando diligência" },
+    { href: "secretaria-ciencia.html", label: "Aguardando ciência" },
+    { href: "secretaria-providencia.html", label: "Pendências de providência" },
   ],
 };
 

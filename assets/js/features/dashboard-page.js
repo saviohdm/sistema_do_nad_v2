@@ -53,7 +53,7 @@ const atalhosPanel = `
     <h3 class="panel__title">Atalhos operacionais</h3>
     <div class="button-row">
       <a class="button" href="proposicoes-lista.html">Ir para proposições</a>
-      <a class="button button--secondary" href="pendencias-secretaria.html">Abrir pendências</a>
+      <a class="button button--secondary" href="secretaria-diligencia.html">Abrir pendências</a>
       <a class="button button--ghost" href="proposicao-detalhe.html?id=prop-003">Abrir caso com avaliação pendente</a>
     </div>
   </section>
