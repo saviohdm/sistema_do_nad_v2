@@ -95,6 +95,7 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     dataFimAte,
     comDiligenciasAbertas,
     comPendenciasSecretaria,
+    subStatus,
   } = filtros;
 
   const termo = typeof textoBusca === "string" ? textoBusca.trim().toLowerCase() : "";
@@ -127,6 +128,8 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     if (dataFimAte && (!p.dataFimCorreicao || p.dataFimCorreicao > dataFimAte)) return false;
     if (comDiligenciasAbertas && !(p.diligencias || []).some((d) => d.status === "aberta")) return false;
     if (comPendenciasSecretaria && !(p.pendenciasSecretaria || []).some((x) => x.status === "pendente")) return false;
+    if (subStatus === "nova" && p.juizoAtual) return false;
+    if (subStatus === "retornada" && p.juizoAtual?.situacao !== SituacaoJuizo.NECESSITA_MAIS_INFORMACOES) return false;
     if (termo) {
       const haystack = [p.numero, p.numeroElo, p.descricao, p.observacoesGerais]
         .filter(Boolean)
