@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(brew upgrade:*)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(lsof -ti:8080)",
+      "Bash(python3 -m http.server 8080)",
+      "Bash(kill %1)",
+      "Bash(xargs kill *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
