@@ -1,4 +1,4 @@
-import { SituacaoJuizo, TipoHistorico } from "./enums.js";
+import { StatusFluxo, TipoHistorico } from "./enums.js";
 import { appendHistory, buildHistoryEvent } from "./historico.js";
 
 const hasCientificacao = (proposicao) =>
@@ -16,6 +16,7 @@ export const cientificarProposicao = (
       descricao: "Correicionado cientificado da decisão conclusiva.",
     }),
   );
+  proposicao.statusFluxo = StatusFluxo.BAIXA_DEFINITIVA;
 
   return proposicao;
 };
@@ -30,11 +31,22 @@ export const cientificarGrupo = (
   state.proposicoes.forEach((proposicao) => {
     if (proposicao.correicaoId !== correicaoId) return;
     if (proposicao.unidade !== unidade) return;
-    if (proposicao.juizoAtual?.situacao !== SituacaoJuizo.CONCLUIDA) return;
-    if (hasCientificacao(proposicao)) return;
+    if (proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_CIENCIA) return;
 
     cientificarProposicao(proposicao, usuario);
     afetadas.push(proposicao);
   });
   return afetadas;
+};
+
+export const cientificarGruposEmLote = (
+  state,
+  grupos,
+  usuario = "Secretaria Processual da CN",
+) => {
+  return grupos.map(({ correicaoId, unidade }) => ({
+    correicaoId,
+    unidade,
+    afetadas: cientificarGrupo(state, correicaoId, unidade, usuario),
+  }));
 };

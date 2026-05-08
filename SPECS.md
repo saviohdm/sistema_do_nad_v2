@@ -87,8 +87,9 @@ O juízo de valor da Corregedoria Nacional possui duas camadas obrigatórias.
   - retorna para a `Secretaria Processual da CN`
   - recebe nova diligência
   - reinicia o ciclo de comprovação
-- Toda decisão do tipo `concluída` leva a `CIENTIFICAR`.
-- A cientificação encerra o fluxo principal da proposição.
+- Toda decisão do tipo `concluída` transita a proposição para `aguardando_ciencia` e leva a `CIENTIFICAR`.
+- O ato de ciência (evento `CIENTIFICACAO`) transita o `statusFluxo` para `baixa_definitiva` e encerra o fluxo principal da proposição.
+- A ciência ocorre em bloco por `(correição × unidade)`: só é liberada quando todas as proposições daquela unidade naquela correição estão em `aguardando_ciencia`. Pendências em `pendenciasSecretaria[]` são ortogonais e **não bloqueiam** a transição para `baixa_definitiva`.
 - Se o resultado for `parcialmente cumprida` ou `não cumprida` e houver providência adicional:
   - a proposição segue para `CIENTIFICAR`; e
   - em paralelo, o sistema cria uma pendência para a `Secretaria Processual da CN` informar o cumprimento da providência
@@ -243,10 +244,14 @@ O juízo de valor da Corregedoria Nacional possui duas camadas obrigatórias.
 ## Regras de estado e consistência
 
 - `statusFluxo` deve refletir a fase atual do processo, nunca o resultado conclusivo.
+- Valores válidos de `statusFluxo`: `aguardando_referendo_cnmp`, `rascunho_cn`, `aguardando_secretaria`, `aguardando_comprovacao`, `aguardando_avaliacao_membro`, `aguardando_decisao_corregedor`, `aguardando_ciencia`, `baixa_definitiva`.
+- `aguardando_ciencia` é o estado entre a decisão conclusiva e o ato de ciência ao correicionado. `baixa_definitiva` é o estado terminal pós-ciência (incluindo proposições apagadas pela CN).
+- A ciência (`CIENTIFICACAO`) é a única transição que leva a `baixa_definitiva`; pendências de providência (em `pendenciasSecretaria[]`) não influenciam essa transição.
 - O resultado conclusivo deve ficar em `juizoAtual`.
 - `juizoAtual.situacao` admite apenas:
   - `necessita_mais_informacoes`
   - `concluida`
+- `juizoAtual.situacao = concluida` (camada de juízo) é independente de `statusFluxo = baixa_definitiva` (camada de fluxo). A homonímia foi evitada renomeando o status terminal.
 - `juizoAtual.tipoConclusao` só pode existir quando `situacao = concluida`.
 - `juizoAtual.existeProvidenciaSecretaria` só pode existir quando `tipoConclusao` for `parcialmente_cumprida` ou `nao_cumprida`.
 - A avaliação do membro auxiliar deve carregar o mesmo formato de invariantes da decisão final.

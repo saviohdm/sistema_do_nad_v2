@@ -1,91 +1,826 @@
-import { requireAuth } from "../app/auth.js";
+import { PERSONAS, getCurrentPersona, requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
-import { Labels } from "../domain/enums.js";
 import { listFilaAguardandoCiencia } from "../domain/secretaria-filas.js";
 import { cientificarGrupo } from "../domain/ciencia.js";
-import { renderBadge } from "../ui/components.js";
+import { renderBadge, renderEmptyState, renderStatCard } from "../ui/components.js";
+import { closeModal } from "../ui/modal.js";
 
 requireAuth();
 
-const escapeAttr = (value) => String(value).replace(/"/g, "&quot;");
+if (getCurrentPersona() !== PERSONAS.SECRETARIA) {
+  window.location.href = "/pages/dashboard.html";
+}
 
-const renderFilaCiencia = (grupos) => {
-  if (!grupos.length) {
-    return `<div class="empty-state">Nenhum grupo aguardando ciência.</div>`;
+const FILTROS_KEY = "nad-secretaria-ciencia-filtros";
+const SELECAO_KEY = "nad-secretaria-ciencia-selecao";
+const MODAL_ROOT_ID = "nad-modal-root";
+const TOAST_ROOT_ID = "nad-toast-root";
+
+const FILTRO_KEYS_URL = ["ramoMP", "correicaoId", "estado", "prontoEm"];
+
+const selecaoKeys = new Set();
+
+const persistirSelecao = () => {
+  sessionStorage.setItem(SELECAO_KEY, JSON.stringify(Array.from(selecaoKeys)));
+};
+
+const hidratarSelecao = () => {
+  const raw = sessionStorage.getItem(SELECAO_KEY);
+  if (!raw) return;
+  try {
+    const keys = JSON.parse(raw);
+    if (Array.isArray(keys)) keys.forEach((k) => selecaoKeys.add(k));
+  } catch {
+    sessionStorage.removeItem(SELECAO_KEY);
+  }
+};
+
+hidratarSelecao();
+
+const escapeAttr = (value) => String(value).replace(/"/g, "&quot;");
+const grupoKey = (g) => `${g.correicaoId || "sem-correicao"}::${g.unidade || "sem-unidade"}`;
+
+const getFiltrosFromUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  const filtros = {};
+  FILTRO_KEYS_URL.forEach((key) => {
+    const value = params.get(key);
+    if (value) filtros[key] = value;
+  });
+  if (params.get("fila") === "1") filtros.filaForcada = true;
+  return filtros;
+};
+
+const setFiltrosInUrl = (filtros) => {
+  const params = new URLSearchParams();
+  FILTRO_KEYS_URL.forEach((key) => {
+    if (filtros[key]) params.set(key, filtros[key]);
+  });
+  if (filtros.filaForcada) params.set("fila", "1");
+  const query = params.toString();
+  const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
+  window.history.pushState({}, "", newUrl);
+};
+
+const persistirFiltros = (filtros) => {
+  sessionStorage.setItem(FILTROS_KEY, JSON.stringify(filtros));
+};
+
+const determinarModo = (filtros) => {
+  if (filtros.filaForcada || filtros.correicaoId || filtros.estado || filtros.prontoEm) {
+    return "grupo";
+  }
+  if (filtros.ramoMP) return "ramo";
+  return "overview";
+};
+
+const aplicarFiltros = (novos) => {
+  setFiltrosInUrl(novos);
+  render();
+};
+
+// ---------------------------------------------------------------------------
+// Helpers temporais e de filtragem
+// ---------------------------------------------------------------------------
+
+const isoDia = (iso) => (iso ? iso.slice(0, 10) : "");
+
+const formatPronto = (iso) => {
+  if (!iso) return "—";
+  const now = new Date();
+  const data = new Date(iso);
+  const diffMs = now - data;
+  if (diffMs < 0) return "Pronto agora";
+  const diffH = Math.floor(diffMs / 3600000);
+  if (isoDia(iso) === isoDia(now.toISOString())) {
+    if (diffH < 1) return "Pronto há menos de 1h";
+    return `Pronto há ${diffH}h`;
+  }
+  const diffDias = Math.floor(diffMs / 86400000);
+  if (diffDias === 1) return "Pronto há 1 dia";
+  return `Pronto há ${diffDias} dias`;
+};
+
+const isHoje = (iso) => {
+  if (!iso) return false;
+  return isoDia(iso) === isoDia(new Date().toISOString());
+};
+
+const isEstaSemana = (iso) => {
+  if (!iso) return false;
+  const diffMs = Date.now() - new Date(iso).getTime();
+  return diffMs >= 0 && diffMs <= 7 * 86400000;
+};
+
+const filtrarGrupos = (grupos, filtros) =>
+  grupos.filter((g) => {
+    if (filtros.ramoMP && g.ramoMP !== filtros.ramoMP) return false;
+    if (filtros.correicaoId && g.correicaoId !== filtros.correicaoId) return false;
+    if (filtros.estado === "completo" && !g.completo) return false;
+    if (filtros.estado === "parcial" && g.completo) return false;
+    if (filtros.prontoEm === "hoje" && !(g.completo && isHoje(g.prontoEm))) return false;
+    if (filtros.prontoEm === "semana" && !(g.completo && isEstaSemana(g.prontoEm))) return false;
+    return true;
+  });
+
+// ---------------------------------------------------------------------------
+// Overview
+// ---------------------------------------------------------------------------
+
+const aggregateBy = (grupos, keyFn, init) => {
+  const map = new Map();
+  grupos.forEach((g) => {
+    const key = keyFn(g);
+    const entry = map.get(key) || init(g);
+    entry.proposicoesAguardando += g.prontas;
+    entry.unidadesTotal += 1;
+    if (g.completo) entry.unidadesProntas += 1;
+    map.set(key, entry);
+  });
+  return Array.from(map.values()).sort(
+    (a, b) => b.proposicoesAguardando - a.proposicoesAguardando,
+  );
+};
+
+const renderOverview = (grupos) => {
+  const totalProposicoes = grupos.reduce((s, g) => s + g.prontas, 0);
+  const completos = grupos.filter((g) => g.completo).length;
+  const parciais = grupos.filter((g) => !g.completo).length;
+  const prontosHoje = grupos.filter((g) => g.completo && isHoje(g.prontoEm)).length;
+
+  const ramos = aggregateBy(
+    grupos,
+    (g) => g.ramoMP || "—",
+    (g) => ({
+      ramoMP: g.ramoMP,
+      ramoMPNome: g.ramoMPNome || g.ramoMP,
+      proposicoesAguardando: 0,
+      unidadesTotal: 0,
+      unidadesProntas: 0,
+    }),
+  );
+
+  const correicoes = aggregateBy(
+    grupos,
+    (g) => g.correicaoId || "—",
+    (g) => ({
+      correicaoId: g.correicaoId,
+      ramoMP: g.ramoMP,
+      proposicoesAguardando: 0,
+      unidadesTotal: 0,
+      unidadesProntas: 0,
+    }),
+  );
+
+  const ramoRows = ramos.length
+    ? ramos
+        .map(
+          (item) => `
+            <tr data-nav-ramo="${escapeAttr(item.ramoMP || "")}">
+              <td><strong>${item.ramoMP || "—"}</strong></td>
+              <td>${item.ramoMPNome || "—"}</td>
+              <td class="numeric">${item.proposicoesAguardando}</td>
+              <td class="numeric">${item.unidadesProntas} / ${item.unidadesTotal}</td>
+            </tr>
+          `,
+        )
+        .join("")
+    : `<tr><td colspan="4">${renderEmptyState("Nenhum ramo com proposições aguardando ciência.")}</td></tr>`;
+
+  const correicaoRows = correicoes.length
+    ? correicoes
+        .map(
+          (item) => `
+            <tr data-nav-correicao="${escapeAttr(item.correicaoId || "")}">
+              <td>${item.correicaoId || "—"}</td>
+              <td>${item.ramoMP || "—"}</td>
+              <td class="numeric">${item.proposicoesAguardando}</td>
+              <td class="numeric">${item.unidadesProntas} / ${item.unidadesTotal}</td>
+            </tr>
+          `,
+        )
+        .join("")
+    : `<tr><td colspan="4">${renderEmptyState("Nenhuma correição com proposições aguardando ciência.")}</td></tr>`;
+
+  return `
+    <section class="stack">
+      <div class="panel">
+        <h3 class="panel__title">Panorama da fila</h3>
+        <p class="muted">
+          Grupos (correição × unidade) cujas proposições aguardam ciência ao correicionado.
+          A ciência só pode ser efetuada em bloco quando todas as proposições do grupo estão prontas.
+        </p>
+        <div class="cards-grid">
+          ${renderStatCard("Proposições aguardando", totalProposicoes)}
+          ${renderStatCard("Grupos completos", completos)}
+          ${renderStatCard("Grupos parciais", parciais)}
+          ${renderStatCard("Prontos hoje", prontosHoje)}
+        </div>
+        <div class="button-row" style="margin-top: 1rem;">
+          <button class="button" type="button" data-action="ver-todos">Ver todos em uma fila</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel__title">Por ramo do MP</h3>
+        <p class="muted">Clique em uma linha para ver as correições daquele ramo.</p>
+        <div class="table-wrap">
+          <table class="table table--hover">
+            <thead>
+              <tr>
+                <th>Ramo</th>
+                <th>Nome</th>
+                <th class="numeric">Proposições aguardando</th>
+                <th class="numeric">Unidades prontas / total</th>
+              </tr>
+            </thead>
+            <tbody>${ramoRows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel__title">Por correição</h3>
+        <p class="muted">Clique em uma linha para abrir os grupos daquela correição.</p>
+        <div class="table-wrap">
+          <table class="table table--hover">
+            <thead>
+              <tr>
+                <th>Correição</th>
+                <th>Ramo</th>
+                <th class="numeric">Proposições aguardando</th>
+                <th class="numeric">Unidades prontas / total</th>
+              </tr>
+            </thead>
+            <tbody>${correicaoRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  `;
+};
+
+// ---------------------------------------------------------------------------
+// Ramo mode — lista correições do ramo
+// ---------------------------------------------------------------------------
+
+const renderModoRamo = (grupos, filtros) => {
+  const doRamo = grupos.filter((g) => g.ramoMP === filtros.ramoMP);
+  const nomeRamo = doRamo[0]?.ramoMPNome || filtros.ramoMP;
+
+  const correicoes = aggregateBy(
+    doRamo,
+    (g) => g.correicaoId || "—",
+    (g) => ({
+      correicaoId: g.correicaoId,
+      ramoMP: g.ramoMP,
+      proposicoesAguardando: 0,
+      unidadesTotal: 0,
+      unidadesProntas: 0,
+    }),
+  );
+
+  const rows = correicoes.length
+    ? correicoes
+        .map(
+          (item) => `
+            <tr data-nav-correicao="${escapeAttr(item.correicaoId || "")}">
+              <td><strong>${item.correicaoId || "—"}</strong></td>
+              <td class="numeric">${item.proposicoesAguardando}</td>
+              <td class="numeric">${item.unidadesProntas} / ${item.unidadesTotal}</td>
+            </tr>
+          `,
+        )
+        .join("")
+    : `<tr><td colspan="3">${renderEmptyState("Nenhuma correição neste ramo aguarda ciência.")}</td></tr>`;
+
+  const totalGrupos = doRamo.length;
+  const completos = doRamo.filter((g) => g.completo).length;
+
+  return `
+    <section class="stack">
+      <div class="panel">
+        <div class="button-row" style="justify-content: space-between; align-items: baseline;">
+          <div>
+            <h3 class="panel__title">${filtros.ramoMP} — ${nomeRamo}</h3>
+            <p class="muted">${totalGrupos} grupo(s) aguardando ciência neste ramo · ${completos} completo(s).</p>
+          </div>
+          <div class="button-row">
+            <button class="button" type="button" data-action="ver-todos-do-ramo">Ver todos os grupos do ramo</button>
+            <button class="button button--ghost" type="button" data-action="voltar-overview">Voltar ao panorama</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel__title">Correições</h3>
+        <p class="muted">Clique em uma linha para abrir os grupos daquela correição.</p>
+        <div class="table-wrap">
+          <table class="table table--hover">
+            <thead>
+              <tr>
+                <th>Correição</th>
+                <th class="numeric">Proposições aguardando</th>
+                <th class="numeric">Unidades prontas / total</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  `;
+};
+
+// ---------------------------------------------------------------------------
+// Grupo mode — filtros laterais e cards
+// ---------------------------------------------------------------------------
+
+const option = (value, label, selected) =>
+  `<option value="${escapeAttr(value)}"${selected === value ? " selected" : ""}>${label}</option>`;
+
+const renderPainelFiltros = (grupos, filtros) => {
+  const ramos = Array.from(new Set(grupos.map((g) => g.ramoMP).filter(Boolean))).sort();
+  const correicoes = Array.from(
+    new Set(grupos.map((g) => g.correicaoId).filter(Boolean)),
+  ).sort();
+
+  return `
+    <form class="panel stack" id="painel-filtros">
+      <h3 class="panel__title">Filtros</h3>
+      <div class="field-grid">
+        <div class="field">
+          <label for="filtro-ramo">Ramo</label>
+          <select id="filtro-ramo" name="ramoMP">
+            <option value="">Todos</option>
+            ${ramos.map((r) => option(r, r, filtros.ramoMP || "")).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label for="filtro-correicao">Correição</label>
+          <select id="filtro-correicao" name="correicaoId">
+            <option value="">Todas</option>
+            ${correicoes.map((c) => option(c, c, filtros.correicaoId || "")).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label for="filtro-estado">Estado</label>
+          <select id="filtro-estado" name="estado">
+            ${option("", "Todos", filtros.estado || "")}
+            ${option("completo", "Completo (pronto para ciência)", filtros.estado || "")}
+            ${option("parcial", "Parcial (aguardando decisões)", filtros.estado || "")}
+          </select>
+        </div>
+        <div class="field">
+          <label for="filtro-prontoem">Pronto em</label>
+          <select id="filtro-prontoem" name="prontoEm">
+            ${option("", "Qualquer", filtros.prontoEm || "")}
+            ${option("hoje", "Hoje", filtros.prontoEm || "")}
+            ${option("semana", "Últimos 7 dias", filtros.prontoEm || "")}
+          </select>
+        </div>
+      </div>
+      <div class="button-row">
+        <button class="button" type="submit">Aplicar filtros</button>
+        <button class="button button--ghost" type="button" data-action="limpar-filtros">Limpar</button>
+      </div>
+    </form>
+  `;
+};
+
+const renderCardGrupo = (grupo) => {
+  const key = grupoKey(grupo);
+  const selecionado = selecaoKeys.has(key);
+  const podeSelecionar = grupo.completo;
+  const statusBadge = grupo.completo
+    ? renderBadge(
+        `Pronto${grupo.prontoEm ? " · " + formatPronto(grupo.prontoEm) : ""}`,
+        "success",
+      )
+    : renderBadge(
+        `Aguardando ${grupo.pendentesNoGrupo} decisão(ões) pendente(s)`,
+        "warning",
+      );
+
+  const checkbox = podeSelecionar
+    ? `<input type="checkbox" data-grupo-checkbox="${escapeAttr(key)}" ${selecionado ? "checked" : ""} aria-label="Selecionar grupo ${grupo.unidade}" />`
+    : `<input type="checkbox" disabled aria-label="Grupo parcial não selecionável" />`;
+
+  const providenciaLine =
+    grupo.comProvidencia > 0
+      ? `<div class="muted" style="font-size: 0.85rem;">${grupo.comProvidencia} com pendência paralela</div>`
+      : "";
+
+  const proposicoesLista = grupo.proposicoes
+    .map((p) => `<li><strong>${p.numero}</strong> — ${p.descricao?.substring(0, 80) || "—"}${(p.descricao || "").length > 80 ? "…" : ""}</li>`)
+    .join("");
+
+  return `
+    <article class="proposicao-card proposicao-card--selecionavel ${selecionado ? "proposicao-card--selected" : ""}" ${podeSelecionar ? "" : 'style="opacity: 0.65;"'}>
+      ${checkbox}
+      <div>
+        <div class="proposicao-card__header">
+          <div>
+            <div class="proposicao-card__numero">${grupo.unidade || "—"}</div>
+            <div class="proposicao-card__tipo">${grupo.ramoMPNome || grupo.ramoMP || "—"} · Correição ${grupo.correicaoId || "—"}</div>
+          </div>
+          <div class="pill-list">${statusBadge}</div>
+        </div>
+        <div class="proposicao-card__content">
+          <div><strong>${grupo.prontas}</strong> de ${grupo.total} proposições prontas para ciência</div>
+          ${providenciaLine}
+          <ul class="stack" style="padding-left: 1rem; margin-top: var(--space-2); font-size: 0.875rem;">
+            ${proposicoesLista}
+          </ul>
+        </div>
+      </div>
+    </article>
+  `;
+};
+
+const renderSelectAllRow = (gruposSelecionaveis) => {
+  const total = gruposSelecionaveis.length;
+  if (total === 0) return "";
+
+  const selecionadosVisiveis = gruposSelecionaveis.reduce(
+    (acc, g) => acc + (selecaoKeys.has(grupoKey(g)) ? 1 : 0),
+    0,
+  );
+
+  let estado;
+  let texto;
+  if (selecionadosVisiveis === 0) {
+    estado = "nenhum";
+    texto = `Selecionar todos os ${total} grupos completos visíveis`;
+  } else if (selecionadosVisiveis === total) {
+    estado = "todos";
+    texto = `Desmarcar todos os ${total} grupos visíveis`;
+  } else {
+    estado = "parcial";
+    texto = `${selecionadosVisiveis} de ${total} grupos selecionados — marcar restantes`;
   }
 
   return `
-    <div class="stack">
-      ${grupos
-        .map((grupo) => {
-          const statusBadge = grupo.completo
-            ? renderBadge("Grupo completo · pronto para ciência", "success")
-            : renderBadge(
-                `Aguardando ${grupo.pendentesNoGrupo} proposição(ões) restante(s)`,
-                "warning",
-              );
-          const acao = grupo.completo
-            ? `<button class="button" type="button" data-ciencia-grupo data-correicao="${escapeAttr(grupo.correicaoId || "")}" data-unidade="${escapeAttr(grupo.unidade || "")}">Dar ciência em lote (${grupo.prontas})</button>`
-            : `<button class="button button--secondary" type="button" disabled title="Aguardando todas as proposições desta unidade/correição estarem conclusivas">Dar ciência em lote (${grupo.prontas}/${grupo.total})</button>`;
+    <label class="select-all-row">
+      <input type="checkbox" data-select-all data-select-all-state="${estado}" ${estado === "todos" ? "checked" : ""} />
+      <span><strong>${texto}</strong></span>
+    </label>
+  `;
+};
 
-          return `
-            <article class="panel">
-              <h3 class="panel__title">${grupo.unidade || "—"}</h3>
-              <p class="muted">${grupo.ramoMPNome || grupo.ramoMP || ""} · Correição ${grupo.correicaoId || "—"} · ${grupo.prontas}/${grupo.total} prontas</p>
-              <div class="pill-list">${statusBadge}</div>
-              <ul class="stack" style="padding-left: 1rem;">
-                ${grupo.proposicoes
-                  .map(
-                    (proposicao) => `
-                      <li>
-                        <strong>${proposicao.numero}</strong> — ${Labels.tipoConclusao[proposicao.juizoAtual?.tipoConclusao] || "—"}
-                      </li>
-                    `,
-                  )
-                  .join("")}
-              </ul>
-              <div class="button-row">${acao}</div>
-            </article>
-          `;
-        })
-        .join("")}
+const renderStickyBar = (totalSelecionados, ocultas, totalProposicoes) => {
+  if (totalSelecionados === 0) return "";
+  const hint =
+    ocultas > 0
+      ? `<span class="batch-bar__hint">${ocultas} grupo(s) oculto(s) pelo filtro atual</span>`
+      : "";
+
+  return `
+    <div class="batch-bar" id="batch-bar">
+      <div class="batch-bar__header">
+        <span class="batch-bar__counter">${totalSelecionados} grupo(s) selecionado(s) · ${totalProposicoes} proposição(ões)</span>
+        ${hint}
+      </div>
+      <div class="button-row" style="align-items: stretch;">
+        <button class="button button--primary" type="button" data-action="abrir-modal-ciencia">
+          Cientificar todas (${totalProposicoes})
+        </button>
+        <button class="button button--ghost" type="button" data-action="limpar-selecao">Limpar seleção</button>
+      </div>
     </div>
   `;
 };
 
+// ---------------------------------------------------------------------------
+// Grupo mode — orquestração
+// ---------------------------------------------------------------------------
+
+const renderModoGrupo = (grupos, filtros) => {
+  const filtrados = filtrarGrupos(grupos, filtros);
+  const filtradosKeys = new Set(filtrados.map(grupoKey));
+  const ocultas = Array.from(selecaoKeys).filter((k) => !filtradosKeys.has(k)).length;
+  const selecionaveis = filtrados.filter((g) => g.completo);
+
+  const cards = filtrados.length
+    ? filtrados.map(renderCardGrupo).join("")
+    : renderEmptyState("Nenhum grupo corresponde aos filtros selecionados.");
+
+  const proposicoesSelecionadas = grupos
+    .filter((g) => selecaoKeys.has(grupoKey(g)))
+    .reduce((s, g) => s + g.prontas, 0);
+
+  const contextoSelecao = [
+    filtros.ramoMP ? `Ramo: <strong>${filtros.ramoMP}</strong>` : null,
+    filtros.correicaoId ? `Correição: <strong>${filtros.correicaoId}</strong>` : null,
+    filtros.estado ? `Estado: <strong>${filtros.estado}</strong>` : null,
+    filtros.prontoEm
+      ? `Pronto em: <strong>${filtros.prontoEm === "hoje" ? "Hoje" : "Últimos 7 dias"}</strong>`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return `
+    <section class="page-grid page-grid--two">
+      <div class="stack">
+        <div class="panel">
+          <div class="button-row" style="justify-content: space-between; align-items: baseline;">
+            <div>
+              <h3 class="panel__title">Fila de ciência</h3>
+              <p class="muted">${contextoSelecao || "Todos os grupos aguardando ciência."}</p>
+            </div>
+            <div class="button-row">
+              <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
+              ${filtros.ramoMP ? `<button class="button button--ghost" type="button" data-action="voltar-ramo">Correições do ramo</button>` : ""}
+            </div>
+          </div>
+        </div>
+
+        ${renderSelectAllRow(selecionaveis)}
+        <div class="stack" id="lista-cards">${cards}</div>
+        ${renderStickyBar(selecaoKeys.size, ocultas, proposicoesSelecionadas)}
+      </div>
+
+      <aside class="stack">
+        <div class="panel">
+          <h3 class="panel__title">Contador</h3>
+          <p class="muted">Visíveis com os filtros atuais:</p>
+          <div class="stat-card" style="margin-top: 0.5rem;">
+            <span class="stat-card__value">${filtrados.length}</span>
+            <span class="stat-card__label">grupo(s)</span>
+          </div>
+          <p class="muted" style="margin-top: 1rem;">Total na fila: <strong>${grupos.length}</strong> grupo(s)</p>
+        </div>
+
+        ${renderPainelFiltros(grupos, filtros)}
+      </aside>
+    </section>
+  `;
+};
+
+// ---------------------------------------------------------------------------
+// Modal de confirmação e toast
+// ---------------------------------------------------------------------------
+
+const ensureModalRoot = () => {
+  let root = document.getElementById(MODAL_ROOT_ID);
+  if (!root) {
+    root = document.createElement("div");
+    root.id = MODAL_ROOT_ID;
+    document.body.appendChild(root);
+  }
+  return root;
+};
+
+const ensureToastRoot = () => {
+  let root = document.getElementById(TOAST_ROOT_ID);
+  if (!root) {
+    root = document.createElement("div");
+    root.id = TOAST_ROOT_ID;
+    root.className = "toast-root";
+    document.body.appendChild(root);
+  }
+  return root;
+};
+
+const showToast = (mensagem) => {
+  const root = ensureToastRoot();
+  const toast = document.createElement("div");
+  toast.className = "toast toast--success";
+  toast.textContent = mensagem;
+  root.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add("toast--leaving");
+    setTimeout(() => toast.remove(), 350);
+  }, 3500);
+};
+
+const abrirModalCiencia = (gruposSelecionados) => {
+  const root = ensureModalRoot();
+  const totalProposicoes = gruposSelecionados.reduce((s, g) => s + g.prontas, 0);
+  const totalProvidencias = gruposSelecionados.reduce((s, g) => s + (g.comProvidencia || 0), 0);
+
+  const itens = gruposSelecionados
+    .map(
+      (g) => `
+        <li>
+          <strong>${g.unidade || "—"}</strong> · Correição ${g.correicaoId || "—"} · ${g.prontas} proposição(ões)
+          ${g.comProvidencia > 0 ? ` · <em>${g.comProvidencia} gerará(ão) pendência paralela</em>` : ""}
+        </li>
+      `,
+    )
+    .join("");
+
+  const providenciaLine =
+    totalProvidencias > 0
+      ? `<p class="muted">Após a ciência, <strong>${totalProvidencias}</strong> proposição(ões) permanecerão com pendência paralela em acompanhamento (não bloqueiam a baixa definitiva).</p>`
+      : "";
+
+  const body = `
+    <p>Você está prestes a cientificar <strong>${gruposSelecionados.length}</strong> grupo(s), totalizando <strong>${totalProposicoes}</strong> proposição(ões). Cada proposição transitará para <em>baixa definitiva</em>.</p>
+    ${providenciaLine}
+    <p><strong>Grupos selecionados:</strong></p>
+    <div class="lote-resumo-list">
+      <ul>${itens}</ul>
+    </div>
+    <div class="button-row" style="justify-content: flex-end; margin-top: var(--space-4);">
+      <button class="button button--ghost" type="button" data-modal-close>Cancelar</button>
+      <button class="button button--primary" type="button" data-action="confirmar-ciencia">Confirmar ciência</button>
+    </div>
+  `;
+
+  root.innerHTML = `
+    <div class="modal-overlay" data-modal-overlay>
+      <div class="modal-dialog" role="dialog" aria-modal="true" aria-label="Confirmar ciência em lote">
+        <header class="modal-header">
+          <h2 class="modal-title">Confirmar ciência em lote</h2>
+          <button class="modal-close" type="button" data-modal-close aria-label="Fechar">×</button>
+        </header>
+        <div class="modal-body">${body}</div>
+      </div>
+    </div>
+  `;
+
+  root.querySelectorAll("[data-modal-close]").forEach((btn) =>
+    btn.addEventListener("click", closeModal),
+  );
+  root.querySelector("[data-modal-overlay]")?.addEventListener("click", (event) => {
+    if (event.target.matches("[data-modal-overlay]")) closeModal();
+  });
+  root.querySelector("[data-action='confirmar-ciencia']")?.addEventListener("click", () => {
+    confirmarCienciaEmLote(gruposSelecionados);
+  });
+};
+
+const confirmarCienciaEmLote = (gruposSelecionados) => {
+  const snapshot = gruposSelecionados.map((g) => ({
+    correicaoId: g.correicaoId,
+    unidade: g.unidade,
+    prontas: g.prontas,
+  }));
+
+  mutateState((draft) => {
+    snapshot.forEach(({ correicaoId, unidade }) => {
+      cientificarGrupo(draft, correicaoId, unidade);
+    });
+    return draft;
+  });
+
+  selecaoKeys.clear();
+  persistirSelecao();
+  closeModal();
+
+  snapshot.forEach(({ unidade, prontas }) => {
+    showToast(`Ciência registrada para ${prontas} proposição(ões) da unidade ${unidade || "—"}.`);
+  });
+
+  render();
+};
+
+// ---------------------------------------------------------------------------
+// Render principal
+// ---------------------------------------------------------------------------
+
 const render = () => {
+  const filtros = getFiltrosFromUrl();
+  persistirFiltros(filtros);
+
   const currentState = state();
-  const filaCiencia = listFilaAguardandoCiencia(currentState);
-  const countCiencia = filaCiencia.reduce((sum, grupo) => sum + grupo.prontas, 0);
+  const grupos = listFilaAguardandoCiencia(currentState);
+
+  const keysValidas = new Set(grupos.map(grupoKey));
+  let podou = false;
+  for (const key of Array.from(selecaoKeys)) {
+    if (!keysValidas.has(key)) {
+      selecaoKeys.delete(key);
+      podou = true;
+    }
+  }
+  if (podou) persistirSelecao();
+
+  const modo = determinarModo(filtros);
+
+  let content;
+  let subtitle;
+  if (modo === "overview") {
+    content = renderOverview(grupos);
+    subtitle =
+      "Grupos (correição × unidade) com proposições aguardando ciência. A ciência só pode ser efetuada quando o grupo está completo.";
+  } else if (modo === "ramo") {
+    content = renderModoRamo(grupos, filtros);
+    subtitle = "Escolha uma correição dentro do ramo para abrir seus grupos.";
+  } else {
+    content = renderModoGrupo(grupos, filtros);
+    subtitle =
+      "Selecione múltiplos grupos completos e cientifique todas as proposições em uma só ação.";
+  }
 
   mountPage({
     activePage: "secretaria-ciencia",
     title: "Aguardando ciência",
-    subtitle:
-      "Proposições com juízo conclusivo, agrupadas por unidade + correição. A ciência só é liberada quando todas as proposições do grupo estão prontas.",
+    subtitle,
     actions: baseActions,
-    content: `
-      <section class="panel">
-        <h2 class="panel__title">Fila de ciência ${renderBadge(`${countCiencia}`, countCiencia ? "warning" : "neutral")}</h2>
-        ${renderFilaCiencia(filaCiencia)}
-      </section>
-    `,
+    content,
   });
 
-  document.querySelectorAll("[data-ciencia-grupo]").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const correicaoId = event.currentTarget.dataset.correicao || null;
-      const unidade = event.currentTarget.dataset.unidade || null;
+  bindHandlers(filtros, grupos);
+};
 
-      mutateState((draft) => {
-        cientificarGrupo(draft, correicaoId, unidade);
-        return draft;
-      });
+const bindHandlers = (filtros, grupos) => {
+  document.querySelectorAll("[data-nav-ramo]").forEach((row) => {
+    row.addEventListener("click", () => {
+      aplicarFiltros({ ramoMP: row.dataset.navRamo });
+    });
+  });
 
+  document.querySelectorAll("[data-nav-correicao]").forEach((row) => {
+    const correicao = row.dataset.navCorreicao;
+    if (!correicao) return;
+    row.addEventListener("click", () => {
+      aplicarFiltros({ ramoMP: filtros.ramoMP, correicaoId: correicao });
+    });
+  });
+
+  document.querySelector("[data-action='ver-todos']")?.addEventListener("click", () => {
+    aplicarFiltros({ filaForcada: true });
+  });
+
+  document.querySelector("[data-action='ver-todos-do-ramo']")?.addEventListener("click", () => {
+    aplicarFiltros({ ramoMP: filtros.ramoMP, filaForcada: true });
+  });
+
+  document.querySelector("[data-action='voltar-overview']")?.addEventListener("click", () => {
+    aplicarFiltros({});
+  });
+
+  document.querySelector("[data-action='voltar-ramo']")?.addEventListener("click", () => {
+    aplicarFiltros({ ramoMP: filtros.ramoMP });
+  });
+
+  document.querySelector("[data-action='limpar-filtros']")?.addEventListener("click", () => {
+    aplicarFiltros({
+      ramoMP: filtros.ramoMP || "",
+      filaForcada: !filtros.ramoMP ? true : false,
+    });
+  });
+
+  document.querySelector("#painel-filtros")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    aplicarFiltros({
+      ramoMP: (data.get("ramoMP") || "").toString(),
+      correicaoId: (data.get("correicaoId") || "").toString(),
+      estado: (data.get("estado") || "").toString(),
+      prontoEm: (data.get("prontoEm") || "").toString(),
+      filaForcada: true,
+    });
+  });
+
+  document.querySelectorAll("[data-grupo-checkbox]").forEach((cb) => {
+    cb.addEventListener("change", (event) => {
+      const key = event.currentTarget.dataset.grupoCheckbox;
+      if (event.currentTarget.checked) {
+        selecaoKeys.add(key);
+      } else {
+        selecaoKeys.delete(key);
+      }
+      persistirSelecao();
       render();
     });
   });
+
+  const selectAll = document.querySelector("[data-select-all]");
+  if (selectAll) {
+    selectAll.indeterminate = selectAll.dataset.selectAllState === "parcial";
+    selectAll.addEventListener("change", (event) => {
+      const filtrados = filtrarGrupos(grupos, filtros);
+      const selecionaveis = filtrados.filter((g) => g.completo);
+      if (event.currentTarget.checked) {
+        selecionaveis.forEach((g) => selecaoKeys.add(grupoKey(g)));
+      } else {
+        selecionaveis.forEach((g) => selecaoKeys.delete(grupoKey(g)));
+      }
+      persistirSelecao();
+      render();
+    });
+  }
+
+  document.querySelector("[data-action='limpar-selecao']")?.addEventListener("click", () => {
+    selecaoKeys.clear();
+    persistirSelecao();
+    render();
+  });
+
+  document
+    .querySelector("[data-action='abrir-modal-ciencia']")
+    ?.addEventListener("click", () => {
+      const selecionados = grupos.filter((g) => selecaoKeys.has(grupoKey(g)) && g.completo);
+      if (selecionados.length === 0) return;
+      abrirModalCiencia(selecionados);
+    });
 };
+
+window.addEventListener("popstate", render);
 
 render();

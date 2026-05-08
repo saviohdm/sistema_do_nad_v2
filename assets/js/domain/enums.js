@@ -5,7 +5,8 @@ export const StatusFluxo = {
   AGUARDANDO_COMPROVACAO: "aguardando_comprovacao",
   AGUARDANDO_AVALIACAO_MEMBRO: "aguardando_avaliacao_membro",
   AGUARDANDO_DECISAO_CORREGEDOR: "aguardando_decisao_corregedor",
-  CONCLUIDA: "concluida",
+  AGUARDANDO_CIENCIA: "aguardando_ciencia",
+  BAIXA_DEFINITIVA: "baixa_definitiva",
 };
 
 export const SituacaoJuizo = {
@@ -51,7 +52,8 @@ export const Labels = {
     [StatusFluxo.AGUARDANDO_COMPROVACAO]: "Aguardando comprovação",
     [StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO]: "Aguardando avaliação do membro",
     [StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR]: "Aguardando decisão do Corregedor",
-    [StatusFluxo.CONCLUIDA]: "Concluída",
+    [StatusFluxo.AGUARDANDO_CIENCIA]: "Aguardando ciência",
+    [StatusFluxo.BAIXA_DEFINITIVA]: "Baixa definitiva",
   },
   situacaoJuizo: {
     [SituacaoJuizo.NECESSITA_MAIS_INFORMACOES]: "Necessita mais informações",

@@ -1,4 +1,6 @@
 import { getCurrentPersona, hasPermission, getMenuOverrideForCurrentPersona } from "../app/auth.js";
+import { loadState } from "../app/store.js";
+import { countGruposCompletosProntos } from "../domain/secretaria-filas.js";
 
 const baseNavItems = [
   { href: "dashboard.html", label: "Dashboard" },
@@ -12,6 +14,26 @@ const getNavItemsForCurrentPersona = () => {
   const override = getMenuOverrideForCurrentPersona();
   if (override) return override;
   return baseNavItems.filter((item) => !item.permission || hasPermission(item.permission));
+};
+
+const computeBadgeValue = (badgeKey) => {
+  if (!badgeKey) return null;
+  try {
+    const state = loadState();
+    if (badgeKey === "gruposCompletosProntos") {
+      const total = countGruposCompletosProntos(state);
+      return total > 0 ? total : null;
+    }
+  } catch (err) {
+    return null;
+  }
+  return null;
+};
+
+const renderNavBadge = (badgeKey) => {
+  const value = computeBadgeValue(badgeKey);
+  if (value == null) return "";
+  return `<span class="nav-link__badge" aria-label="${value} pendentes">${value}</span>`;
 };
 
 export const renderPersonaBadge = () => {
@@ -51,7 +73,8 @@ export const renderAppShell = ({ activePage, title, subtitle, content, actions =
             .map(
               (item) => `
                 <a class="nav-link ${item.href.includes(activePage) ? "is-active" : ""}" href="${item.href}">
-                  ${item.label}
+                  <span class="nav-link__label">${item.label}</span>
+                  ${renderNavBadge(item.badgeKey)}
                 </a>
               `,
             )

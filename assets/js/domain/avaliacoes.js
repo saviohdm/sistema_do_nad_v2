@@ -25,7 +25,7 @@ const finalizarOuRetornar = (proposicao, eventType, usuario, juizo, descricao, m
     return proposicao;
   }
 
-  proposicao.statusFluxo = StatusFluxo.CONCLUIDA;
+  proposicao.statusFluxo = StatusFluxo.AGUARDANDO_CIENCIA;
 
   if (juizo.existeProvidenciaSecretaria && juizo.tipoProvidencia) {
     criarPendenciaSecretaria(proposicao, {

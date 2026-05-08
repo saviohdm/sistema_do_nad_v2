@@ -162,7 +162,7 @@ export const getDashboardSummary = (state) => {
         item.statusFluxo === StatusFluxo.AGUARDANDO_SECRETARIA ||
         item.statusFluxo === StatusFluxo.AGUARDANDO_COMPROVACAO,
     ).length,
-    concluidas: proposicoes.filter((item) => item.statusFluxo === StatusFluxo.CONCLUIDA).length,
+    concluidas: proposicoes.filter((item) => item.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA).length,
     pendenciasSecretaria: countPendenciasAbertas(state),
   };
 };
@@ -175,7 +175,8 @@ export const getStatusBadgeTone = (status) =>
     [StatusFluxo.AGUARDANDO_COMPROVACAO]: "warning",
     [StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO]: "primary",
     [StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR]: "danger",
-    [StatusFluxo.CONCLUIDA]: "success",
+    [StatusFluxo.AGUARDANDO_CIENCIA]: "primary",
+    [StatusFluxo.BAIXA_DEFINITIVA]: "success",
   }[status] || "neutral");
 
 export const getJuizoBadgeTone = (juizo) => {
@@ -368,13 +369,8 @@ export const countPendentesDoCorregedor = (state) => {
 const pertenceAFilaSecretaria = (proposicao) => {
   // Fila 1: aguardando criação de diligência
   if (proposicao.statusFluxo === StatusFluxo.AGUARDANDO_SECRETARIA) return true;
-  // Fila 2: juízo conclusivo ainda sem ciência registrada
-  if (
-    proposicao.juizoAtual?.situacao === SituacaoJuizo.CONCLUIDA &&
-    !hasEvent(proposicao, TipoHistorico.CIENTIFICACAO)
-  ) {
-    return true;
-  }
+  // Fila 2: aguardando ciência ao correicionado
+  if (proposicao.statusFluxo === StatusFluxo.AGUARDANDO_CIENCIA) return true;
   // Fila 3: providência pendente em paralelo
   if (hasPendenciaSecretariaAberta(proposicao)) return true;
   return false;
@@ -399,7 +395,7 @@ export const countPendentesPorPersona = (state) => {
 };
 
 export const markPropositionDeleted = (proposicao) => {
-  proposicao.statusFluxo = StatusFluxo.CONCLUIDA;
+  proposicao.statusFluxo = StatusFluxo.BAIXA_DEFINITIVA;
   proposicao.juizoAtual = {
     situacao: SituacaoJuizo.CONCLUIDA,
     tipoConclusao: TipoConclusao.ENCERRADA,
