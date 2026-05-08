@@ -20,6 +20,7 @@ if (getCurrentPersona() !== PERSONAS.SECRETARIA) {
 }
 
 const FILTROS_KEY = "nad-secretaria-diligencia-filtros";
+const SELECAO_KEY = "nad-secretaria-diligencia-selecao";
 const MODAL_ROOT_ID = "nad-modal-root";
 
 const FILTRO_KEYS_URL = [
@@ -35,6 +36,23 @@ const FILTRO_KEYS_URL = [
 ];
 
 const selecaoIds = new Set();
+
+const persistirSelecao = () => {
+  sessionStorage.setItem(SELECAO_KEY, JSON.stringify(Array.from(selecaoIds)));
+};
+
+const hidratarSelecao = () => {
+  const raw = sessionStorage.getItem(SELECAO_KEY);
+  if (!raw) return;
+  try {
+    const ids = JSON.parse(raw);
+    if (Array.isArray(ids)) ids.forEach((id) => selecaoIds.add(id));
+  } catch {
+    sessionStorage.removeItem(SELECAO_KEY);
+  }
+};
+
+hidratarSelecao();
 
 const escapeAttr = (value) => String(value).replace(/"/g, "&quot;");
 const uniq = (values) => Array.from(new Set(values.filter(Boolean))).sort();
@@ -326,13 +344,31 @@ const renderCardSelecionavel = (proposicao) => {
 };
 
 const renderSelectAllRow = (filtrados) => {
-  const idsVisiveis = filtrados.map((p) => p.id);
-  const todosVisiveisSelecionados =
-    idsVisiveis.length > 0 && idsVisiveis.every((id) => selecaoIds.has(id));
+  const total = filtrados.length;
+  if (total === 0) return "";
+
+  const selecionadosVisiveis = filtrados.reduce(
+    (acc, p) => acc + (selecaoIds.has(p.id) ? 1 : 0),
+    0,
+  );
+
+  let estado;
+  let texto;
+  if (selecionadosVisiveis === 0) {
+    estado = "nenhum";
+    texto = `Selecionar todos os ${total} visíveis`;
+  } else if (selecionadosVisiveis === total) {
+    estado = "todos";
+    texto = `Desmarcar todos os ${total} visíveis`;
+  } else {
+    estado = "parcial";
+    texto = `${selecionadosVisiveis} de ${total} visíveis selecionados — marcar restantes`;
+  }
+
   return `
     <label class="select-all-row">
-      <input type="checkbox" data-select-all ${todosVisiveisSelecionados ? "checked" : ""} ${idsVisiveis.length === 0 ? "disabled" : ""} />
-      <span><strong>Selecionar todos os ${idsVisiveis.length} visíveis</strong></span>
+      <input type="checkbox" data-select-all data-select-all-state="${estado}" ${estado === "todos" ? "checked" : ""} />
+      <span><strong>${texto}</strong></span>
     </label>
   `;
 };
@@ -511,6 +547,7 @@ const confirmarCriacaoEmLote = (prazo, descricao) => {
     return draft;
   });
   selecaoIds.clear();
+  persistirSelecao();
   closeModal();
   render();
 };
@@ -526,9 +563,14 @@ const render = () => {
   const currentState = state();
   const pendentes = listFilaAguardandoDiligencia(currentState);
   const idsValidos = new Set(pendentes.map((p) => p.id));
+  let podou = false;
   for (const id of Array.from(selecaoIds)) {
-    if (!idsValidos.has(id)) selecaoIds.delete(id);
+    if (!idsValidos.has(id)) {
+      selecaoIds.delete(id);
+      podou = true;
+    }
   }
+  if (podou) persistirSelecao();
 
   const modo = determinarModo(filtros);
 
@@ -629,22 +671,29 @@ const bindHandlers = (filtros, pendentes) => {
       } else {
         selecaoIds.delete(id);
       }
+      persistirSelecao();
       render();
     });
   });
 
-  document.querySelector("[data-select-all]")?.addEventListener("change", (event) => {
-    const filtrados = filtrarProposicoes(pendentes, filtros);
-    if (event.currentTarget.checked) {
-      filtrados.forEach((p) => selecaoIds.add(p.id));
-    } else {
-      filtrados.forEach((p) => selecaoIds.delete(p.id));
-    }
-    render();
-  });
+  const selectAllCheckbox = document.querySelector("[data-select-all]");
+  if (selectAllCheckbox) {
+    selectAllCheckbox.indeterminate = selectAllCheckbox.dataset.selectAllState === "parcial";
+    selectAllCheckbox.addEventListener("change", (event) => {
+      const filtrados = filtrarProposicoes(pendentes, filtros);
+      if (event.currentTarget.checked) {
+        filtrados.forEach((p) => selecaoIds.add(p.id));
+      } else {
+        filtrados.forEach((p) => selecaoIds.delete(p.id));
+      }
+      persistirSelecao();
+      render();
+    });
+  }
 
   document.querySelector("[data-action='limpar-selecao']")?.addEventListener("click", () => {
     selecaoIds.clear();
+    persistirSelecao();
     render();
   });
 

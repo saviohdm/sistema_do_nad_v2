@@ -1,0 +1,45 @@
+# US-SECRETARIA-001 · Aguardando Diligência
+
+**Como** Secretária Processual da CN,
+**eu quero** ver todas as proposições aguardando diligência e criar diligências em lote (prazo + descrição únicos),
+**para** processar rápido o backlog de uma correição sem repetir o mesmo formulário N vezes.
+
+## Ator
+Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `criar_diligencia`).
+
+## Pré-condições
+- Persona logada é Secretaria.
+- Existe ao menos uma proposição com `statusFluxo = AGUARDANDO_SECRETARIA` (recém-referendada pela CN ou retornada via decisão `necessita mais informações`).
+
+## Fluxo principal
+1. Acessa **Aguardando diligência** → vê panorama (total, novas, retornadas) por ramo e por correição.
+2. Entra em Modo Fila (clique em correição/ramo ou "Ver todas").
+3. Aplica filtros (prioridade, temática, UF, correição, membro, sub-status, busca).
+4. Marca **"Selecionar todos os N visíveis"** (seleção é cumulativa entre filtros).
+5. Preenche prazo (≥ hoje) e descrição únicos para o lote.
+6. Confirma no modal que lista cada proposição.
+7. Sistema cria 1 diligência por proposição com `loteId` compartilhado, transita `statusFluxo` para `AGUARDANDO_COMPROVACAO` e registra `CRIACAO_DILIGENCIA` no histórico.
+
+## Fluxos alternativos
+- **Vazio**: filtros sem match → linha "Selecionar todos" oculta; seleção cumulativa preservada.
+- **F5/navegação**: seleção restaurada via `sessionStorage`.
+- **Troca de usuário**: logout limpa `sessionStorage`.
+- **Retornada**: mesmo fluxo, badge "Retornou · necessita mais informações".
+- **Unitária**: card → "Abrir detalhe" cria sem `loteId`.
+
+## Regras de negócio
+- Secretaria só **operacionaliza**, não decide cumprimento.
+- Toda diligência gera evento `CRIACAO_DILIGENCIA` no histórico.
+- Diligências em lote compartilham `loteId`.
+- Prazo não pode ser anterior à data atual.
+- Ciência ao correicionado é fluxo separado (`secretaria-ciencia.html`).
+
+## Pós-condições
+- Cada proposição selecionada migra para `AGUARDANDO_COMPROVACAO` com diligência aberta.
+- `selecaoIds` e `sessionStorage[SELECAO_KEY]` zerados.
+
+## Referências
+- [secretaria-diligencia-page.js](../assets/js/features/secretaria-diligencia-page.js)
+- [diligencias.js:34](../assets/js/domain/diligencias.js)
+- [secretaria-filas.js:12](../assets/js/domain/secretaria-filas.js)
+- [passos_do_processo_nad.md](../passos_do_processo_nad.md) — Secretaria Processual da CN

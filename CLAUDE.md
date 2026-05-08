@@ -92,6 +92,18 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 
 **Excalidraw.excalidraw**: Visual architecture diagram (requires Excalidraw to view).
 
+**historias_de_usuario/**: One Markdown file per user story, kept short (~40 lines). Each file follows the same template: Connextra story (Como/eu quero/para que), Ator, Pré-condições, Fluxo principal, Fluxos alternativos, Regras de negócio, Pós-condições, Referências.
+
+### Convenção de nomes em `historias_de_usuario/`
+
+- Padrão: `US-<persona>-<NNN>-<slug>.md`
+  - `<persona>`: `corregedor` | `membro` | `secretaria` | `correicionado`
+  - `<NNN>`: numeração sequencial por persona, com 3 dígitos (`001`, `002`, ...)
+  - `<slug>`: identificador curto em kebab-case do escopo da história
+- Exemplos: `US-secretaria-001-aguardando-diligencia.md`, `US-corregedor-002-decisao-com-providencia.md`
+- Cada arquivo descreve **uma única jornada**. Para fluxos derivados, criar nova história e referenciá-la em "Fluxos alternativos".
+- Referências a código devem usar links Markdown relativos (ex.: `[secretaria-diligencia-page.js](../assets/js/features/secretaria-diligencia-page.js)`).
+
 ## Important Constraints
 
 1. **Never violate persona authority**: Auxiliary evaluations cannot produce effects. Only National Prosecutor decisions matter.

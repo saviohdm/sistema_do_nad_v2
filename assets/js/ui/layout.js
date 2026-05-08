@@ -28,7 +28,7 @@ export const renderPersonaBadge = () => {
         <button
           class="button button--small"
           style="flex-shrink: 0; background: rgba(255, 255, 255, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3);"
-          onclick="localStorage.clear(); window.location.href='/pages/login.html';"
+          onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/pages/login.html';"
         >
           Trocar
         </button>
