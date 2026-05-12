@@ -847,3 +847,211 @@
     transform: translateY(0);
   }
 }
+
+/* Dashboard da Secretaria Processual */
+
+.secretaria-dashboard {
+  gap: var(--space-6);
+}
+
+.secretaria-dashboard__section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.secretaria-dashboard__section-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.secretaria-dashboard__section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.secretaria-dashboard__panel + .secretaria-dashboard__panel {
+  margin-top: var(--space-4);
+}
+
+.secretaria-dashboard__block-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.secretaria-dashboard__block-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.secretaria-dashboard__block-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.secretaria-dashboard__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.secretaria-dashboard__list--inline {
+  margin-top: var(--space-2);
+}
+
+.secretaria-dashboard__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: 150ms ease;
+  text-decoration: none;
+  width: 100%;
+}
+
+.secretaria-dashboard__row:hover {
+  border-color: var(--primary);
+  background: var(--surface-alt);
+  transform: translateX(2px);
+}
+
+.secretaria-dashboard__row--static {
+  cursor: default;
+}
+
+.secretaria-dashboard__row--static:hover {
+  border-color: var(--line);
+  background: var(--surface);
+  transform: none;
+}
+
+.secretaria-dashboard__row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.secretaria-dashboard__row-main strong {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.secretaria-dashboard__row-desc {
+  font-size: 0.85rem;
+}
+
+.secretaria-dashboard__row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.secretaria-dashboard__see-all {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-size: 0.9rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.secretaria-dashboard__see-all:hover {
+  text-decoration: underline;
+}
+
+.secretaria-dashboard__empty {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.secretaria-dashboard__empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  text-align: center;
+}
+
+.secretaria-dashboard__expansor {
+  margin-top: var(--space-3);
+}
+
+.secretaria-dashboard__expansor summary {
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .secretaria-dashboard__row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .secretaria-dashboard__row-meta {
+    white-space: normal;
+  }
+}
+
+.field--checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+}
+
+.field--checkbox label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}

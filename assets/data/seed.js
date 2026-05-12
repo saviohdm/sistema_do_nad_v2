@@ -35,6 +35,7 @@ export const seedState = {
       dataInicioCorreicao: "2026-02-03",
       dataFimCorreicao: "2026-02-14",
       observacoesGerais: "Proposição migrada após conclusão da correição ordinária.",
+      correicaoId: "corr-2026-BA-PGJ",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
       juizoAtual: null,
       avaliacaoVigenteId: null,
@@ -43,6 +44,7 @@ export const seedState = {
       historico: [
         createEvent("hist-1", TipoHistorico.CRIACAO, "Corregedor Nacional", {
           descricao: "Proposição criada a partir da migração do SCI.",
+          data: "2026-05-04T09:00:00Z",
         }),
       ],
     },
@@ -765,6 +767,77 @@ export const seedState = {
         createEvent("hist-109", TipoHistorico.COMPROVACAO, "Correicionado", {
           descricao: "Comprovação documental enviada pelo correicionado.",
           data: "2026-05-02T14:00:00Z",
+        }),
+      ],
+    },
+    {
+      id: "prop-201",
+      numero: "PROP-2026-0201",
+      tipo: "Determinação",
+      unidade: "Procuradoria-Geral de Justiça",
+      membro: "Dra. Helena Rocha",
+      descricao:
+        "Definir matriz de competências dos órgãos auxiliares para apoio a metas institucionais.",
+      prioridade: "normal",
+      numeroElo: "2034567-89.2026.1.05.0201",
+      ramoMP: "MPBA",
+      ramoMPNome: "Ministério Público do Estado da Bahia",
+      tematica: "Governança e controle de prazos",
+      uf: ["BA"],
+      dataInicioCorreicao: "2026-02-03",
+      dataFimCorreicao: "2026-02-14",
+      observacoesGerais: "Compõe o grupo de proposições migradas após a correição ordinária.",
+      correicaoId: "corr-2026-BA-PGJ",
+      statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
+      juizoAtual: null,
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [],
+      diligencias: [],
+      historico: [
+        createEvent("hist-201", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Proposição criada a partir da migração do SCI.",
+          data: "2026-05-06T11:00:00Z",
+        }),
+      ],
+    },
+    {
+      id: "prop-202",
+      numero: "PROP-2026-0202",
+      tipo: "Determinação",
+      unidade: "Promotoria do Recreio",
+      membro: "Dra. Elisa Torres",
+      descricao:
+        "Sinalizar formalmente o conjunto de processos prioritários por matéria.",
+      prioridade: "normal",
+      numeroElo: "2134567-89.2026.1.05.0202",
+      ramoMP: "MPRJ",
+      ramoMPNome: "Ministério Público do Estado do Rio de Janeiro",
+      tematica: "Governança e metas institucionais",
+      uf: ["RJ"],
+      dataInicioCorreicao: "2026-03-20",
+      dataFimCorreicao: "2026-03-31",
+      observacoesGerais:
+        "Retornou à Secretaria após decisão por necessitar de mais informações.",
+      correicaoId: "corr-2026-RJ-02",
+      statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
+      juizoAtual: {
+        situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+      },
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [],
+      diligencias: [],
+      historico: [
+        createEvent("hist-202", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Proposição criada.",
+          data: "2026-04-02T10:00:00Z",
+        }),
+        createEvent("hist-203", TipoHistorico.DECISAO, "Corregedor Nacional", {
+          modo: "deferimento",
+          descricao: "Decisão homologando a necessidade de novas informações.",
+          data: "2026-05-09T16:00:00Z",
+          juizo: {
+            situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+          },
         }),
       ],
     },

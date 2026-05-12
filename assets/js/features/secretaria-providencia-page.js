@@ -9,9 +9,56 @@ import { renderBadge } from "../ui/components.js";
 
 requireAuth();
 
-const renderFilaProvidencia = (proposicoes) => {
+const LIMITE_ATRASADAS = 10;
+
+const getFiltrosFromUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    atrasadas: params.get("atrasadas") === "1",
+  };
+};
+
+const setFiltrosInUrl = (filtros) => {
+  const params = new URLSearchParams();
+  if (filtros.atrasadas) params.set("atrasadas", "1");
+  const query = params.toString();
+  const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
+  window.history.pushState({}, "", newUrl);
+};
+
+const aplicarFiltros = (novos) => {
+  setFiltrosInUrl(novos);
+  render();
+};
+
+const diasDesde = (iso, hoje = new Date()) => {
+  if (!iso) return null;
+  const inicio = new Date(iso);
+  if (Number.isNaN(inicio.getTime())) return null;
+  return Math.max(0, Math.floor((hoje - inicio) / 86400000));
+};
+
+const isAtrasada = (pendencia, hoje) =>
+  pendencia.status === "pendente" && (diasDesde(pendencia.dataCriacao, hoje) ?? 0) > LIMITE_ATRASADAS;
+
+const aplicarFiltroPendencias = (proposicoes, filtros, hoje) => {
+  if (!filtros.atrasadas) return proposicoes;
+  return proposicoes
+    .map((proposicao) => ({
+      ...proposicao,
+      pendenciasSecretaria: proposicao.pendenciasSecretaria.filter((p) =>
+        isAtrasada(p, hoje),
+      ),
+    }))
+    .filter((proposicao) => proposicao.pendenciasSecretaria.length > 0);
+};
+
+const renderFilaProvidencia = (proposicoes, filtros, hoje) => {
   if (!proposicoes.length) {
-    return `<div class="empty-state">Nenhuma providência pendente.</div>`;
+    const msg = filtros.atrasadas
+      ? "Nenhuma providência atrasada (mais de 10 dias em aberto)."
+      : "Nenhuma providência pendente.";
+    return `<div class="empty-state">${msg}</div>`;
   }
 
   return `
@@ -23,8 +70,10 @@ const renderFilaProvidencia = (proposicoes) => {
               <h3 class="panel__title">${proposicao.numero} · ${proposicao.unidade}</h3>
               <div class="cards-grid">
                 ${proposicao.pendenciasSecretaria
-                  .map(
-                    (pendencia) => `
+                  .map((pendencia) => {
+                    const dias = diasDesde(pendencia.dataCriacao, hoje);
+                    const atrasada = isAtrasada(pendencia, hoje);
+                    return `
                       <article class="status-card">
                         <div class="pill-list">
                           <span class="badge badge--${pendencia.status === "cumprida" ? "success" : "warning"}">
@@ -33,6 +82,13 @@ const renderFilaProvidencia = (proposicoes) => {
                           <span class="badge badge--neutral">
                             ${Labels.tipoProvidencia[pendencia.tipoProvidencia]}
                           </span>
+                          ${
+                            atrasada
+                              ? `<span class="badge badge--danger">Há ${dias} dias em aberto</span>`
+                              : pendencia.status === "pendente" && dias !== null
+                                ? `<span class="badge badge--neutral">Há ${dias} dias em aberto</span>`
+                                : ""
+                          }
                         </div>
                         <p><strong>${pendencia.descricao}</strong></p>
                         <p class="muted">Criada em ${formatDateTime(pendencia.dataCriacao)}</p>
@@ -56,8 +112,8 @@ const renderFilaProvidencia = (proposicoes) => {
                             : ""
                         }
                       </article>
-                    `,
-                  )
+                    `;
+                  })
                   .join("")}
               </div>
             </section>
@@ -68,22 +124,46 @@ const renderFilaProvidencia = (proposicoes) => {
   `;
 };
 
+const renderToolbar = (filtros, total) => `
+  <div class="toolbar" style="display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap;">
+    <label class="field field--checkbox" style="margin: 0;">
+      <input type="checkbox" data-filtro-atrasadas ${filtros.atrasadas ? "checked" : ""} />
+      <span>Somente atrasadas (mais de ${LIMITE_ATRASADAS} dias em aberto)</span>
+    </label>
+    <span class="muted">${total} proposição(ões) com pendência ${filtros.atrasadas ? "atrasada" : "aberta"}</span>
+  </div>
+`;
+
 const render = () => {
+  const filtros = getFiltrosFromUrl();
   const currentState = state();
-  const filaProvidencia = listFilaPendenciasProvidencia(currentState);
+  const hoje = new Date();
+  const todas = listFilaPendenciasProvidencia(currentState);
+  const filtradas = aplicarFiltroPendencias(todas, filtros, hoje);
+
+  const titulo = filtros.atrasadas
+    ? "Pendências de providência atrasadas"
+    : "Pendências de providência";
+  const subtitulo = filtros.atrasadas
+    ? `Apenas pendências em aberto há mais de ${LIMITE_ATRASADAS} dias. Cumprimento ocorre fora do sistema; aqui apenas se registra data e observações.`
+    : "Controle administrativo paralelo das providências externas (parcial/não cumprida). Cumprimento ocorre fora do sistema; aqui apenas se registra data e observações.";
 
   mountPage({
     activePage: "secretaria-providencia",
-    title: "Pendências de providência",
-    subtitle:
-      "Controle administrativo paralelo das providências externas (parcial/não cumprida). Cumprimento ocorre fora do sistema; aqui apenas se registra data e observações.",
+    title: titulo,
+    subtitle: subtitulo,
     actions: baseActions,
     content: `
       <section class="panel">
-        <h2 class="panel__title">Pendências de providência ${renderBadge(`${filaProvidencia.length}`, filaProvidencia.length ? "warning" : "neutral")}</h2>
-        ${renderFilaProvidencia(filaProvidencia)}
+        <h2 class="panel__title">${titulo} ${renderBadge(`${filtradas.length}`, filtradas.length ? "warning" : "neutral")}</h2>
+        ${renderToolbar(filtros, filtradas.length)}
+        ${renderFilaProvidencia(filtradas, filtros, hoje)}
       </section>
     `,
+  });
+
+  document.querySelector("[data-filtro-atrasadas]")?.addEventListener("change", (event) => {
+    aplicarFiltros({ atrasadas: event.currentTarget.checked });
   });
 
   document.querySelectorAll("[data-pendencia-form]").forEach((form) => {
@@ -108,5 +188,7 @@ const render = () => {
     });
   });
 };
+
+window.addEventListener("popstate", render);
 
 render();

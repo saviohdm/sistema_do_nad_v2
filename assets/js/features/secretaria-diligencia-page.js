@@ -8,7 +8,10 @@ import {
   groupByRamoMP,
   groupByUnidade,
 } from "../domain/proposicoes.js";
-import { listFilaAguardandoDiligencia } from "../domain/secretaria-filas.js";
+import {
+  listFilaAguardandoDiligencia,
+  listGruposAguardandoDiligencia,
+} from "../domain/secretaria-filas.js";
 import { criarDiligenciaEmLote } from "../domain/diligencias.js";
 import { renderBadge, renderEmptyState, renderStatCard } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
@@ -34,6 +37,8 @@ const FILTRO_KEYS_URL = [
   "subStatus",
   "textoBusca",
 ];
+
+const FILTRO_FLAGS_URL = ["gruposCompletos"];
 
 const selecaoIds = new Set();
 
@@ -68,6 +73,9 @@ const getFiltrosFromUrl = () => {
     if (value) filtros[key] = value;
   });
   if (params.get("fila") === "1") filtros.filaForcada = true;
+  FILTRO_FLAGS_URL.forEach((flag) => {
+    if (params.get(flag) === "1") filtros[flag] = true;
+  });
   return filtros;
 };
 
@@ -77,6 +85,9 @@ const setFiltrosInUrl = (filtros) => {
     if (filtros[key]) params.set(key, filtros[key]);
   });
   if (filtros.filaForcada) params.set("fila", "1");
+  FILTRO_FLAGS_URL.forEach((flag) => {
+    if (filtros[flag]) params.set(flag, "1");
+  });
   const query = params.toString();
   const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
   window.history.pushState({}, "", newUrl);
@@ -95,7 +106,8 @@ const determinarModo = (filtros) => {
     filtros.uf ||
     filtros.membro ||
     filtros.subStatus ||
-    filtros.textoBusca;
+    filtros.textoBusca ||
+    filtros.gruposCompletos;
   if (filtros.filaForcada || filtrosDeFila) return "fila";
   if (filtros.ramoMP) return "ramo";
   return "overview";
@@ -292,6 +304,12 @@ const renderPainelFiltros = (pendentes, filtros) => {
             placeholder="Número, número ELO, descrição ou observações"
             value="${escapeAttr(filtros.textoBusca || "")}" />
         </div>
+        <div class="field field--checkbox" style="grid-column: span 2;">
+          <label>
+            <input type="checkbox" name="gruposCompletos" value="1" ${filtros.gruposCompletos ? "checked" : ""} />
+            <span>Somente grupos completos (todas as proposições da unidade aguardando a Secretaria)</span>
+          </label>
+        </div>
       </div>
       <div class="button-row">
         <button class="button" type="submit">Aplicar filtros</button>
@@ -429,6 +447,7 @@ const renderModoFila = (pendentes, filtros) => {
     filtros.subStatus
       ? `Sub-status: <strong>${filtros.subStatus === "nova" ? "Nova" : "Retornada"}</strong>`
       : null,
+    filtros.gruposCompletos ? `<strong>Somente grupos completos</strong>` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -561,7 +580,12 @@ const render = () => {
   persistirFiltros(filtros);
 
   const currentState = state();
-  const pendentes = listFilaAguardandoDiligencia(currentState);
+  let pendentes = listFilaAguardandoDiligencia(currentState);
+  if (filtros.gruposCompletos) {
+    const completos = listGruposAguardandoDiligencia(currentState).filter((g) => g.completo);
+    const idsCompletos = new Set(completos.flatMap((g) => g.proposicoes.map((p) => p.id)));
+    pendentes = pendentes.filter((p) => idsCompletos.has(p.id));
+  }
   const idsValidos = new Set(pendentes.map((p) => p.id));
   let podou = false;
   for (const id of Array.from(selecaoIds)) {
@@ -659,6 +683,7 @@ const bindHandlers = (filtros, pendentes) => {
       membro: data.get("membro") || "",
       subStatus: data.get("subStatus") || "",
       textoBusca: (data.get("textoBusca") || "").toString().trim(),
+      gruposCompletos: data.get("gruposCompletos") === "1",
     });
   });
 
