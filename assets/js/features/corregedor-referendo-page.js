@@ -67,11 +67,11 @@ const determinarModo = (filtros) => {
 
 const uniq = (values) => Array.from(new Set(values.filter(Boolean)));
 
-const renderPainelFiltros = (pendentes, filtros) => {
-  const prioridades = uniq(pendentes.map((p) => p.prioridade));
-  const tematicas = uniq(pendentes.map((p) => p.tematica));
-  const ufs = uniq(pendentes.flatMap((p) => p.uf || []));
-  const correicoes = uniq(pendentes.map((p) => p.correicaoId));
+const renderPainelFiltros = (proposicoesAguardandoReferendo, filtros) => {
+  const prioridades = uniq(proposicoesAguardandoReferendo.map((p) => p.prioridade));
+  const tematicas = uniq(proposicoesAguardandoReferendo.map((p) => p.tematica));
+  const ufs = uniq(proposicoesAguardandoReferendo.flatMap((p) => p.uf || []));
+  const correicoes = uniq(proposicoesAguardandoReferendo.map((p) => p.correicaoId));
 
   const option = (value, label, selected) =>
     `<option value="${value}"${selected === value ? " selected" : ""}>${label}</option>`;
@@ -143,10 +143,10 @@ const renderCardFila = (proposicao) => `
   </article>
 `;
 
-const renderOverview = (pendentes) => {
-  const totalPendentes = pendentes.length;
-  const ramos = groupByRamoMP(pendentes);
-  const correicoes = groupByCorreicao(pendentes);
+const renderOverview = (proposicoesAguardandoReferendo) => {
+  const totalProposicoesAguardandoReferendo = proposicoesAguardandoReferendo.length;
+  const ramos = groupByRamoMP(proposicoesAguardandoReferendo);
+  const correicoes = groupByCorreicao(proposicoesAguardandoReferendo);
 
   const ramoRows = ramos.length
     ? ramos
@@ -192,7 +192,7 @@ const renderOverview = (pendentes) => {
           de cada proposição se inicia na Secretaria Processual.
         </p>
         <div class="cards-grid">
-          ${renderStatCard("Proposições aguardando referendo", totalPendentes)}
+          ${renderStatCard("Proposições aguardando referendo", totalProposicoesAguardandoReferendo)}
           ${renderStatCard("Ramos envolvidos", ramos.length)}
           ${renderStatCard("Correições envolvidas", correicoes.length)}
         </div>
@@ -208,7 +208,7 @@ const renderOverview = (pendentes) => {
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
-              <tr><th>Ramo</th><th>Nome</th><th class="numeric">Pendentes</th></tr>
+              <tr><th>Ramo</th><th>Nome</th><th class="numeric">Proposições</th></tr>
             </thead>
             <tbody>
               ${ramoRows}
@@ -226,7 +226,7 @@ const renderOverview = (pendentes) => {
               <tr>
                 <th>Correição</th>
                 <th>Ramo</th>
-                <th class="numeric">Pendentes</th>
+                <th class="numeric">Proposições</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -240,8 +240,8 @@ const renderOverview = (pendentes) => {
   `;
 };
 
-const renderModoRamo = (pendentes, filtros) => {
-  const daquelaBandeira = pendentes.filter((p) => p.ramoMP === filtros.ramoMP);
+const renderModoRamo = (proposicoesAguardandoReferendo, filtros) => {
+  const daquelaBandeira = proposicoesAguardandoReferendo.filter((p) => p.ramoMP === filtros.ramoMP);
   const unidades = groupByUnidade(daquelaBandeira);
   const nomeRamo = daquelaBandeira[0]?.ramoMPNome || filtros.ramoMP;
 
@@ -279,7 +279,7 @@ const renderModoRamo = (pendentes, filtros) => {
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
-              <tr><th>Unidade</th><th class="numeric">Pendentes</th></tr>
+              <tr><th>Unidade</th><th class="numeric">Proposições</th></tr>
             </thead>
             <tbody>
               ${rows}
@@ -291,8 +291,8 @@ const renderModoRamo = (pendentes, filtros) => {
   `;
 };
 
-const renderModoFila = (pendentes, filtros) => {
-  const filtrados = filtrarProposicoes(pendentes, filtros);
+const renderModoFila = (proposicoesAguardandoReferendo, filtros) => {
+  const filtrados = filtrarProposicoes(proposicoesAguardandoReferendo, filtros);
 
   const cards = filtrados.length
     ? filtrados.map((p) => renderCardFila(p)).join("")
@@ -340,10 +340,10 @@ const renderModoFila = (pendentes, filtros) => {
             <span class="stat-card__value">${filtrados.length}</span>
             <span class="stat-card__label">proposição(ões)</span>
           </div>
-          <p class="muted" style="margin-top: 1rem;">Total pendente no sistema: <strong>${pendentes.length}</strong></p>
+          <p class="muted" style="margin-top: 1rem;">Proposições aguardando referendo no sistema: <strong>${proposicoesAguardandoReferendo.length}</strong></p>
         </div>
 
-        ${renderPainelFiltros(pendentes, filtros)}
+        ${renderPainelFiltros(proposicoesAguardandoReferendo, filtros)}
       </aside>
     </section>
   `;
@@ -354,21 +354,21 @@ const render = () => {
   persistirFiltros(filtros);
 
   const currentState = state();
-  const pendentes = listProposicoesAguardandoReferendo(currentState);
+  const proposicoesAguardandoReferendo = listProposicoesAguardandoReferendo(currentState);
 
   const modo = determinarModo(filtros);
 
   let content;
   let subtitle;
   if (modo === "overview") {
-    content = renderOverview(pendentes);
+    content = renderOverview(proposicoesAguardandoReferendo);
     subtitle =
       "Proposições que ainda aguardam referendo do CNMP. Agrupe por ramo ou correição, gere o relatório final e registre o referendo em bloco.";
   } else if (modo === "ramo") {
-    content = renderModoRamo(pendentes, filtros);
+    content = renderModoRamo(proposicoesAguardandoReferendo, filtros);
     subtitle = "Escolha uma unidade dentro do ramo para entrar na fila de proposições aguardando referendo.";
   } else {
-    content = renderModoFila(pendentes, filtros);
+    content = renderModoFila(proposicoesAguardandoReferendo, filtros);
     subtitle =
       "Revise, edite ou apague cada proposição antes do referendo. A ação de referendar sempre opera em bloco pela correição.";
   }
@@ -406,7 +406,7 @@ const handleReferendar = (correicaoId) => {
   window.alert(
     afetadas > 0
       ? `${afetadas} proposição(ões) encaminhada(s) à Secretaria Processual.`
-      : "Nenhuma proposição pendente encontrada para esta correição.",
+      : "Nenhuma proposição aguardando referendo encontrada para esta correição.",
   );
   aplicarFiltros({});
 };
@@ -426,13 +426,13 @@ const handleApagar = (proposicaoId) => {
 };
 
 const handleGerarRelatorio = (correicaoId, currentState) => {
-  const pendentes = listProposicoesAguardandoReferendo(currentState).filter(
+  const proposicoesAguardandoReferendo = listProposicoesAguardandoReferendo(currentState).filter(
     (p) => p.correicaoId === correicaoId,
   );
   openRelatorioFinalModal({
     correicaoId,
-    ramoMP: pendentes[0]?.ramoMP || "",
-    proposicoes: pendentes,
+    ramoMP: proposicoesAguardandoReferendo[0]?.ramoMP || "",
+    proposicoes: proposicoesAguardandoReferendo,
   });
 };
 
