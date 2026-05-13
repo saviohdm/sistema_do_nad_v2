@@ -65,11 +65,11 @@ const uniq = (values) => Array.from(new Set(values.filter(Boolean)));
 
 const temAvaliacaoVigente = (proposicao) => Boolean(proposicao.avaliacaoVigenteId);
 
-const renderPainelFiltros = (pendentes, filtros) => {
-  const prioridades = uniq(pendentes.map((p) => p.prioridade));
-  const tematicas = uniq(pendentes.map((p) => p.tematica));
-  const ufs = uniq(pendentes.flatMap((p) => p.uf || []));
-  const correicoes = uniq(pendentes.map((p) => p.correicaoId));
+const renderPainelFiltros = (aguardandoDecisao, filtros) => {
+  const prioridades = uniq(aguardandoDecisao.map((p) => p.prioridade));
+  const tematicas = uniq(aguardandoDecisao.map((p) => p.tematica));
+  const ufs = uniq(aguardandoDecisao.flatMap((p) => p.uf || []));
+  const correicoes = uniq(aguardandoDecisao.map((p) => p.correicaoId));
 
   const option = (value, label, selected) =>
     `<option value="${value}"${selected === value ? " selected" : ""}>${label}</option>`;
@@ -139,12 +139,12 @@ const renderCardFila = (proposicao) => {
   `;
 };
 
-const renderOverview = (pendentes) => {
-  const totalPendentes = pendentes.length;
-  const ramos = groupByRamoMP(pendentes);
-  const correicoes = groupByCorreicao(pendentes);
-  const comAvaliacao = pendentes.filter(temAvaliacaoVigente).length;
-  const semAvaliacao = totalPendentes - comAvaliacao;
+const renderOverview = (aguardandoDecisao) => {
+  const totalAguardandoDecisao = aguardandoDecisao.length;
+  const ramos = groupByRamoMP(aguardandoDecisao);
+  const correicoes = groupByCorreicao(aguardandoDecisao);
+  const comAvaliacao = aguardandoDecisao.filter(temAvaliacaoVigente).length;
+  const semAvaliacao = totalAguardandoDecisao - comAvaliacao;
 
   const ramoRows = ramos.length
     ? ramos
@@ -184,7 +184,7 @@ const renderOverview = (pendentes) => {
           Sem avaliação vigente, pode avaliar diretamente com força de decisão.
         </p>
         <div class="cards-grid">
-          ${renderStatCard("Aguardando decisão", totalPendentes)}
+          ${renderStatCard("Aguardando decisão", totalAguardandoDecisao)}
           ${renderStatCard("Com avaliação submetida", comAvaliacao)}
           ${renderStatCard("Sem avaliação (decisão direta)", semAvaliacao)}
         </div>
@@ -199,7 +199,7 @@ const renderOverview = (pendentes) => {
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
-              <tr><th>Ramo</th><th>Nome</th><th class="numeric">Pendentes</th></tr>
+              <tr><th>Ramo</th><th>Nome</th><th class="numeric">Aguardando decisão</th></tr>
             </thead>
             <tbody>
               ${ramoRows}
@@ -214,7 +214,7 @@ const renderOverview = (pendentes) => {
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
-              <tr><th>Correição</th><th>Ramo</th><th class="numeric">Pendentes</th></tr>
+              <tr><th>Correição</th><th>Ramo</th><th class="numeric">Aguardando decisão</th></tr>
             </thead>
             <tbody>
               ${correicaoRows}
@@ -226,8 +226,8 @@ const renderOverview = (pendentes) => {
   `;
 };
 
-const renderModoRamo = (pendentes, filtros) => {
-  const daquelaBandeira = pendentes.filter((p) => p.ramoMP === filtros.ramoMP);
+const renderModoRamo = (aguardandoDecisao, filtros) => {
+  const daquelaBandeira = aguardandoDecisao.filter((p) => p.ramoMP === filtros.ramoMP);
   const unidades = groupByUnidade(daquelaBandeira);
   const nomeRamo = daquelaBandeira[0]?.ramoMPNome || filtros.ramoMP;
 
@@ -265,7 +265,7 @@ const renderModoRamo = (pendentes, filtros) => {
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
-              <tr><th>Unidade</th><th class="numeric">Pendentes</th></tr>
+              <tr><th>Unidade</th><th class="numeric">Aguardando decisão</th></tr>
             </thead>
             <tbody>
               ${rows}
@@ -277,8 +277,8 @@ const renderModoRamo = (pendentes, filtros) => {
   `;
 };
 
-const renderModoFila = (pendentes, filtros) => {
-  const filtrados = filtrarProposicoes(pendentes, filtros);
+const renderModoFila = (aguardandoDecisao, filtros) => {
+  const filtrados = filtrarProposicoes(aguardandoDecisao, filtros);
 
   const cards = filtrados.length
     ? filtrados.map((p) => renderCardFila(p)).join("")
@@ -324,10 +324,10 @@ const renderModoFila = (pendentes, filtros) => {
             <span class="stat-card__value">${filtrados.length}</span>
             <span class="stat-card__label">proposição(ões)</span>
           </div>
-          <p class="muted" style="margin-top: 1rem;">Total pendente no sistema: <strong>${pendentes.length}</strong></p>
+          <p class="muted" style="margin-top: 1rem;">Total aguardando decisão no sistema: <strong>${aguardandoDecisao.length}</strong></p>
         </div>
 
-        ${renderPainelFiltros(pendentes, filtros)}
+        ${renderPainelFiltros(aguardandoDecisao, filtros)}
       </aside>
     </section>
   `;
@@ -338,21 +338,21 @@ const render = () => {
   persistirFiltros(filtros);
 
   const currentState = state();
-  const pendentes = listProposicoesAguardandoDecisao(currentState);
+  const aguardandoDecisao = listProposicoesAguardandoDecisao(currentState);
 
   const modo = determinarModo(filtros);
 
   let content;
   let subtitle;
   if (modo === "overview") {
-    content = renderOverview(pendentes);
+    content = renderOverview(aguardandoDecisao);
     subtitle =
       "Proposições que retornaram com avaliação do membro auxiliar ou que aguardam sua avaliação direta com força de decisão.";
   } else if (modo === "ramo") {
-    content = renderModoRamo(pendentes, filtros);
+    content = renderModoRamo(aguardandoDecisao, filtros);
     subtitle = "Escolha uma unidade dentro do ramo para entrar na fila de decisão.";
   } else {
-    content = renderModoFila(pendentes, filtros);
+    content = renderModoFila(aguardandoDecisao, filtros);
     subtitle =
       "Decida cada proposição. Badges indicam se há avaliação submetida (deferir/indeferir) ou se cabe avaliação direta.";
   }
