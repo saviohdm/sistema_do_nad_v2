@@ -122,12 +122,12 @@ const aplicarFiltros = (novosFiltros) => {
 // Overview
 // ---------------------------------------------------------------------------
 
-const renderOverview = (pendentes) => {
-  const total = pendentes.length;
-  const novas = pendentes.filter((p) => !p.juizoAtual).length;
-  const retornadas = pendentes.filter(isRetornada).length;
-  const ramos = groupByRamoMP(pendentes);
-  const correicoes = groupByCorreicao(pendentes);
+const renderOverview = (aguardandoDiligencia) => {
+  const total = aguardandoDiligencia.length;
+  const novas = aguardandoDiligencia.filter((p) => !p.juizoAtual).length;
+  const retornadas = aguardandoDiligencia.filter(isRetornada).length;
+  const ramos = groupByRamoMP(aguardandoDiligencia);
+  const correicoes = groupByCorreicao(aguardandoDiligencia);
 
   const ramoRows = ramos.length
     ? ramos
@@ -166,7 +166,7 @@ const renderOverview = (pendentes) => {
           (novas) ou que retornaram após decisão "necessita mais informações".
         </p>
         <div class="cards-grid">
-          ${renderStatCard("Total na fila", total)}
+          ${renderStatCard("Total aguardando diligência", total)}
           ${renderStatCard("Novas", novas)}
           ${renderStatCard("Retornadas (necessita mais informações)", retornadas)}
         </div>
@@ -181,7 +181,7 @@ const renderOverview = (pendentes) => {
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
-              <tr><th>Ramo</th><th>Nome</th><th class="numeric">Pendentes</th></tr>
+              <tr><th>Ramo</th><th>Nome</th><th class="numeric">Aguardando diligência</th></tr>
             </thead>
             <tbody>${ramoRows}</tbody>
           </table>
@@ -194,7 +194,7 @@ const renderOverview = (pendentes) => {
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
-              <tr><th>Correição</th><th>Ramo</th><th class="numeric">Pendentes</th></tr>
+              <tr><th>Correição</th><th>Ramo</th><th class="numeric">Aguardando diligência</th></tr>
             </thead>
             <tbody>${correicaoRows}</tbody>
           </table>
@@ -208,8 +208,8 @@ const renderOverview = (pendentes) => {
 // Modo Ramo
 // ---------------------------------------------------------------------------
 
-const renderModoRamo = (pendentes, filtros) => {
-  const doRamo = pendentes.filter((p) => p.ramoMP === filtros.ramoMP);
+const renderModoRamo = (aguardandoDiligencia, filtros) => {
+  const doRamo = aguardandoDiligencia.filter((p) => p.ramoMP === filtros.ramoMP);
   const unidades = groupByUnidade(doRamo);
   const nomeRamo = doRamo[0]?.ramoMPNome || filtros.ramoMP;
 
@@ -247,7 +247,7 @@ const renderModoRamo = (pendentes, filtros) => {
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
-              <tr><th>Unidade</th><th class="numeric">Pendentes</th></tr>
+              <tr><th>Unidade</th><th class="numeric">Aguardando diligência</th></tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
@@ -264,12 +264,12 @@ const renderModoRamo = (pendentes, filtros) => {
 const option = (value, label, selected) =>
   `<option value="${escapeAttr(value)}"${selected === value ? " selected" : ""}>${label}</option>`;
 
-const renderPainelFiltros = (pendentes, filtros) => {
-  const prioridades = uniq(pendentes.map((p) => p.prioridade));
-  const tematicas = uniq(pendentes.map((p) => p.tematica));
-  const ufs = uniq(pendentes.flatMap((p) => p.uf || []));
-  const correicoes = uniq(pendentes.map((p) => p.correicaoId));
-  const membros = uniq(pendentes.map((p) => p.membro));
+const renderPainelFiltros = (aguardandoDiligencia, filtros) => {
+  const prioridades = uniq(aguardandoDiligencia.map((p) => p.prioridade));
+  const tematicas = uniq(aguardandoDiligencia.map((p) => p.tematica));
+  const ufs = uniq(aguardandoDiligencia.flatMap((p) => p.uf || []));
+  const correicoes = uniq(aguardandoDiligencia.map((p) => p.correicaoId));
+  const membros = uniq(aguardandoDiligencia.map((p) => p.membro));
 
   const selectSimples = (id, name, label, lista, valor) => `
     <div class="field">
@@ -427,8 +427,8 @@ const renderStickyBar = (totalSelecionados, ocultas) => {
 // Modo Fila — orquestração
 // ---------------------------------------------------------------------------
 
-const renderModoFila = (pendentes, filtros) => {
-  const filtrados = filtrarProposicoes(pendentes, filtros);
+const renderModoFila = (aguardandoDiligencia, filtros) => {
+  const filtrados = filtrarProposicoes(aguardandoDiligencia, filtros);
   const idsFiltradosSet = new Set(filtrados.map((p) => p.id));
   const ocultas = Array.from(selecaoIds).filter((id) => !idsFiltradosSet.has(id)).length;
 
@@ -481,10 +481,10 @@ const renderModoFila = (pendentes, filtros) => {
             <span class="stat-card__value">${filtrados.length}</span>
             <span class="stat-card__label">proposição(ões)</span>
           </div>
-          <p class="muted" style="margin-top: 1rem;">Total na fila: <strong>${pendentes.length}</strong></p>
+          <p class="muted" style="margin-top: 1rem;">Total aguardando diligência no sistema: <strong>${aguardandoDiligencia.length}</strong></p>
         </div>
 
-        ${renderPainelFiltros(pendentes, filtros)}
+        ${renderPainelFiltros(aguardandoDiligencia, filtros)}
       </aside>
     </section>
   `;
@@ -580,13 +580,13 @@ const render = () => {
   persistirFiltros(filtros);
 
   const currentState = state();
-  let pendentes = listFilaAguardandoDiligencia(currentState);
+  let aguardandoDiligencia = listFilaAguardandoDiligencia(currentState);
   if (filtros.gruposCompletos) {
     const completos = listGruposAguardandoDiligencia(currentState).filter((g) => g.completo);
     const idsCompletos = new Set(completos.flatMap((g) => g.proposicoes.map((p) => p.id)));
-    pendentes = pendentes.filter((p) => idsCompletos.has(p.id));
+    aguardandoDiligencia = aguardandoDiligencia.filter((p) => idsCompletos.has(p.id));
   }
-  const idsValidos = new Set(pendentes.map((p) => p.id));
+  const idsValidos = new Set(aguardandoDiligencia.map((p) => p.id));
   let podou = false;
   for (const id of Array.from(selecaoIds)) {
     if (!idsValidos.has(id)) {
@@ -601,14 +601,14 @@ const render = () => {
   let content;
   let subtitle;
   if (modo === "overview") {
-    content = renderOverview(pendentes);
+    content = renderOverview(aguardandoDiligencia);
     subtitle =
       "Proposições recém-referendadas ou que retornaram com juízo \"necessita mais informações\".";
   } else if (modo === "ramo") {
-    content = renderModoRamo(pendentes, filtros);
+    content = renderModoRamo(aguardandoDiligencia, filtros);
     subtitle = "Escolha uma unidade dentro do ramo para entrar na fila.";
   } else {
-    content = renderModoFila(pendentes, filtros);
+    content = renderModoFila(aguardandoDiligencia, filtros);
     subtitle =
       "Selecione múltiplas proposições e crie diligências em lote com um único prazo e descrição.";
   }
@@ -621,10 +621,10 @@ const render = () => {
     content,
   });
 
-  bindHandlers(filtros, pendentes);
+  bindHandlers(filtros, aguardandoDiligencia);
 };
 
-const bindHandlers = (filtros, pendentes) => {
+const bindHandlers = (filtros, aguardandoDiligencia) => {
   document.querySelectorAll("[data-nav-ramo]").forEach((row) => {
     row.addEventListener("click", () => {
       aplicarFiltros({ ramoMP: row.dataset.navRamo });
@@ -705,7 +705,7 @@ const bindHandlers = (filtros, pendentes) => {
   if (selectAllCheckbox) {
     selectAllCheckbox.indeterminate = selectAllCheckbox.dataset.selectAllState === "parcial";
     selectAllCheckbox.addEventListener("change", (event) => {
-      const filtrados = filtrarProposicoes(pendentes, filtros);
+      const filtrados = filtrarProposicoes(aguardandoDiligencia, filtros);
       if (event.currentTarget.checked) {
         filtrados.forEach((p) => selecaoIds.add(p.id));
       } else {
@@ -730,7 +730,7 @@ const bindHandlers = (filtros, pendentes) => {
     if (!prazo || !descricao) return;
     const hoje = new Date().toISOString().slice(0, 10);
     if (prazo < hoje) return;
-    const proposicoesSelecionadas = pendentes.filter((p) => selecaoIds.has(p.id));
+    const proposicoesSelecionadas = aguardandoDiligencia.filter((p) => selecaoIds.has(p.id));
     if (proposicoesSelecionadas.length === 0) return;
     abrirModalConfirmacao(proposicoesSelecionadas, prazo, descricao);
   });
