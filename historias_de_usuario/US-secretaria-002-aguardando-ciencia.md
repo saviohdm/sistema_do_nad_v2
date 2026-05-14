@@ -32,7 +32,7 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `registrar_cienti
 - Ciência só pode ser registrada para proposições em `statusFluxo = AGUARDANDO_CIENCIA`.
 - Ciência em bloco ocorre por `(correição, unidade)`; a unidade é o bloco-mínimo. Multi-grupo é apenas um agregador de UX — internamente, cada grupo é processado individualmente.
 - Apenas grupos **completos** (todas as proposições da unidade naquela correição em `AGUARDANDO_CIENCIA`) são selecionáveis.
-- Após ciência, `statusFluxo` da proposição vira `BAIXA_DEFINITIVA`. Pendências de providência permanecem ativas em `pendenciasSecretaria[]`, mas **não impedem** a transição.
+- Após ciência, `statusFluxo` da proposição vira `BAIXA_DEFINITIVA`. Providências pendentes permanecem ativas em `pendenciasSecretaria[]`, mas **não impedem** a transição.
 - Badge cross-page no menu lateral da Secretaria mostra a contagem de **grupos completos prontos** (não de proposições).
 
 ## Pós-condições

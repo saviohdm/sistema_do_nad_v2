@@ -335,7 +335,7 @@ const render = () => {
             </section>
 
             <section class="panel detail-section">
-              <h3 class="panel__title">Pendências da Secretaria</h3>
+              <h3 class="panel__title">Providências pendentes</h3>
               ${renderPendenciasCards(
                 proposicao.pendenciasSecretaria.map((item) => ({
                   ...item,

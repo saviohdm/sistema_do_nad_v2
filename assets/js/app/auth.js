@@ -48,7 +48,7 @@ const PERSONA_MENU_OVERRIDES = {
       label: "Aguardando ciência",
       badgeKey: "gruposCompletosProntos",
     },
-    { href: "secretaria-providencia.html", label: "Pendências de providência" },
+    { href: "secretaria-providencia.html", label: "Providências pendentes" },
     { href: "proposicoes-lista.html", label: "Consulta" },
   ],
 };

@@ -33,7 +33,7 @@ const comPendencia = findPropWithPendingProvidence(currentState);
 
 const pendenciasPanel = `
   <section class="panel">
-    <h3 class="panel__title">Pendências abertas da Secretaria</h3>
+    <h3 class="panel__title">Providências pendentes da Secretaria</h3>
     ${
       comPendencia.length
         ? `
@@ -166,7 +166,7 @@ const buildDefaultContent = () => {
         ${renderStatCard("Aguardando decisão", summary.aguardandoDecisao)}
         ${renderStatCard("Dependem da Secretaria", summary.necessitaSecretaria)}
         ${renderStatCard("Concluídas", summary.concluidas)}
-        ${renderStatCard("Pendências da Secretaria", summary.pendenciasSecretaria)}
+        ${renderStatCard("Providências pendentes", summary.pendenciasSecretaria)}
       </section>
 
       <section class="page-grid page-grid--two">
