@@ -292,6 +292,7 @@ const render = () => {
       label: "Avaliação vigente",
       value: avaliacaoVigente ? formatDate(avaliacaoVigente.data) : "Não há",
     },
+    { label: "Observações gerais", value: proposicao.observacoesGerais || "—" },
   ];
 
   mountPage({
@@ -303,46 +304,39 @@ const render = () => {
     content: `
       <section class="stack">
         ${renderProposicaoHero(proposicao)}
-        <section class="split-callout">
-          <div class="panel">
-            <h3 class="panel__title">Metadados do caso</h3>
-            ${renderMetaList(meta)}
-          </div>
-          <div class="panel">
-            <h3 class="panel__title">Leitura rápida</h3>
-            <div class="stack">
-              <div class="status-card">
-                <span class="muted">Juízo atual</span>
-                <strong>${proposicao.juizoAtual ? Labels.situacaoJuizo[proposicao.juizoAtual.situacao] : "Sem juízo final"}</strong>
-              </div>
-              <div class="status-card">
-                <span class="muted">Conclusão</span>
-                <strong>${proposicao.juizoAtual?.tipoConclusao ? Labels.tipoConclusao[proposicao.juizoAtual.tipoConclusao] : "—"}</strong>
-              </div>
-              <div class="status-card">
-                <span class="muted">Observações gerais</span>
-                <strong>${proposicao.observacoesGerais || "Sem observações complementares."}</strong>
-              </div>
-            </div>
-          </div>
+        <section class="panel">
+          <h3 class="panel__title">Metadados do caso</h3>
+          ${renderMetaList(meta)}
         </section>
 
         <section class="page-grid page-grid--two">
           <div class="stack">
-            <section class="panel detail-section">
-              <h3 class="panel__title">Diligências</h3>
-              ${renderDiligenciasCards(proposicao.diligencias)}
-            </section>
+            ${
+              proposicao.diligencias.length > 0
+                ? `
+                  <section class="panel detail-section">
+                    <h3 class="panel__title">Diligências</h3>
+                    ${renderDiligenciasCards(proposicao.diligencias)}
+                  </section>
+                `
+                : ""
+            }
 
-            <section class="panel detail-section">
-              <h3 class="panel__title">Providências pendentes</h3>
-              ${renderPendenciasCards(
-                proposicao.pendenciasSecretaria.map((item) => ({
-                  ...item,
-                  __formRef: `${proposicao.id}:${item.id}`,
-                })),
-              ).replaceAll('data-pendencia-form="', `data-pendencia-form="${proposicao.id}:`)}
-            </section>
+            ${
+              proposicao.pendenciasSecretaria.length > 0
+                ? `
+                  <section class="panel detail-section">
+                    <h3 class="panel__title">Providências pendentes</h3>
+                    ${renderPendenciasCards(
+                      proposicao.pendenciasSecretaria.map((item) => ({
+                        ...item,
+                        __formRef: `${proposicao.id}:${item.id}`,
+                      })),
+                    ).replaceAll('data-pendencia-form="', `data-pendencia-form="${proposicao.id}:`)}
+                  </section>
+                `
+                : ""
+            }
 
             <section class="panel detail-section">
               <h3 class="panel__title">Histórico completo</h3>

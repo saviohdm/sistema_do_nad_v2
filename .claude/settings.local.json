@@ -13,7 +13,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(node -e \"import\\('/Users/saviodamasceno/Documents/Sistema_do_NAD/sistema_do_nad_v2/assets/js/features/secretaria-diligencia-page.js'\\).then\\(\\(\\)=>console.log\\('OK'\\)\\).catch\\(e=>console.log\\('ERR:',e.message\\)\\)\")"
+      "Bash(node -e \"import\\('/Users/saviodamasceno/Documents/Sistema_do_NAD/sistema_do_nad_v2/assets/js/features/secretaria-diligencia-page.js'\\).then\\(\\(\\)=>console.log\\('OK'\\)\\).catch\\(e=>console.log\\('ERR:',e.message\\)\\)\")",
+      "Bash(curl -sI http://localhost:8080/pages/login.html)",
+      "Bash(curl -sI http://localhost:8080/)",
+      "Bash(curl -sv http://localhost:8080/)",
+      "Bash(lsof -iTCP:8080 -sTCP:LISTEN)"
     ]
   }
 }
