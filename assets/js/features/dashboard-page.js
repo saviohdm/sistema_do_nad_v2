@@ -11,6 +11,7 @@ import {
   getDashboardSummary,
   listProposicoes,
 } from "../domain/proposicoes.js";
+import { countDiligenciasPorSituacao } from "../domain/diligencias.js";
 import {
   listFilaAguardandoCiencia,
   listGruposAguardandoDiligencia,
@@ -72,6 +73,7 @@ const buildCorregedorContent = () => {
   const porRamo = countProposicoesPorRamoMP(currentState);
   const pendentesCN = countPendentesDoCorregedor(currentState);
   const pendentesPersona = countPendentesPorPersona(currentState);
+  const diligencias = countDiligenciasPorSituacao(currentState);
 
   const proposicoesCard = renderChartCard(
     "Proposições",
@@ -134,6 +136,21 @@ const buildCorregedorContent = () => {
           ${correicoesCard}
           ${pendentesCNCard}
           ${pendentesPersonaCard}
+        </div>
+      </section>
+
+      <section class="metric-section">
+        <header class="metric-section__header">
+          <h3 class="panel__title">Diligências</h3>
+          <p class="muted">
+            Acompanhamento da instrução probatória das proposições. Bloco somente leitura.
+          </p>
+        </header>
+        <div class="stats-grid">
+          ${renderStatCard("Abertas", diligencias.abertas)}
+          ${renderStatCard("Vencidas", diligencias.vencidas)}
+          ${renderStatCard("Próximas (7 dias)", diligencias.proximas)}
+          ${renderStatCard("Comprovadas", diligencias.comprovadas)}
         </div>
       </section>
 

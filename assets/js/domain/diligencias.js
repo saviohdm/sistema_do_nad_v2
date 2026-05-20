@@ -42,6 +42,30 @@ export const criarDiligenciaEmLote = (
   return loteId;
 };
 
+export const countDiligenciasPorSituacao = (state, hoje = new Date()) => {
+  const inicioHoje = new Date(hoje);
+  inicioHoje.setHours(0, 0, 0, 0);
+  const limiteProximas = new Date(inicioHoje);
+  limiteProximas.setDate(limiteProximas.getDate() + 7);
+
+  const acc = { abertas: 0, vencidas: 0, proximas: 0, comprovadas: 0 };
+  for (const prop of state.proposicoes ?? []) {
+    for (const dil of prop.diligencias ?? []) {
+      if (dil.status === "comprovada") {
+        acc.comprovadas++;
+        continue;
+      }
+      if (dil.status !== "aberta") continue;
+      acc.abertas++;
+      const prazo = dil.prazo ? new Date(dil.prazo) : null;
+      if (!prazo) continue;
+      if (prazo < inicioHoje) acc.vencidas++;
+      else if (prazo <= limiteProximas) acc.proximas++;
+    }
+  }
+  return acc;
+};
+
 export const registrarComprovacao = (
   proposicao,
   { descricao, observacoes, usuario = "Correicionado" },
