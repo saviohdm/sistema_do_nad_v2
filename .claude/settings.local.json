@@ -17,7 +17,9 @@
       "Bash(curl -sI http://localhost:8080/pages/login.html)",
       "Bash(curl -sI http://localhost:8080/)",
       "Bash(curl -sv http://localhost:8080/)",
-      "Bash(lsof -iTCP:8080 -sTCP:LISTEN)"
+      "Bash(lsof -iTCP:8080 -sTCP:LISTEN)",
+      "Skill(grill-me)",
+      "Skill(grill-me:*)"
     ]
   }
 }
