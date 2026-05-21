@@ -105,7 +105,7 @@ const renderFormFiltros = (opcoes, filtros) => {
 
   const situacaoOptions = [
     option("", "Todas", filtros.situacaoApreciacao || ""),
-    option("sem_apreciacao", "Sem apreciação registrada", filtros.situacaoApreciacao || ""),
+    option("sem_apreciacao", "Sem decisão do CN registrada", filtros.situacaoApreciacao || ""),
     ...Object.values(SituacaoApreciacao).map((s) =>
       option(s, Labels.situacaoApreciacao[s], filtros.situacaoApreciacao || ""),
     ),

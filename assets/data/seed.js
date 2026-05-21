@@ -37,7 +37,7 @@ export const seedState = {
       observacoesGerais: "Proposição migrada após conclusão da correição ordinária.",
       correicaoId: "corr-2026-BA-PGJ",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -65,7 +65,7 @@ export const seedState = {
       dataFimCorreicao: "2026-01-30",
       observacoesGerais: "Há diligência aberta para comprovação documental.",
       statusFluxo: StatusFluxo.AGUARDANDO_COMPROVACAO,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -105,7 +105,7 @@ export const seedState = {
       dataFimCorreicao: "2026-02-21",
       observacoesGerais: "Caso submetido à decisão do Corregedor após avaliação técnica.",
       statusFluxo: StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: "hist-6",
       pendenciasSecretaria: [],
       diligencias: [
@@ -156,7 +156,7 @@ export const seedState = {
       dataFimCorreicao: "2026-03-13",
       observacoesGerais: "Retornou à Secretaria para complementação de informações.",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
-      apreciacaoAtual: {
+      apreciacaoDoCN: {
         situacao: SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES,
       },
       avaliacaoVigenteId: "hist-10",
@@ -212,7 +212,7 @@ export const seedState = {
       dataFimCorreicao: "2026-01-23",
       observacoesGerais: "Há providência pendente de encaminhamento à Corregedoria local.",
       statusFluxo: StatusFluxo.BAIXA_DEFINITIVA,
-      apreciacaoAtual: {
+      apreciacaoDoCN: {
         situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
         existeProvidenciaSecretaria: true,
@@ -276,7 +276,7 @@ export const seedState = {
       observacoesGerais: "Conclusão direta pelo Corregedor Nacional.",
       correicaoId: "corr-2026-SC-01",
       statusFluxo: StatusFluxo.BAIXA_DEFINITIVA,
-      apreciacaoAtual: {
+      apreciacaoDoCN: {
         situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.CUMPRIDA,
         existeProvidenciaSecretaria: false,
@@ -316,7 +316,7 @@ export const seedState = {
       observacoesGerais: "Comprovação recebida; aguardando avaliação do membro auxiliar.",
       correicaoId: "corr-2026-BA-01",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -358,7 +358,7 @@ export const seedState = {
       observacoesGerais: "Segunda proposição do mesmo ramo aguardando avaliação.",
       correicaoId: "corr-2026-BA-01",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -400,7 +400,7 @@ export const seedState = {
       observacoesGerais: "Exigência de análise prioritária.",
       correicaoId: "corr-2026-RS-01",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -442,7 +442,7 @@ export const seedState = {
       observacoesGerais: "Aguardando avaliação do membro para submissão ao Corregedor.",
       correicaoId: "corr-2026-GO-01",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -485,7 +485,7 @@ export const seedState = {
       observacoesGerais: "Proposição recém-migrada aguardando referendo do CNMP.",
       correicaoId: "corr-REF-2026-MG-01",
       statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -515,7 +515,7 @@ export const seedState = {
       observacoesGerais: "Segunda proposição da mesma correição, aguardando referendo.",
       correicaoId: "corr-REF-2026-MG-01",
       statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -545,7 +545,7 @@ export const seedState = {
       observacoesGerais: "Proposição aguardando referendo do CNMP.",
       correicaoId: "corr-REF-2026-SP-01",
       statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -575,7 +575,7 @@ export const seedState = {
       observacoesGerais: "Segunda proposição da mesma correição, aguardando referendo.",
       correicaoId: "corr-REF-2026-SP-01",
       statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -604,7 +604,7 @@ export const seedState = {
       observacoesGerais: "Decisão conclusiva proferida; aguardando ciência ao correicionado.",
       correicaoId: "corr-2026-BA-01",
       statusFluxo: StatusFluxo.AGUARDANDO_CIENCIA,
-      apreciacaoAtual: {
+      apreciacaoDoCN: {
         situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
         existeProvidenciaSecretaria: true,
@@ -670,7 +670,7 @@ export const seedState = {
       observacoesGerais: "Decisão conclusiva sem providência paralela.",
       correicaoId: "corr-2026-BA-01",
       statusFluxo: StatusFluxo.AGUARDANDO_CIENCIA,
-      apreciacaoAtual: {
+      apreciacaoDoCN: {
         situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.CUMPRIDA,
         existeProvidenciaSecretaria: false,
@@ -712,7 +712,7 @@ export const seedState = {
       observacoesGerais: "Decisão conclusiva proferida.",
       correicaoId: "corr-2026-RJ-02",
       statusFluxo: StatusFluxo.AGUARDANDO_CIENCIA,
-      apreciacaoAtual: {
+      apreciacaoDoCN: {
         situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.CUMPRIDA,
         existeProvidenciaSecretaria: false,
@@ -755,7 +755,7 @@ export const seedState = {
       observacoesGerais: "Aguardando avaliação do membro auxiliar — bloqueia fechamento do grupo da unidade.",
       correicaoId: "corr-2026-RJ-02",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -789,7 +789,7 @@ export const seedState = {
       observacoesGerais: "Compõe o grupo de proposições migradas após a correição ordinária.",
       correicaoId: "corr-2026-BA-PGJ",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
-      apreciacaoAtual: null,
+      apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -820,7 +820,7 @@ export const seedState = {
         "Retornou à Secretaria após decisão por necessitar de mais informações.",
       correicaoId: "corr-2026-RJ-02",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
-      apreciacaoAtual: {
+      apreciacaoDoCN: {
         situacao: SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES,
       },
       avaliacaoVigenteId: null,

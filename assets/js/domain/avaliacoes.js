@@ -17,7 +17,7 @@ const finalizarOuRetornar = (proposicao, eventType, usuario, juizo, descricao, m
   });
 
   appendHistory(proposicao, event);
-  proposicao.apreciacaoAtual = cloneJuizo(juizo);
+  proposicao.apreciacaoDoCN = cloneJuizo(juizo);
   proposicao.avaliacaoVigenteId = eventType === TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR ? event.id : null;
 
   if (juizo.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) {

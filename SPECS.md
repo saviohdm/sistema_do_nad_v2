@@ -142,6 +142,13 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - A avaliação removida não deve permanecer no histórico material.
 - Em substituição, o sistema deve registrar o evento `avaliacao_removida_pelo_corregedor`.
 
+## Glossário
+
+- **Apreciação**: objeto-juízo que descreve as invariantes de mérito sobre uma proposição (`situacao` + `tipoConclusao` + `existeProvidenciaSecretaria` + `tipoProvidencia` + `observacoes`). É produzido tanto pelo membro auxiliar (no ato de **avaliação**, com natureza de sugestão) quanto pelo Corregedor Nacional (nos atos de **decisão** ou **avaliação com força de decisão**, com natureza vinculante). Apenas as apreciações do Corregedor Nacional ficam registradas no campo `apreciacaoDoCN` da proposição.
+- **Avaliação**: ato do membro auxiliar que produz uma apreciação. Não gera efeitos por si só; segue para a baia do Corregedor Nacional.
+- **Decisão**: ato do Corregedor Nacional que aprecia uma avaliação do membro auxiliar (deferindo ou indeferindo). Vinculante.
+- **Avaliação com força de decisão**: ato do Corregedor Nacional que produz apreciação vinculante sem necessidade de avaliação prévia do membro auxiliar.
+
 ## Modelagem de dados
 
 ### Correções
@@ -177,7 +184,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   "descricao": "...",
   "prioridade": "normal",
   "statusFluxo": "aguardando_decisao_corregedor",
-  "apreciacaoAtual": {
+  "apreciacaoDoCN": {
     "situacao": "concluida",
     "tipoConclusao": "parcialmente_cumprida",
     "existeProvidenciaSecretaria": true
@@ -247,13 +254,14 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - Valores válidos de `statusFluxo`: `aguardando_referendo_cnmp`, `rascunho_cn`, `aguardando_secretaria`, `aguardando_comprovacao`, `aguardando_avaliacao_membro`, `aguardando_decisao_corregedor`, `aguardando_ciencia`, `baixa_definitiva`.
 - `aguardando_ciencia` é o estado entre a decisão conclusiva e o ato de ciência ao correicionado. `baixa_definitiva` é o estado terminal pós-ciência (incluindo proposições apagadas pela CN).
 - A ciência (`CIENTIFICACAO`) é a única transição que leva a `baixa_definitiva`; pendências de providência (em `pendenciasSecretaria[]`) não influenciam essa transição.
-- O resultado conclusivo deve ficar em `apreciacaoAtual`.
-- `apreciacaoAtual.situacao` admite apenas:
+- O resultado conclusivo deve ficar em `apreciacaoDoCN`.
+- `apreciacaoDoCN` só é preenchido por atos do Corregedor Nacional (`decisao` ou `avaliacao_com_forca_de_decisao`); a avaliação do membro auxiliar não popula esse campo.
+- `apreciacaoDoCN.situacao` admite apenas:
   - `necessita_mais_informacoes`
   - `concluida`
-- `apreciacaoAtual.situacao = concluida` (camada de apreciação) é independente de `statusFluxo = baixa_definitiva` (camada de fluxo). A homonímia foi evitada renomeando o status terminal.
-- `apreciacaoAtual.tipoConclusao` só pode existir quando `situacao = concluida`.
-- `apreciacaoAtual.existeProvidenciaSecretaria` só pode existir quando `tipoConclusao` for `parcialmente_cumprida` ou `nao_cumprida`.
+- `apreciacaoDoCN.situacao = concluida` (camada de apreciação) é independente de `statusFluxo = baixa_definitiva` (camada de fluxo). A homonímia foi evitada renomeando o status terminal.
+- `apreciacaoDoCN.tipoConclusao` só pode existir quando `situacao = concluida`.
+- `apreciacaoDoCN.existeProvidenciaSecretaria` só pode existir quando `tipoConclusao` for `parcialmente_cumprida` ou `nao_cumprida`.
 - A avaliação do membro auxiliar deve carregar o mesmo formato de invariantes da decisão final.
 - O sistema não deve manter simultaneamente uma avaliação vigente e um evento de remoção dessa mesma avaliação como conteúdo ativo.
 

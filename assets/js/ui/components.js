@@ -17,7 +17,7 @@ export const renderStatusBadge = (status) =>
   renderBadge(Labels.statusFluxo[status] || status, getStatusBadgeTone(status));
 
 export const renderApreciacaoBadge = (apreciacao) => {
-  if (!apreciacao) return renderBadge("Sem apreciação", "neutral");
+  if (!apreciacao) return renderBadge("Aguardando decisão", "neutral");
   const label = apreciacao.tipoConclusao
     ? Labels.tipoConclusao[apreciacao.tipoConclusao]
     : Labels.situacaoApreciacao[apreciacao.situacao];
@@ -180,7 +180,7 @@ export const renderProposicaoTable = (proposicoes) => `
                   <td>${item.tipo}</td>
                   <td>${item.unidade}</td>
                   <td>${renderStatusBadge(item.statusFluxo)}</td>
-                  <td>${renderApreciacaoBadge(item.apreciacaoAtual)}</td>
+                  <td>${renderApreciacaoBadge(item.apreciacaoDoCN)}</td>
                   <td>${item.pendenciasSecretaria.filter((pendencia) => pendencia.status === "pendente").length}</td>
                 </tr>
               `,
@@ -307,7 +307,7 @@ export const renderProposicaoHero = (proposicao) => `
       </div>
       <div class="pill-list">
         ${renderStatusBadge(proposicao.statusFluxo)}
-        ${renderApreciacaoBadge(proposicao.apreciacaoAtual)}
+        ${renderApreciacaoBadge(proposicao.apreciacaoDoCN)}
       </div>
     </div>
     <p>${proposicao.descricao}</p>
@@ -329,7 +329,7 @@ export const renderEmptyState = (message) => `
 
 export const renderProposicaoCard = (proposicao) => {
   const statusBadge = renderStatusBadge(proposicao.statusFluxo);
-  const apreciacaoBadge = renderApreciacaoBadge(proposicao.apreciacaoAtual);
+  const apreciacaoBadge = renderApreciacaoBadge(proposicao.apreciacaoDoCN);
 
   return `
     <a href="/pages/proposicao-detalhe.html?id=${proposicao.id}" class="proposicao-card">

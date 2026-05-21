@@ -118,18 +118,18 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     if (statusList.length > 0 && !statusList.includes(p.statusFluxo)) return false;
     if (situacaoApreciacao) {
       if (situacaoApreciacao === "sem_apreciacao") {
-        if (p.apreciacaoAtual) return false;
-      } else if (p.apreciacaoAtual?.situacao !== situacaoApreciacao) {
+        if (p.apreciacaoDoCN) return false;
+      } else if (p.apreciacaoDoCN?.situacao !== situacaoApreciacao) {
         return false;
       }
     }
-    if (tipoConclusao && p.apreciacaoAtual?.tipoConclusao !== tipoConclusao) return false;
+    if (tipoConclusao && p.apreciacaoDoCN?.tipoConclusao !== tipoConclusao) return false;
     if (dataInicioDe && (!p.dataInicioCorreicao || p.dataInicioCorreicao < dataInicioDe)) return false;
     if (dataFimAte && (!p.dataFimCorreicao || p.dataFimCorreicao > dataFimAte)) return false;
     if (comDiligenciasAbertas && !(p.diligencias || []).some((d) => d.status === "aberta")) return false;
     if (comPendenciasSecretaria && !(p.pendenciasSecretaria || []).some((x) => x.status === "pendente")) return false;
-    if (subStatus === "nova" && p.apreciacaoAtual) return false;
-    if (subStatus === "retornada" && p.apreciacaoAtual?.situacao !== SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) return false;
+    if (subStatus === "nova" && p.apreciacaoDoCN) return false;
+    if (subStatus === "retornada" && p.apreciacaoDoCN?.situacao !== SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) return false;
     if (termo) {
       const haystack = [p.numero, p.numeroElo, p.descricao, p.observacoesGerais]
         .filter(Boolean)
@@ -257,14 +257,14 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
 };
 
 export const getHumanSummary = (proposicao) => {
-  const apreciacaoAtual = proposicao.apreciacaoAtual;
-  if (!apreciacaoAtual) return "Sem apreciação final registrada.";
+  const apreciacaoDoCN = proposicao.apreciacaoDoCN;
+  if (!apreciacaoDoCN) return "Sem decisão do CN registrada.";
 
-  if (apreciacaoAtual.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) {
+  if (apreciacaoDoCN.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) {
     return "A proposição retornou à Secretaria para nova diligência.";
   }
 
-  return `Apreciação final: ${Labels.tipoConclusao[apreciacaoAtual.tipoConclusao]}.`;
+  return `Decisão do CN: ${Labels.tipoConclusao[apreciacaoDoCN.tipoConclusao]}.`;
 };
 
 export const findPropWithPendingProvidence = (state) =>
@@ -396,7 +396,7 @@ export const countPendentesPorPersona = (state) => {
 
 export const markPropositionDeleted = (proposicao) => {
   proposicao.statusFluxo = StatusFluxo.BAIXA_DEFINITIVA;
-  proposicao.apreciacaoAtual = {
+  proposicao.apreciacaoDoCN = {
     situacao: SituacaoApreciacao.CONCLUIDA,
     tipoConclusao: TipoConclusao.ENCERRADA,
     observacoes: "Proposição apagada pela Corregedoria Nacional.",
@@ -456,7 +456,7 @@ export const criarProposicao = (
     dataFimCorreicao: dataFimCorreicao || "",
     observacoesGerais: observacoesGerais || "",
     statusFluxo: statusInicial,
-    apreciacaoAtual: null,
+    apreciacaoDoCN: null,
     avaliacaoVigenteId: null,
     diligencias: [],
     pendenciasSecretaria: [],

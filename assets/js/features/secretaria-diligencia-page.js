@@ -63,7 +63,7 @@ const escapeAttr = (value) => String(value).replace(/"/g, "&quot;");
 const uniq = (values) => Array.from(new Set(values.filter(Boolean))).sort();
 
 const isRetornada = (p) =>
-  p.apreciacaoAtual?.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES;
+  p.apreciacaoDoCN?.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES;
 
 const getFiltrosFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
@@ -124,7 +124,7 @@ const aplicarFiltros = (novosFiltros) => {
 
 const renderOverview = (aguardandoDiligencia) => {
   const total = aguardandoDiligencia.length;
-  const novas = aguardandoDiligencia.filter((p) => !p.apreciacaoAtual).length;
+  const novas = aguardandoDiligencia.filter((p) => !p.apreciacaoDoCN).length;
   const retornadas = aguardandoDiligencia.filter(isRetornada).length;
   const ramos = groupByRamoMP(aguardandoDiligencia);
   const correicoes = groupByCorreicao(aguardandoDiligencia);

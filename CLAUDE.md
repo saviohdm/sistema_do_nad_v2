@@ -63,9 +63,10 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 ## Architecture Principles
 
 ### State Management
+- **Apreciação (object)**: Author-agnostic judgment object (`situacao`, `tipoConclusao`, `existeProvidenciaSecretaria`, `tipoProvidencia`, `observacoes`). Both the auxiliary member's evaluation and the National Prosecutor's decision carry an apreciação. Only the National Prosecutor's apreciação is binding.
 - `statusFluxo`: Reflects current process phase, NOT the conclusive result
-- `apreciacaoAtual`: Holds the conclusive judgment (situation + conclusion type + provision flag)
-- `apreciacaoAtual.existeProvidenciaSecretaria`: Only valid when `tipoConclusao` is `parcialmente_cumprida` or `nao_cumprida`
+- `apreciacaoDoCN`: Holds the binding/conclusive apreciação produced by the National Prosecutor (via decision or evaluation-with-decision-force). Empty until the CN acts; the auxiliary member's evaluation does NOT populate this field.
+- `apreciacaoDoCN.existeProvidenciaSecretaria`: Only valid when `tipoConclusao` is `parcialmente_cumprida` or `nao_cumprida`
 
 ### Audit Trail (`historico`)
 - All relevant events must be recorded with full audit trail
@@ -116,7 +117,7 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 
 5. **Provision independence**: The main proposition flow never waits for provision fulfillment. Provisions run in parallel and are for administrative tracking only.
 
-6. **State consistency**: `apreciacaoAtual` must respect the rules in SPECS.md:244-253 regarding situation, conclusion type, and provision existence.
+6. **State consistency**: `apreciacaoDoCN` must respect the rules in SPECS.md regarding situation, conclusion type, and provision existence.
 
 ## When Implementing
 

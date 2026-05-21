@@ -77,7 +77,7 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
 
 1. Após a comprovação do correicionado, o membro auxiliar `RASCUNHA avaliação`.
 2. O membro auxiliar `AVALIA`.
-3. A avaliação do membro auxiliar deve registrar as mesmas invariantes que poderão constar da decisão final:
+3. A avaliação do membro auxiliar registra uma apreciação com as mesmas invariantes que poderão constar da decisão final:
    `necessita mais informações`; ou
    `concluída`, com um dos tipos:
    `cumprida`,
@@ -89,9 +89,9 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
 5. A avaliação do membro auxiliar nunca produz efeito concreto por si só.
 6. Toda avaliação do membro auxiliar é encaminhada ao Corregedor Nacional para decisão.
 
-## Apreciação de valor da Corregedoria Nacional
+## Decisão da Corregedoria Nacional
 
-1. A apreciação de valor da Corregedoria Nacional possui duas camadas.
+1. A decisão da Corregedoria Nacional é expressa em uma apreciação de duas camadas.
 2. A primeira camada define se a proposição está `concluída` ou se `necessita mais informações`.
 3. Se `necessita mais informações`, a proposição retorna para a Secretaria Processual para nova diligência e novo ciclo de comprovação.
 4. Se `concluída`, a segunda camada define o tipo conclusivo:
@@ -101,6 +101,7 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
    `prejudicada (perda de objeto)` ou
    `encerrada (sem análise de mérito)`.
 5. Apenas os tipos `parcialmente cumprida` e `não cumprida` admitem providências adicionais a serem cumpridas pela Secretaria Processual.
+6. A apreciação é o objeto-juízo que descreve essas invariantes; tanto a avaliação do membro auxiliar quanto a decisão do Corregedor Nacional carregam uma apreciação. Apenas a apreciação registrada pelo Corregedor Nacional (em decisão ou em avaliação com força de decisão) produz efeitos vinculantes — e é essa que fica armazenada como `apreciacaoDoCN` na proposição.
 
 ## Regras sobre decisão e avaliação
 

@@ -198,7 +198,7 @@ const renderHeaderProposicao = (proposicao) => {
       ${ufs ? renderBadge(ufs, "neutral") : ""}
       ${renderPrioridadeBadge(proposicao.prioridade)}
       ${proposicao.membro ? renderBadge(`Membro: ${proposicao.membro}`, "neutral") : ""}
-      ${renderConclusaoBadge(proposicao.apreciacaoAtual)}
+      ${renderConclusaoBadge(proposicao.apreciacaoDoCN)}
     </div>
   `;
 };
@@ -223,7 +223,7 @@ const renderCardPendencia = (proposicao, pendencia, hoje) => {
       </div>
       <p><strong>${escapeAttr(pendencia.descricao)}</strong></p>
       <p class="muted">Criada em ${formatDateTime(pendencia.dataCriacao)}</p>
-      ${renderFundamentos(proposicao.apreciacaoAtual, pendencia.id)}
+      ${renderFundamentos(proposicao.apreciacaoDoCN, pendencia.id)}
       <form class="stack" data-pendencia-form="${escapeAttr(proposicao.id)}:${escapeAttr(pendencia.id)}">
         <div class="field">
           <label>Data de cumprimento</label>
