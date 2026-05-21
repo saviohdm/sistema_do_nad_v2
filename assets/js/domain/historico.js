@@ -21,12 +21,12 @@ export const removeHistoryEvent = (proposicao, eventId) => {
 };
 
 export const summarizeHistoryEvent = (event) => {
-  const juizo = event.juizo;
+  const apreciacao = event.apreciacao;
   const partes = [];
 
   if (event.descricao) partes.push(event.descricao);
-  if (juizo?.situacao) partes.push(Labels.situacaoJuizo[juizo.situacao]);
-  if (juizo?.tipoConclusao) partes.push(Labels.tipoConclusao[juizo.tipoConclusao]);
+  if (apreciacao?.situacao) partes.push(Labels.situacaoApreciacao[apreciacao.situacao]);
+  if (apreciacao?.tipoConclusao) partes.push(Labels.tipoConclusao[apreciacao.tipoConclusao]);
 
   return {
     title:

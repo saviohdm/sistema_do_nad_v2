@@ -1,4 +1,4 @@
-import { SituacaoJuizo, StatusFluxo, TipoHistorico } from "./enums.js";
+import { SituacaoApreciacao, StatusFluxo, TipoHistorico } from "./enums.js";
 import { listProposicoes } from "./proposicoes.js";
 
 const grupoKey = (correicaoId, unidade) =>
@@ -40,14 +40,14 @@ const dataDecisaoMaisRecente = (proposicao) => {
 // Data em que a proposição passou a aguardar a Secretaria.
 // Retornadas: última DECISAO (que decidiu pelo retorno). Novas: primeira CRIACAO.
 const dataAguardandoSecretaria = (proposicao) => {
-  const isRetornada = proposicao.juizoAtual?.situacao === SituacaoJuizo.NECESSITA_MAIS_INFORMACOES;
+  const isRetornada = proposicao.apreciacaoAtual?.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES;
   if (isRetornada) return dataDecisaoMaisRecente(proposicao);
   const evento = proposicao.historico.find((e) => e.tipo === TipoHistorico.CRIACAO);
   return evento?.data || null;
 };
 
 const contarComProvidencia = (proposicoes) =>
-  proposicoes.filter((p) => p.juizoAtual?.existeProvidenciaSecretaria === true).length;
+  proposicoes.filter((p) => p.apreciacaoAtual?.existeProvidenciaSecretaria === true).length;
 
 export const listFilaAguardandoDiligencia = (state) =>
   listProposicoes(state).filter(
@@ -55,7 +55,7 @@ export const listFilaAguardandoDiligencia = (state) =>
   );
 
 const isRetornada = (proposicao) =>
-  proposicao.juizoAtual?.situacao === SituacaoJuizo.NECESSITA_MAIS_INFORMACOES;
+  proposicao.apreciacaoAtual?.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES;
 
 // Agrupa proposições em AGUARDANDO_SECRETARIA por (correicaoId, unidade),
 // adicionando metadados sobre o grupo inteiro (completo se todas não-finalizadas

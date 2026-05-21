@@ -2,8 +2,8 @@ const PREFIX = "nad-rascunho-avaliacao-";
 
 const rascunhoKey = (proposicaoId) => `${PREFIX}${proposicaoId}`;
 
-export const salvarRascunhoAvaliacao = (proposicaoId, juizo) => {
-  const payload = { juizo, savedAt: new Date().toISOString() };
+export const salvarRascunhoAvaliacao = (proposicaoId, apreciacao) => {
+  const payload = { apreciacao, savedAt: new Date().toISOString() };
   localStorage.setItem(rascunhoKey(proposicaoId), JSON.stringify(payload));
   return payload;
 };

@@ -29,12 +29,12 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 
 - A `Secretaria Processual da CN` pratica `CRIAR DILIGÊNCIA`.
 - O `Correicionado` pratica `RASCUNHAR comprovação` e depois `COMPROVAR`.
-- A comprovação reabre o fluxo interno da Corregedoria Nacional para emissão de juízo de valor.
+- A comprovação reabre o fluxo interno da Corregedoria Nacional para emissão de apreciação de valor.
 
 ### 3. Avaliação do membro auxiliar
 
 - O `Membro Auxiliar da CN` pratica `RASCUNHAR avaliação` e `AVALIAR`.
-- A avaliação do membro auxiliar deve registrar todas as invariantes exigidas para o juízo final da Corregedoria Nacional.
+- A avaliação do membro auxiliar deve registrar todas as invariantes exigidas para a apreciação final da Corregedoria Nacional.
 - A avaliação do membro auxiliar nunca produz efeitos concretos.
 - Toda avaliação do membro auxiliar é remetida à baia do `Corregedor Nacional` para decisão.
 
@@ -49,9 +49,9 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
   - nova avaliação do membro auxiliar; ou
   - avaliação com força de decisão pelo Corregedor Nacional
 
-## Conteúdo do juízo de valor
+## Conteúdo da apreciação de valor
 
-O juízo de valor da Corregedoria Nacional possui duas camadas obrigatórias.
+A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatórias.
 
 ### Primeira camada
 
@@ -177,7 +177,7 @@ O juízo de valor da Corregedoria Nacional possui duas camadas obrigatórias.
   "descricao": "...",
   "prioridade": "normal",
   "statusFluxo": "aguardando_decisao_corregedor",
-  "juizoAtual": {
+  "apreciacaoAtual": {
     "situacao": "concluida",
     "tipoConclusao": "parcialmente_cumprida",
     "existeProvidenciaSecretaria": true
@@ -214,7 +214,7 @@ O juízo de valor da Corregedoria Nacional possui duas camadas obrigatórias.
       "tipo": "avaliacao_membro_auxiliar",
       "data": "2024-11-20T16:00:00Z",
       "usuario": "Membro Auxiliar da CN",
-      "juizo": {
+      "apreciacao": {
         "situacao": "concluida",
         "tipoConclusao": "parcialmente_cumprida",
         "existeProvidenciaSecretaria": true
@@ -225,7 +225,7 @@ O juízo de valor da Corregedoria Nacional possui duas camadas obrigatórias.
       "data": "2024-11-21T10:00:00Z",
       "usuario": "Corregedor Nacional",
       "modo": "deferimento",
-      "juizo": {
+      "apreciacao": {
         "situacao": "concluida",
         "tipoConclusao": "parcialmente_cumprida",
         "existeProvidenciaSecretaria": true
@@ -247,13 +247,13 @@ O juízo de valor da Corregedoria Nacional possui duas camadas obrigatórias.
 - Valores válidos de `statusFluxo`: `aguardando_referendo_cnmp`, `rascunho_cn`, `aguardando_secretaria`, `aguardando_comprovacao`, `aguardando_avaliacao_membro`, `aguardando_decisao_corregedor`, `aguardando_ciencia`, `baixa_definitiva`.
 - `aguardando_ciencia` é o estado entre a decisão conclusiva e o ato de ciência ao correicionado. `baixa_definitiva` é o estado terminal pós-ciência (incluindo proposições apagadas pela CN).
 - A ciência (`CIENTIFICACAO`) é a única transição que leva a `baixa_definitiva`; pendências de providência (em `pendenciasSecretaria[]`) não influenciam essa transição.
-- O resultado conclusivo deve ficar em `juizoAtual`.
-- `juizoAtual.situacao` admite apenas:
+- O resultado conclusivo deve ficar em `apreciacaoAtual`.
+- `apreciacaoAtual.situacao` admite apenas:
   - `necessita_mais_informacoes`
   - `concluida`
-- `juizoAtual.situacao = concluida` (camada de juízo) é independente de `statusFluxo = baixa_definitiva` (camada de fluxo). A homonímia foi evitada renomeando o status terminal.
-- `juizoAtual.tipoConclusao` só pode existir quando `situacao = concluida`.
-- `juizoAtual.existeProvidenciaSecretaria` só pode existir quando `tipoConclusao` for `parcialmente_cumprida` ou `nao_cumprida`.
+- `apreciacaoAtual.situacao = concluida` (camada de apreciação) é independente de `statusFluxo = baixa_definitiva` (camada de fluxo). A homonímia foi evitada renomeando o status terminal.
+- `apreciacaoAtual.tipoConclusao` só pode existir quando `situacao = concluida`.
+- `apreciacaoAtual.existeProvidenciaSecretaria` só pode existir quando `tipoConclusao` for `parcialmente_cumprida` ou `nao_cumprida`.
 - A avaliação do membro auxiliar deve carregar o mesmo formato de invariantes da decisão final.
 - O sistema não deve manter simultaneamente uma avaliação vigente e um evento de remoção dessa mesma avaliação como conteúdo ativo.
 

@@ -1,4 +1,4 @@
-import { Labels, SituacaoJuizo, StatusFluxo, TipoConclusao, TipoHistorico } from "./enums.js";
+import { Labels, SituacaoApreciacao, StatusFluxo, TipoConclusao, TipoHistorico } from "./enums.js";
 import { buildHistoryEvent, appendHistory } from "./historico.js";
 
 export const listProposicoes = (state) => [...state.proposicoes];
@@ -87,7 +87,7 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     idsComRascunho,
     textoBusca,
     statusFluxo,
-    situacaoJuizo,
+    situacaoApreciacao,
     tipoConclusao,
     tipo,
     membro,
@@ -116,20 +116,20 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     if (tipo && p.tipo !== tipo) return false;
     if (membro && p.membro !== membro) return false;
     if (statusList.length > 0 && !statusList.includes(p.statusFluxo)) return false;
-    if (situacaoJuizo) {
-      if (situacaoJuizo === "sem_juizo") {
-        if (p.juizoAtual) return false;
-      } else if (p.juizoAtual?.situacao !== situacaoJuizo) {
+    if (situacaoApreciacao) {
+      if (situacaoApreciacao === "sem_apreciacao") {
+        if (p.apreciacaoAtual) return false;
+      } else if (p.apreciacaoAtual?.situacao !== situacaoApreciacao) {
         return false;
       }
     }
-    if (tipoConclusao && p.juizoAtual?.tipoConclusao !== tipoConclusao) return false;
+    if (tipoConclusao && p.apreciacaoAtual?.tipoConclusao !== tipoConclusao) return false;
     if (dataInicioDe && (!p.dataInicioCorreicao || p.dataInicioCorreicao < dataInicioDe)) return false;
     if (dataFimAte && (!p.dataFimCorreicao || p.dataFimCorreicao > dataFimAte)) return false;
     if (comDiligenciasAbertas && !(p.diligencias || []).some((d) => d.status === "aberta")) return false;
     if (comPendenciasSecretaria && !(p.pendenciasSecretaria || []).some((x) => x.status === "pendente")) return false;
-    if (subStatus === "nova" && p.juizoAtual) return false;
-    if (subStatus === "retornada" && p.juizoAtual?.situacao !== SituacaoJuizo.NECESSITA_MAIS_INFORMACOES) return false;
+    if (subStatus === "nova" && p.apreciacaoAtual) return false;
+    if (subStatus === "retornada" && p.apreciacaoAtual?.situacao !== SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) return false;
     if (termo) {
       const haystack = [p.numero, p.numeroElo, p.descricao, p.observacoesGerais]
         .filter(Boolean)
@@ -179,11 +179,11 @@ export const getStatusBadgeTone = (status) =>
     [StatusFluxo.BAIXA_DEFINITIVA]: "success",
   }[status] || "neutral");
 
-export const getJuizoBadgeTone = (juizo) => {
-  if (!juizo) return "neutral";
-  if (juizo.situacao === SituacaoJuizo.NECESSITA_MAIS_INFORMACOES) return "warning";
-  if (juizo.tipoConclusao === TipoConclusao.NAO_CUMPRIDA) return "danger";
-  if (juizo.tipoConclusao === TipoConclusao.PARCIALMENTE_CUMPRIDA) return "warning";
+export const getApreciacaoBadgeTone = (apreciacao) => {
+  if (!apreciacao) return "neutral";
+  if (apreciacao.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) return "warning";
+  if (apreciacao.tipoConclusao === TipoConclusao.NAO_CUMPRIDA) return "danger";
+  if (apreciacao.tipoConclusao === TipoConclusao.PARCIALMENTE_CUMPRIDA) return "warning";
   return "success";
 };
 
@@ -257,14 +257,14 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
 };
 
 export const getHumanSummary = (proposicao) => {
-  const juizoAtual = proposicao.juizoAtual;
-  if (!juizoAtual) return "Sem juízo final registrado.";
+  const apreciacaoAtual = proposicao.apreciacaoAtual;
+  if (!apreciacaoAtual) return "Sem apreciação final registrada.";
 
-  if (juizoAtual.situacao === SituacaoJuizo.NECESSITA_MAIS_INFORMACOES) {
+  if (apreciacaoAtual.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) {
     return "A proposição retornou à Secretaria para nova diligência.";
   }
 
-  return `Juízo final: ${Labels.tipoConclusao[juizoAtual.tipoConclusao]}.`;
+  return `Apreciação final: ${Labels.tipoConclusao[apreciacaoAtual.tipoConclusao]}.`;
 };
 
 export const findPropWithPendingProvidence = (state) =>
@@ -396,8 +396,8 @@ export const countPendentesPorPersona = (state) => {
 
 export const markPropositionDeleted = (proposicao) => {
   proposicao.statusFluxo = StatusFluxo.BAIXA_DEFINITIVA;
-  proposicao.juizoAtual = {
-    situacao: SituacaoJuizo.CONCLUIDA,
+  proposicao.apreciacaoAtual = {
+    situacao: SituacaoApreciacao.CONCLUIDA,
     tipoConclusao: TipoConclusao.ENCERRADA,
     observacoes: "Proposição apagada pela Corregedoria Nacional.",
   };
@@ -456,7 +456,7 @@ export const criarProposicao = (
     dataFimCorreicao: dataFimCorreicao || "",
     observacoesGerais: observacoesGerais || "",
     statusFluxo: statusInicial,
-    juizoAtual: null,
+    apreciacaoAtual: null,
     avaliacaoVigenteId: null,
     diligencias: [],
     pendenciasSecretaria: [],

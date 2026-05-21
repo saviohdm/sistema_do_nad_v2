@@ -54,7 +54,7 @@ const render = () => {
     ? `Editar proposição ${proposicaoParaEditar.numero}`
     : "Criar nova proposição";
   const subtitle = isEdicao
-    ? "Atualize os dados da proposição enquanto ela aguarda referendo do CNMP. Campos sensíveis (histórico, juízo, diligências) são preservados."
+    ? "Atualize os dados da proposição enquanto ela aguarda referendo do CNMP. Campos sensíveis (histórico, apreciação, diligências) são preservados."
     : "Preencha os dados da proposição e os metadados da correição de origem. Você pode salvar como rascunho ou criar e encaminhar diretamente para a Secretaria.";
 
   mountPage({

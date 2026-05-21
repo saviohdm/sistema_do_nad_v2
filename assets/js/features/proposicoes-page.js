@@ -1,6 +1,6 @@
 import { requireAuth, hasPermission } from "../app/auth.js";
 import { mountPage, state } from "../app/bootstrap.js";
-import { Labels, StatusFluxo, SituacaoJuizo, TipoConclusao } from "../domain/enums.js";
+import { Labels, StatusFluxo, SituacaoApreciacao, TipoConclusao } from "../domain/enums.js";
 import { filtrarProposicoes, listProposicoes } from "../domain/proposicoes.js";
 import { renderAlert, renderEmptyState, renderProposicaoTable } from "../ui/components.js";
 
@@ -14,7 +14,7 @@ const STATUS_KEY = "status";
 const FILTRO_KEYS = [
   "tipo",
   "prioridade",
-  "situacaoJuizo",
+  "situacaoApreciacao",
   "tipoConclusao",
   "ramoMP",
   "uf",
@@ -104,10 +104,10 @@ const renderFormFiltros = (opcoes, filtros) => {
     .join("");
 
   const situacaoOptions = [
-    option("", "Todas", filtros.situacaoJuizo || ""),
-    option("sem_juizo", "Sem juízo registrado", filtros.situacaoJuizo || ""),
-    ...Object.values(SituacaoJuizo).map((s) =>
-      option(s, Labels.situacaoJuizo[s], filtros.situacaoJuizo || ""),
+    option("", "Todas", filtros.situacaoApreciacao || ""),
+    option("sem_apreciacao", "Sem apreciação registrada", filtros.situacaoApreciacao || ""),
+    ...Object.values(SituacaoApreciacao).map((s) =>
+      option(s, Labels.situacaoApreciacao[s], filtros.situacaoApreciacao || ""),
     ),
   ].join("");
 
@@ -155,7 +155,7 @@ const renderFormFiltros = (opcoes, filtros) => {
       </fieldset>
 
       <fieldset class="stack">
-        <legend class="muted"><strong>Fluxo e juízo</strong></legend>
+        <legend class="muted"><strong>Fluxo e apreciação</strong></legend>
         <div class="field-grid">
           <div class="field" style="grid-column: span 2;">
             <label for="filtro-status">Status do fluxo <span class="muted">(Ctrl/Cmd + clique para múltiplos)</span></label>
@@ -164,14 +164,14 @@ const renderFormFiltros = (opcoes, filtros) => {
             </select>
           </div>
           <div class="field">
-            <label for="filtro-situacao">Situação do juízo</label>
-            <select id="filtro-situacao" name="situacaoJuizo">
+            <label for="filtro-situacao">Situação da apreciação</label>
+            <select id="filtro-situacao" name="situacaoApreciacao">
               ${situacaoOptions}
             </select>
           </div>
           <div class="field">
             <label for="filtro-conclusao">Tipo de conclusão</label>
-            <select id="filtro-conclusao" name="tipoConclusao" ${filtros.situacaoJuizo && filtros.situacaoJuizo !== SituacaoJuizo.CONCLUIDA ? "disabled" : ""}>
+            <select id="filtro-conclusao" name="tipoConclusao" ${filtros.situacaoApreciacao && filtros.situacaoApreciacao !== SituacaoApreciacao.CONCLUIDA ? "disabled" : ""}>
               ${conclusaoOptions}
             </select>
           </div>
@@ -344,7 +344,7 @@ const bindHandlers = () => {
   const conclusao = document.querySelector("#filtro-conclusao");
   if (situacao && conclusao) {
     situacao.addEventListener("change", () => {
-      const habilitar = situacao.value === SituacaoJuizo.CONCLUIDA || situacao.value === "";
+      const habilitar = situacao.value === SituacaoApreciacao.CONCLUIDA || situacao.value === "";
       conclusao.disabled = !habilitar;
       if (!habilitar) conclusao.value = "";
     });

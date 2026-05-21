@@ -30,7 +30,7 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
 13. Quando a CN `APAGA avaliação`, a proposição permanece existente e somente a avaliação vigente é removida.
 14. Após `APAGAR avaliação`, a CN pode devolver a proposição ao membro auxiliar para nova avaliação ou praticar `AVALIAÇÃO COM FORÇA DE DECISÃO`.
 15. A `AVALIAÇÃO COM FORÇA DE DECISÃO` exige que a proposição esteja sem avaliação vigente e produz desde logo os mesmos efeitos da decisão do Corregedor Nacional.
-16. Em toda decisão ou avaliação com força de decisão, a CN deve selecionar as invariantes do juízo de valor:
+16. Em toda decisão ou avaliação com força de decisão, a CN deve selecionar as invariantes da apreciação de valor:
     `necessita mais informações`; ou
     `concluída`, com exatamente um dos tipos:
     `cumprida`,
@@ -89,9 +89,9 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
 5. A avaliação do membro auxiliar nunca produz efeito concreto por si só.
 6. Toda avaliação do membro auxiliar é encaminhada ao Corregedor Nacional para decisão.
 
-## Juízo de valor da Corregedoria Nacional
+## Apreciação de valor da Corregedoria Nacional
 
-1. O juízo de valor da Corregedoria Nacional possui duas camadas.
+1. A apreciação de valor da Corregedoria Nacional possui duas camadas.
 2. A primeira camada define se a proposição está `concluída` ou se `necessita mais informações`.
 3. Se `necessita mais informações`, a proposição retorna para a Secretaria Processual para nova diligência e novo ciclo de comprovação.
 4. Se `concluída`, a segunda camada define o tipo conclusivo:

@@ -1,6 +1,6 @@
 import {
   Labels,
-  SituacaoJuizo,
+  SituacaoApreciacao,
   StatusFluxo,
   TipoHistorico,
 } from "./enums.js";
@@ -13,14 +13,14 @@ const finalizarOuRetornar = (proposicao, eventType, usuario, juizo, descricao, m
   const event = buildHistoryEvent(eventType, usuario, {
     descricao,
     modo,
-    juizo: cloneJuizo(juizo),
+    apreciacao: cloneJuizo(juizo),
   });
 
   appendHistory(proposicao, event);
-  proposicao.juizoAtual = cloneJuizo(juizo);
+  proposicao.apreciacaoAtual = cloneJuizo(juizo);
   proposicao.avaliacaoVigenteId = eventType === TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR ? event.id : null;
 
-  if (juizo.situacao === SituacaoJuizo.NECESSITA_MAIS_INFORMACOES) {
+  if (juizo.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) {
     proposicao.statusFluxo = StatusFluxo.AGUARDANDO_SECRETARIA;
     return proposicao;
   }
@@ -44,7 +44,7 @@ export const salvarAvaliacaoMembro = (
 ) => {
   const event = buildHistoryEvent(TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, usuario, {
     descricao: "Avaliação do membro auxiliar submetida ao Corregedor Nacional.",
-    juizo: cloneJuizo(juizo),
+    apreciacao: cloneJuizo(juizo),
   });
 
   appendHistory(proposicao, event);
@@ -55,13 +55,13 @@ export const salvarAvaliacaoMembro = (
 
 export const deferirAvaliacao = (proposicao, usuario = "Corregedor Nacional") => {
   const avaliacao = proposicao.historico.find((event) => event.id === proposicao.avaliacaoVigenteId);
-  if (!avaliacao?.juizo) return proposicao;
+  if (!avaliacao?.apreciacao) return proposicao;
 
   return finalizarOuRetornar(
     proposicao,
     TipoHistorico.DECISAO,
     usuario,
-    avaliacao.juizo,
+    avaliacao.apreciacao,
     "Decisão de deferimento reproduzindo integralmente as invariantes da avaliação.",
     "deferimento",
   );

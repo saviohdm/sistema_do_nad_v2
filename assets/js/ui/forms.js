@@ -1,6 +1,6 @@
 import {
   Labels,
-  SituacaoJuizo,
+  SituacaoApreciacao,
   TipoConclusao,
   TipoProvidencia,
 } from "../domain/enums.js";
@@ -16,16 +16,16 @@ const renderOptions = (entries, selectedValue) =>
 const conclusaoEntries = Object.entries(Labels.tipoConclusao);
 const providenciaEntries = Object.entries(Labels.tipoProvidencia);
 
-export const renderJuizoForm = ({
+export const renderApreciacaoForm = ({
   formId,
   title,
   submitLabel,
   includeDelete = false,
-  initialJuizo = null,
+  initialApreciacao = null,
   includeRascunho = false,
 }) => {
-  const j = initialJuizo || {};
-  const situacaoValue = j.situacao || SituacaoJuizo.CONCLUIDA;
+  const j = initialApreciacao || {};
+  const situacaoValue = j.situacao || SituacaoApreciacao.CONCLUIDA;
   const tipoConclusaoValue = j.tipoConclusao || "";
   const existeProvidenciaValue = j.existeProvidenciaSecretaria ? "true" : "false";
   const tipoProvidenciaValue = j.tipoProvidencia || "";
@@ -33,8 +33,8 @@ export const renderJuizoForm = ({
 
   const situacaoOpts = renderOptions(
     [
-      [SituacaoJuizo.CONCLUIDA, "Concluída"],
-      [SituacaoJuizo.NECESSITA_MAIS_INFORMACOES, "Necessita mais informações"],
+      [SituacaoApreciacao.CONCLUIDA, "Concluída"],
+      [SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES, "Necessita mais informações"],
     ],
     situacaoValue,
   );
@@ -52,7 +52,7 @@ export const renderJuizoForm = ({
   );
 
   return `
-    <form class="panel stack" id="${formId}" data-has-rascunho="${initialJuizo ? "true" : "false"}">
+    <form class="panel stack" id="${formId}" data-has-rascunho="${initialApreciacao ? "true" : "false"}">
       <h3 class="panel__title">${title}</h3>
       <div class="field-grid">
         <div class="field">
@@ -102,14 +102,14 @@ export const renderJuizoForm = ({
   `;
 };
 
-export const aplicarRegrasJuizoForm = (form) => {
+export const aplicarRegrasApreciacaoForm = (form) => {
   const situacaoSel = form.querySelector('[name="situacao"]');
   const tipoConclusaoSel = form.querySelector('[name="tipoConclusao"]');
   const existeProvSel = form.querySelector('[name="existeProvidenciaSecretaria"]');
   const tipoProvSel = form.querySelector('[name="tipoProvidencia"]');
   if (!situacaoSel || !tipoConclusaoSel || !existeProvSel || !tipoProvSel) return;
 
-  const conclusaoAtiva = situacaoSel.value === SituacaoJuizo.CONCLUIDA;
+  const conclusaoAtiva = situacaoSel.value === SituacaoApreciacao.CONCLUIDA;
   tipoConclusaoSel.disabled = !conclusaoAtiva;
   if (!conclusaoAtiva) tipoConclusaoSel.value = "";
 
@@ -125,7 +125,7 @@ export const aplicarRegrasJuizoForm = (form) => {
   if (!providenciaAtiva) tipoProvSel.value = "";
 };
 
-export const readJuizoForm = (form) => {
+export const readApreciacaoForm = (form) => {
   const data = new FormData(form);
   const situacao = data.get("situacao");
   const tipoConclusao = data.get("tipoConclusao") || null;
@@ -135,14 +135,14 @@ export const readJuizoForm = (form) => {
 
   return {
     situacao,
-    tipoConclusao: situacao === SituacaoJuizo.CONCLUIDA ? tipoConclusao : null,
+    tipoConclusao: situacao === SituacaoApreciacao.CONCLUIDA ? tipoConclusao : null,
     existeProvidenciaSecretaria:
-      situacao === SituacaoJuizo.CONCLUIDA &&
+      situacao === SituacaoApreciacao.CONCLUIDA &&
       [TipoConclusao.PARCIALMENTE_CUMPRIDA, TipoConclusao.NAO_CUMPRIDA].includes(tipoConclusao)
         ? existeProvidenciaSecretaria
         : false,
     tipoProvidencia:
-      situacao === SituacaoJuizo.CONCLUIDA &&
+      situacao === SituacaoApreciacao.CONCLUIDA &&
       [TipoConclusao.PARCIALMENTE_CUMPRIDA, TipoConclusao.NAO_CUMPRIDA].includes(tipoConclusao) &&
       existeProvidenciaSecretaria
         ? tipoProvidencia
@@ -151,7 +151,7 @@ export const readJuizoForm = (form) => {
   };
 };
 
-export const lerJuizoParcial = (form) => {
+export const lerApreciacaoParcial = (form) => {
   const data = new FormData(form);
   const situacao = data.get("situacao") || null;
   const tipoConclusao = data.get("tipoConclusao") || null;

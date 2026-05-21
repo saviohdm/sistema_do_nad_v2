@@ -64,8 +64,8 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 
 ### State Management
 - `statusFluxo`: Reflects current process phase, NOT the conclusive result
-- `juizoAtual`: Holds the conclusive judgment (situation + conclusion type + provision flag)
-- `juizoAtual.existeProvidenciaSecretaria`: Only valid when `tipoConclusao` is `parcialmente_cumprida` or `nao_cumprida`
+- `apreciacaoAtual`: Holds the conclusive judgment (situation + conclusion type + provision flag)
+- `apreciacaoAtual.existeProvidenciaSecretaria`: Only valid when `tipoConclusao` is `parcialmente_cumprida` or `nao_cumprida`
 
 ### Audit Trail (`historico`)
 - All relevant events must be recorded with full audit trail
@@ -116,7 +116,7 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 
 5. **Provision independence**: The main proposition flow never waits for provision fulfillment. Provisions run in parallel and are for administrative tracking only.
 
-6. **State consistency**: `juizoAtual` must respect the rules in SPECS.md:244-253 regarding situation, conclusion type, and provision existence.
+6. **State consistency**: `apreciacaoAtual` must respect the rules in SPECS.md:244-253 regarding situation, conclusion type, and provision existence.
 
 ## When Implementing
 

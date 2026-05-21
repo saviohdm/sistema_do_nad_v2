@@ -5,7 +5,7 @@ import {
 } from "../app/utils.js";
 import {
   getHumanSummary,
-  getJuizoBadgeTone,
+  getApreciacaoBadgeTone,
   getStatusBadgeTone,
 } from "../domain/proposicoes.js";
 import { summarizeHistoryEvent } from "../domain/historico.js";
@@ -16,12 +16,12 @@ export const renderBadge = (label, tone = "neutral") =>
 export const renderStatusBadge = (status) =>
   renderBadge(Labels.statusFluxo[status] || status, getStatusBadgeTone(status));
 
-export const renderJuizoBadge = (juizo) => {
-  if (!juizo) return renderBadge("Sem juízo", "neutral");
-  const label = juizo.tipoConclusao
-    ? Labels.tipoConclusao[juizo.tipoConclusao]
-    : Labels.situacaoJuizo[juizo.situacao];
-  return renderBadge(label, getJuizoBadgeTone(juizo));
+export const renderApreciacaoBadge = (apreciacao) => {
+  if (!apreciacao) return renderBadge("Sem apreciação", "neutral");
+  const label = apreciacao.tipoConclusao
+    ? Labels.tipoConclusao[apreciacao.tipoConclusao]
+    : Labels.situacaoApreciacao[apreciacao.situacao];
+  return renderBadge(label, getApreciacaoBadgeTone(apreciacao));
 };
 
 export const renderStatCard = (label, value) => `
@@ -163,7 +163,7 @@ export const renderProposicaoTable = (proposicoes) => `
             <th>Tipo</th>
             <th>Unidade</th>
             <th>Status</th>
-            <th>Juízo atual</th>
+            <th>Apreciação atual</th>
             <th>Pendências</th>
           </tr>
         </thead>
@@ -180,7 +180,7 @@ export const renderProposicaoTable = (proposicoes) => `
                   <td>${item.tipo}</td>
                   <td>${item.unidade}</td>
                   <td>${renderStatusBadge(item.statusFluxo)}</td>
-                  <td>${renderJuizoBadge(item.juizoAtual)}</td>
+                  <td>${renderApreciacaoBadge(item.apreciacaoAtual)}</td>
                   <td>${item.pendenciasSecretaria.filter((pendencia) => pendencia.status === "pendente").length}</td>
                 </tr>
               `,
@@ -307,7 +307,7 @@ export const renderProposicaoHero = (proposicao) => `
       </div>
       <div class="pill-list">
         ${renderStatusBadge(proposicao.statusFluxo)}
-        ${renderJuizoBadge(proposicao.juizoAtual)}
+        ${renderApreciacaoBadge(proposicao.apreciacaoAtual)}
       </div>
     </div>
     <p>${proposicao.descricao}</p>
@@ -329,7 +329,7 @@ export const renderEmptyState = (message) => `
 
 export const renderProposicaoCard = (proposicao) => {
   const statusBadge = renderStatusBadge(proposicao.statusFluxo);
-  const juizoBadge = renderJuizoBadge(proposicao.juizoAtual);
+  const apreciacaoBadge = renderApreciacaoBadge(proposicao.apreciacaoAtual);
 
   return `
     <a href="/pages/proposicao-detalhe.html?id=${proposicao.id}" class="proposicao-card">
@@ -340,7 +340,7 @@ export const renderProposicaoCard = (proposicao) => {
         </div>
         <div class="pill-list">
           ${statusBadge}
-          ${juizoBadge}
+          ${apreciacaoBadge}
         </div>
       </div>
       <div class="proposicao-card__content">

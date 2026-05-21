@@ -9,13 +9,13 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `cumprir_pendenci
 
 ## Pré-condições
 - Persona logada é Secretaria.
-- Existe ao menos uma proposição cujo `juizoAtual.tipoConclusao` é `parcialmente_cumprida` ou `nao_cumprida`, com `juizoAtual.existeProvidenciaSecretaria = true`, gerando entrada em `pendenciasSecretaria[]` com `status = "pendente"`.
+- Existe ao menos uma proposição cujo `apreciacaoAtual.tipoConclusao` é `parcialmente_cumprida` ou `nao_cumprida`, com `apreciacaoAtual.existeProvidenciaSecretaria = true`, gerando entrada em `pendenciasSecretaria[]` com `status = "pendente"`.
 
 ## Fluxo principal
 1. Acessa **Providências pendentes** no menu lateral.
 2. Vê a fila agrupada por proposição, ordenada pela providência mais antiga em aberto (decrescente em dias).
 3. Cada section traz contexto da proposição: número, unidade, tipo, descrição truncada, correição-mãe, ramo MP, temática, UF, prioridade, membro designado e badge da conclusão (`parcialmente_cumprida` / `nao_cumprida`) que originou a providência.
-4. Cada card de providência mostra tipo (`Encaminhamento à Corregedoria local` / `COCI` / `Outra providência`), descrição, dias em aberto e bloco colapsável **"Fundamentos da decisão que originou a providência"** com o texto de `juizoAtual.observacoes`.
+4. Cada card de providência mostra tipo (`Encaminhamento à Corregedoria local` / `COCI` / `Outra providência`), descrição, dias em aberto e bloco colapsável **"Fundamentos da decisão que originou a providência"** com o texto de `apreciacaoAtual.observacoes`.
 5. Aplica filtros (`tipoProvidencia` / correição-mãe / busca textual / "somente atrasadas") — totalizadores no toolbar atualizam por destino (X Local · Y COCI · Z Outra).
 6. Para cada providência, preenche `dataCumprimento` (o despacho externo já ocorreu) e `observações` (referência ao ofício, número, destinatário); submete.
 7. Sistema invoca `registrarCumprimentoPendencia`, atualiza `status="cumprida"`, registra evento `CUMPRIMENTO_PENDENCIA_SECRETARIA` no `historico` e remove o card da tela.

@@ -9,7 +9,7 @@ export const StatusFluxo = {
   BAIXA_DEFINITIVA: "baixa_definitiva",
 };
 
-export const SituacaoJuizo = {
+export const SituacaoApreciacao = {
   NECESSITA_MAIS_INFORMACOES: "necessita_mais_informacoes",
   CONCLUIDA: "concluida",
 };
@@ -55,9 +55,9 @@ export const Labels = {
     [StatusFluxo.AGUARDANDO_CIENCIA]: "Aguardando ciência",
     [StatusFluxo.BAIXA_DEFINITIVA]: "Baixa definitiva",
   },
-  situacaoJuizo: {
-    [SituacaoJuizo.NECESSITA_MAIS_INFORMACOES]: "Necessita mais informações",
-    [SituacaoJuizo.CONCLUIDA]: "Concluída",
+  situacaoApreciacao: {
+    [SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES]: "Necessita mais informações",
+    [SituacaoApreciacao.CONCLUIDA]: "Concluída",
   },
   tipoConclusao: {
     [TipoConclusao.CUMPRIDA]: "Cumprida",

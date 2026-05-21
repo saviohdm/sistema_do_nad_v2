@@ -33,10 +33,10 @@ import {
   renderTimeline,
 } from "../ui/components.js";
 import {
-  aplicarRegrasJuizoForm,
-  lerJuizoParcial,
-  readJuizoForm,
-  renderJuizoForm,
+  aplicarRegrasApreciacaoForm,
+  lerApreciacaoParcial,
+  readApreciacaoForm,
+  renderApreciacaoForm,
 } from "../ui/forms.js";
 import { openRelatorioFinalModal } from "../ui/modal.js";
 
@@ -115,7 +115,7 @@ const bindHandlers = (proposicao) => {
 
   document.querySelector("#form-avaliacao-membro")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    const juizo = readJuizoForm(event.currentTarget);
+    const juizo = readApreciacaoForm(event.currentTarget);
     mutateState((draft) => {
       const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
       salvarAvaliacaoMembro(item, juizo);
@@ -133,7 +133,7 @@ const bindHandlers = (proposicao) => {
     .querySelector("#form-avaliacao-membro [data-action='salvar-rascunho']")
     ?.addEventListener("click", () => {
       const form = document.querySelector("#form-avaliacao-membro");
-      const juizoParcial = lerJuizoParcial(form);
+      const juizoParcial = lerApreciacaoParcial(form);
       const payload = salvarRascunhoAvaliacao(proposicao.id, juizoParcial);
       const feedback = form.querySelector("[data-role='rascunho-feedback']");
       if (feedback) {
@@ -153,7 +153,7 @@ const bindHandlers = (proposicao) => {
 
   document.querySelector("#form-decisao-corregedor")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    const juizo = readJuizoForm(event.currentTarget);
+    const juizo = readApreciacaoForm(event.currentTarget);
     mutateState((draft) => {
       const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
       indeferirAvaliacao(item, juizo);
@@ -173,7 +173,7 @@ const bindHandlers = (proposicao) => {
 
   document.querySelector("#form-avaliacao-direta")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    const juizo = readJuizoForm(event.currentTarget);
+    const juizo = readApreciacaoForm(event.currentTarget);
     mutateState((draft) => {
       const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
       registrarAvaliacaoComForcaDeDecisao(item, juizo);
@@ -247,10 +247,10 @@ const bindHandlers = (proposicao) => {
   ["form-avaliacao-membro", "form-decisao-corregedor", "form-avaliacao-direta"].forEach((id) => {
     const form = document.querySelector(`#${id}`);
     if (!form) return;
-    aplicarRegrasJuizoForm(form);
+    aplicarRegrasApreciacaoForm(form);
     form.addEventListener("change", (event) => {
       if (["situacao", "tipoConclusao", "existeProvidenciaSecretaria"].includes(event.target.name)) {
-        aplicarRegrasJuizoForm(form);
+        aplicarRegrasApreciacaoForm(form);
       }
     });
   });
@@ -419,11 +419,11 @@ const render = () => {
 
             ${
               available.podeAvaliarComoMembro
-                ? renderJuizoForm({
+                ? renderApreciacaoForm({
                     formId: "form-avaliacao-membro",
                     title: "Avaliação do membro auxiliar",
                     submitLabel: "Salvar avaliação",
-                    initialJuizo: obterRascunhoAvaliacao(proposicao.id)?.juizo || null,
+                    initialApreciacao: obterRascunhoAvaliacao(proposicao.id)?.apreciacao || null,
                     includeRascunho: true,
                   })
                 : ""
@@ -440,7 +440,7 @@ const render = () => {
                     </p>
                     <button class="button" type="button" data-action="deferir-avaliacao">Deferir avaliação vigente</button>
                   </section>
-                  ${renderJuizoForm({
+                  ${renderApreciacaoForm({
                     formId: "form-decisao-corregedor",
                     title: "Indeferir e redefinir invariantes",
                     submitLabel: "Registrar decisão de indeferimento",
@@ -452,7 +452,7 @@ const render = () => {
 
             ${
               available.podeAvaliarDiretamente
-                ? renderJuizoForm({
+                ? renderApreciacaoForm({
                     formId: "form-avaliacao-direta",
                     title: "Avaliação com força de decisão",
                     submitLabel: "Avaliar diretamente",

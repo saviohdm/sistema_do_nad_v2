@@ -1,7 +1,7 @@
 import { PERSONAS, getCurrentPersona, requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
-import { SituacaoJuizo } from "../domain/enums.js";
+import { SituacaoApreciacao } from "../domain/enums.js";
 import {
   filtrarProposicoes,
   groupByCorreicao,
@@ -63,7 +63,7 @@ const escapeAttr = (value) => String(value).replace(/"/g, "&quot;");
 const uniq = (values) => Array.from(new Set(values.filter(Boolean))).sort();
 
 const isRetornada = (p) =>
-  p.juizoAtual?.situacao === SituacaoJuizo.NECESSITA_MAIS_INFORMACOES;
+  p.apreciacaoAtual?.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES;
 
 const getFiltrosFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
@@ -124,7 +124,7 @@ const aplicarFiltros = (novosFiltros) => {
 
 const renderOverview = (aguardandoDiligencia) => {
   const total = aguardandoDiligencia.length;
-  const novas = aguardandoDiligencia.filter((p) => !p.juizoAtual).length;
+  const novas = aguardandoDiligencia.filter((p) => !p.apreciacaoAtual).length;
   const retornadas = aguardandoDiligencia.filter(isRetornada).length;
   const ramos = groupByRamoMP(aguardandoDiligencia);
   const correicoes = groupByCorreicao(aguardandoDiligencia);
@@ -603,7 +603,7 @@ const render = () => {
   if (modo === "overview") {
     content = renderOverview(aguardandoDiligencia);
     subtitle =
-      "Proposições recém-referendadas ou que retornaram com juízo \"necessita mais informações\".";
+      "Proposições recém-referendadas ou que retornaram com apreciação \"necessita mais informações\".";
   } else if (modo === "ramo") {
     content = renderModoRamo(aguardandoDiligencia, filtros);
     subtitle = "Escolha uma unidade dentro do ramo para entrar na fila.";

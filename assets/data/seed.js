@@ -1,6 +1,6 @@
 import {
   Labels,
-  SituacaoJuizo,
+  SituacaoApreciacao,
   StatusFluxo,
   TipoConclusao,
   TipoHistorico,
@@ -37,7 +37,7 @@ export const seedState = {
       observacoesGerais: "Proposição migrada após conclusão da correição ordinária.",
       correicaoId: "corr-2026-BA-PGJ",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -65,7 +65,7 @@ export const seedState = {
       dataFimCorreicao: "2026-01-30",
       observacoesGerais: "Há diligência aberta para comprovação documental.",
       statusFluxo: StatusFluxo.AGUARDANDO_COMPROVACAO,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -105,7 +105,7 @@ export const seedState = {
       dataFimCorreicao: "2026-02-21",
       observacoesGerais: "Caso submetido à decisão do Corregedor após avaliação técnica.",
       statusFluxo: StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: "hist-6",
       pendenciasSecretaria: [],
       diligencias: [
@@ -129,8 +129,8 @@ export const seedState = {
         }),
         createEvent("hist-6", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
           descricao: "Avaliação técnica submetida ao Corregedor.",
-          juizo: {
-            situacao: SituacaoJuizo.CONCLUIDA,
+          apreciacao: {
+            situacao: SituacaoApreciacao.CONCLUIDA,
             tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
             existeProvidenciaSecretaria: true,
             tipoProvidencia: TipoProvidencia.COCI,
@@ -156,8 +156,8 @@ export const seedState = {
       dataFimCorreicao: "2026-03-13",
       observacoesGerais: "Retornou à Secretaria para complementação de informações.",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
-      juizoAtual: {
-        situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+      apreciacaoAtual: {
+        situacao: SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES,
       },
       avaliacaoVigenteId: "hist-10",
       pendenciasSecretaria: [],
@@ -176,16 +176,16 @@ export const seedState = {
         }),
         createEvent("hist-8", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
           descricao: "Avaliação técnica indicando carência de informações.",
-          juizo: {
-            situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+          apreciacao: {
+            situacao: SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES,
             observacoes: "Não há evidência suficiente sobre a replicação da política.",
           },
         }),
         createEvent("hist-9", TipoHistorico.DECISAO, "Corregedor Nacional", {
           modo: "deferimento",
           descricao: "Decisão homologando a necessidade de novas informações.",
-          juizo: {
-            situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+          apreciacao: {
+            situacao: SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES,
           },
         }),
         createEvent("hist-10", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
@@ -212,8 +212,8 @@ export const seedState = {
       dataFimCorreicao: "2026-01-23",
       observacoesGerais: "Há providência pendente de encaminhamento à Corregedoria local.",
       statusFluxo: StatusFluxo.BAIXA_DEFINITIVA,
-      juizoAtual: {
-        situacao: SituacaoJuizo.CONCLUIDA,
+      apreciacaoAtual: {
+        situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
         existeProvidenciaSecretaria: true,
         tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
@@ -236,8 +236,8 @@ export const seedState = {
       historico: [
         createEvent("hist-11", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
           descricao: "Avaliação submetida.",
-          juizo: {
-            situacao: SituacaoJuizo.CONCLUIDA,
+          apreciacao: {
+            situacao: SituacaoApreciacao.CONCLUIDA,
             tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
             existeProvidenciaSecretaria: true,
             tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
@@ -246,8 +246,8 @@ export const seedState = {
         createEvent("hist-12", TipoHistorico.DECISAO, "Corregedor Nacional", {
           modo: "deferimento",
           descricao: "Decisão homologando a avaliação do membro auxiliar.",
-          juizo: {
-            situacao: SituacaoJuizo.CONCLUIDA,
+          apreciacao: {
+            situacao: SituacaoApreciacao.CONCLUIDA,
             tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
             existeProvidenciaSecretaria: true,
             tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
@@ -276,8 +276,8 @@ export const seedState = {
       observacoesGerais: "Conclusão direta pelo Corregedor Nacional.",
       correicaoId: "corr-2026-SC-01",
       statusFluxo: StatusFluxo.BAIXA_DEFINITIVA,
-      juizoAtual: {
-        situacao: SituacaoJuizo.CONCLUIDA,
+      apreciacaoAtual: {
+        situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.CUMPRIDA,
         existeProvidenciaSecretaria: false,
       },
@@ -287,8 +287,8 @@ export const seedState = {
       historico: [
         createEvent("hist-14", TipoHistorico.AVALIACAO_COM_FORCA_DE_DECISAO, "Corregedor Nacional", {
           descricao: "Corregedor Nacional avaliou diretamente sem avaliação vigente.",
-          juizo: {
-            situacao: SituacaoJuizo.CONCLUIDA,
+          apreciacao: {
+            situacao: SituacaoApreciacao.CONCLUIDA,
             tipoConclusao: TipoConclusao.CUMPRIDA,
             existeProvidenciaSecretaria: false,
           },
@@ -316,7 +316,7 @@ export const seedState = {
       observacoesGerais: "Comprovação recebida; aguardando avaliação do membro auxiliar.",
       correicaoId: "corr-2026-BA-01",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -358,7 +358,7 @@ export const seedState = {
       observacoesGerais: "Segunda proposição do mesmo ramo aguardando avaliação.",
       correicaoId: "corr-2026-BA-01",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -400,7 +400,7 @@ export const seedState = {
       observacoesGerais: "Exigência de análise prioritária.",
       correicaoId: "corr-2026-RS-01",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -442,7 +442,7 @@ export const seedState = {
       observacoesGerais: "Aguardando avaliação do membro para submissão ao Corregedor.",
       correicaoId: "corr-2026-GO-01",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [
@@ -485,7 +485,7 @@ export const seedState = {
       observacoesGerais: "Proposição recém-migrada aguardando referendo do CNMP.",
       correicaoId: "corr-REF-2026-MG-01",
       statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -515,7 +515,7 @@ export const seedState = {
       observacoesGerais: "Segunda proposição da mesma correição, aguardando referendo.",
       correicaoId: "corr-REF-2026-MG-01",
       statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -545,7 +545,7 @@ export const seedState = {
       observacoesGerais: "Proposição aguardando referendo do CNMP.",
       correicaoId: "corr-REF-2026-SP-01",
       statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -575,7 +575,7 @@ export const seedState = {
       observacoesGerais: "Segunda proposição da mesma correição, aguardando referendo.",
       correicaoId: "corr-REF-2026-SP-01",
       statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -604,8 +604,8 @@ export const seedState = {
       observacoesGerais: "Decisão conclusiva proferida; aguardando ciência ao correicionado.",
       correicaoId: "corr-2026-BA-01",
       statusFluxo: StatusFluxo.AGUARDANDO_CIENCIA,
-      juizoAtual: {
-        situacao: SituacaoJuizo.CONCLUIDA,
+      apreciacaoAtual: {
+        situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
         existeProvidenciaSecretaria: true,
         tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
@@ -632,8 +632,8 @@ export const seedState = {
         createEvent("hist-102", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
           descricao: "Avaliação submetida.",
           data: "2026-05-05T10:00:00Z",
-          juizo: {
-            situacao: SituacaoJuizo.CONCLUIDA,
+          apreciacao: {
+            situacao: SituacaoApreciacao.CONCLUIDA,
             tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
             existeProvidenciaSecretaria: true,
             tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
@@ -643,8 +643,8 @@ export const seedState = {
           modo: "deferimento",
           descricao: "Decisão homologando a avaliação.",
           data: "2026-05-08T08:30:00Z",
-          juizo: {
-            situacao: SituacaoJuizo.CONCLUIDA,
+          apreciacao: {
+            situacao: SituacaoApreciacao.CONCLUIDA,
             tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
             existeProvidenciaSecretaria: true,
             tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
@@ -670,8 +670,8 @@ export const seedState = {
       observacoesGerais: "Decisão conclusiva sem providência paralela.",
       correicaoId: "corr-2026-BA-01",
       statusFluxo: StatusFluxo.AGUARDANDO_CIENCIA,
-      juizoAtual: {
-        situacao: SituacaoJuizo.CONCLUIDA,
+      apreciacaoAtual: {
+        situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.CUMPRIDA,
         existeProvidenciaSecretaria: false,
       },
@@ -686,8 +686,8 @@ export const seedState = {
         createEvent("hist-105", TipoHistorico.AVALIACAO_COM_FORCA_DE_DECISAO, "Corregedor Nacional", {
           descricao: "Corregedor Nacional decidiu diretamente após análise da documentação.",
           data: "2026-05-08T11:15:00Z",
-          juizo: {
-            situacao: SituacaoJuizo.CONCLUIDA,
+          apreciacao: {
+            situacao: SituacaoApreciacao.CONCLUIDA,
             tipoConclusao: TipoConclusao.CUMPRIDA,
             existeProvidenciaSecretaria: false,
           },
@@ -712,8 +712,8 @@ export const seedState = {
       observacoesGerais: "Decisão conclusiva proferida.",
       correicaoId: "corr-2026-RJ-02",
       statusFluxo: StatusFluxo.AGUARDANDO_CIENCIA,
-      juizoAtual: {
-        situacao: SituacaoJuizo.CONCLUIDA,
+      apreciacaoAtual: {
+        situacao: SituacaoApreciacao.CONCLUIDA,
         tipoConclusao: TipoConclusao.CUMPRIDA,
         existeProvidenciaSecretaria: false,
       },
@@ -729,8 +729,8 @@ export const seedState = {
           modo: "deferimento",
           descricao: "Decisão homologando a avaliação.",
           data: "2026-05-06T16:20:00Z",
-          juizo: {
-            situacao: SituacaoJuizo.CONCLUIDA,
+          apreciacao: {
+            situacao: SituacaoApreciacao.CONCLUIDA,
             tipoConclusao: TipoConclusao.CUMPRIDA,
             existeProvidenciaSecretaria: false,
           },
@@ -755,7 +755,7 @@ export const seedState = {
       observacoesGerais: "Aguardando avaliação do membro auxiliar — bloqueia fechamento do grupo da unidade.",
       correicaoId: "corr-2026-RJ-02",
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -789,7 +789,7 @@ export const seedState = {
       observacoesGerais: "Compõe o grupo de proposições migradas após a correição ordinária.",
       correicaoId: "corr-2026-BA-PGJ",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
-      juizoAtual: null,
+      apreciacaoAtual: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
       diligencias: [],
@@ -820,8 +820,8 @@ export const seedState = {
         "Retornou à Secretaria após decisão por necessitar de mais informações.",
       correicaoId: "corr-2026-RJ-02",
       statusFluxo: StatusFluxo.AGUARDANDO_SECRETARIA,
-      juizoAtual: {
-        situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+      apreciacaoAtual: {
+        situacao: SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES,
       },
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
@@ -835,8 +835,8 @@ export const seedState = {
           modo: "deferimento",
           descricao: "Decisão homologando a necessidade de novas informações.",
           data: "2026-05-09T16:00:00Z",
-          juizo: {
-            situacao: SituacaoJuizo.NECESSITA_MAIS_INFORMACOES,
+          apreciacao: {
+            situacao: SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES,
           },
         }),
       ],
