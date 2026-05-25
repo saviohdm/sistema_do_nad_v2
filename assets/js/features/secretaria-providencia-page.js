@@ -2,10 +2,10 @@ import { requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
 import { formatDate, formatDateTime } from "../app/utils.js";
-import { Labels, TipoProvidencia } from "../domain/enums.js";
+import { Labels, TipoProvidencia, getPrioridadeBadgeTone } from "../domain/enums.js";
 import { listFilaPendenciasProvidencia } from "../domain/secretaria-filas.js";
 import { registrarCumprimentoPendencia } from "../domain/pendencias-secretaria.js";
-import { renderBadge } from "../ui/components.js";
+import { renderBadge, renderPrioridadeBadge, renderSensivelBadge } from "../ui/components.js";
 
 requireAuth();
 
@@ -147,12 +147,6 @@ const correicoesDistintas = (todas) => {
   return Array.from(set).sort();
 };
 
-const renderPrioridadeBadge = (prioridade) => {
-  if (!prioridade) return "";
-  if (prioridade === "alta") return renderBadge("Prioridade alta", "danger");
-  return renderBadge(`Prioridade ${prioridade}`, "neutral");
-};
-
 const renderConclusaoBadge = (juizo) => {
   if (!juizo || !juizo.tipoConclusao) return "";
   const label = Labels.tipoConclusao[juizo.tipoConclusao] || juizo.tipoConclusao;
@@ -192,6 +186,7 @@ const renderHeaderProposicao = (proposicao) => {
       <a class="button button--ghost button--small" href="proposicao-detalhe.html?id=${escapeAttr(proposicao.id)}">Abrir proposição</a>
     </div>
     <div class="pill-list" style="margin-top: var(--space-2);">
+      ${renderSensivelBadge(proposicao.sensivel)}
       ${proposicao.correicaoId ? renderBadge(`Correição ${proposicao.correicaoId}`, "primary") : ""}
       ${proposicao.ramoMP ? renderBadge(proposicao.ramoMP, "neutral") : ""}
       ${proposicao.tematica ? renderBadge(proposicao.tematica, "neutral") : ""}

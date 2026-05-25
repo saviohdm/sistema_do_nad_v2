@@ -1,4 +1,4 @@
-import { Labels } from "../domain/enums.js";
+import { Labels, getPrioridadeBadgeTone } from "../domain/enums.js";
 import {
   formatDate,
   formatDateTime,
@@ -22,6 +22,17 @@ export const renderApreciacaoBadge = (apreciacao) => {
     ? Labels.tipoConclusao[apreciacao.tipoConclusao]
     : Labels.situacaoApreciacao[apreciacao.situacao];
   return renderBadge(label, getApreciacaoBadgeTone(apreciacao));
+};
+
+export const renderPrioridadeBadge = (prioridade) => {
+  if (!prioridade) return "";
+  const label = Labels.prioridade[prioridade] || prioridade;
+  return renderBadge(`Prioridade ${label.toLowerCase()}`, getPrioridadeBadgeTone(prioridade));
+};
+
+export const renderSensivelBadge = (sensivel) => {
+  if (!sensivel) return "";
+  return `<span class="badge badge--sensivel" title="Caso sinalizado como sensível">⚠ Sensível</span>`;
 };
 
 export const renderStatCard = (label, value) => `
@@ -306,6 +317,7 @@ export const renderProposicaoHero = (proposicao) => `
         <h2 class="detail-hero__title">${proposicao.unidade}</h2>
       </div>
       <div class="pill-list">
+        ${renderSensivelBadge(proposicao.sensivel)}
         ${renderStatusBadge(proposicao.statusFluxo)}
         ${renderApreciacaoBadge(proposicao.apreciacaoDoCN)}
       </div>
@@ -339,6 +351,7 @@ export const renderProposicaoCard = (proposicao) => {
           <div class="proposicao-card__tipo">${proposicao.tipo}</div>
         </div>
         <div class="pill-list">
+          ${renderSensivelBadge(proposicao.sensivel)}
           ${statusBadge}
           ${apreciacaoBadge}
         </div>

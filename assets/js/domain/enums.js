@@ -28,9 +28,16 @@ export const TipoProvidencia = {
   OUTRA: "outra_providencia",
 };
 
+export const Prioridade = {
+  URGENTE: "urgente",
+  IMPORTANTE: "importante",
+  NORMAL: "normal",
+};
+
 export const TipoHistorico = {
   CRIACAO: "criacao",
   EDICAO: "edicao",
+  EDICAO_METADADOS: "edicao_metadados",
   APAGAMENTO_PROPOSICAO: "apagamento_proposicao",
   REFERENDO_CNMP: "referendo_cnmp",
   RELATORIO_FINAL_GERADO: "relatorio_final_gerado",
@@ -71,4 +78,20 @@ export const Labels = {
     [TipoProvidencia.COCI]: "Encaminhamento à COCI",
     [TipoProvidencia.OUTRA]: "Outra providência",
   },
+  prioridade: {
+    [Prioridade.URGENTE]: "Urgente",
+    [Prioridade.IMPORTANTE]: "Importante",
+    [Prioridade.NORMAL]: "Normal",
+  },
+  sensivel: {
+    true: "Sim",
+    false: "Não",
+  },
 };
+
+export const getPrioridadeBadgeTone = (prioridade) =>
+  ({
+    [Prioridade.URGENTE]: "danger",
+    [Prioridade.IMPORTANTE]: "warning",
+    [Prioridade.NORMAL]: "neutral",
+  }[prioridade] || "neutral");

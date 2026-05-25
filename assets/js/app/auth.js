@@ -16,12 +16,18 @@ const PERMISSIONS = {
     "indeferir_avaliacao",
     "remover_avaliacao",
     "avaliacao_com_forca_decisao",
+    "editar_metadados",
   ],
-  [PERSONAS.MEMBRO]: ["avaliar_como_membro", "ver_fila_membro_auxiliar"],
+  [PERSONAS.MEMBRO]: [
+    "avaliar_como_membro",
+    "ver_fila_membro_auxiliar",
+    "editar_metadados",
+  ],
   [PERSONAS.SECRETARIA]: [
     "criar_diligencia",
     "registrar_cientificacao",
     "cumprir_pendencia_secretaria",
+    "editar_metadados",
   ],
   [PERSONAS.CORREICIONADO]: ["registrar_comprovacao"],
 };

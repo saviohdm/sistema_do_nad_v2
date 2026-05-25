@@ -10,7 +10,14 @@ import {
   markPropositionDeleted,
   referendarCorreicao,
 } from "../domain/proposicoes.js";
-import { renderBadge, renderEmptyState, renderStatCard } from "../ui/components.js";
+import { Labels } from "../domain/enums.js";
+import {
+  renderBadge,
+  renderEmptyState,
+  renderPrioridadeBadge,
+  renderSensivelBadge,
+  renderStatCard,
+} from "../ui/components.js";
 import { openRelatorioFinalModal } from "../ui/modal.js";
 
 requireAuth();
@@ -84,7 +91,7 @@ const renderPainelFiltros = (proposicoesAguardandoReferendo, filtros) => {
           <label for="filtro-prioridade">Prioridade</label>
           <select id="filtro-prioridade" name="prioridade">
             <option value="">Todas</option>
-            ${prioridades.map((v) => option(v, v, filtros.prioridade)).join("")}
+            ${prioridades.map((v) => option(v, Labels.prioridade[v] || v, filtros.prioridade)).join("")}
           </select>
         </div>
         <div class="field">
@@ -126,7 +133,8 @@ const renderCardFila = (proposicao) => `
           <div class="proposicao-card__tipo">${proposicao.tipo} · ${proposicao.ramoMP}</div>
         </div>
         <div class="pill-list">
-          ${renderBadge(proposicao.prioridade === "alta" ? "Prioridade alta" : "Prioridade normal", proposicao.prioridade === "alta" ? "danger" : "neutral")}
+          ${renderSensivelBadge(proposicao.sensivel)}
+          ${renderPrioridadeBadge(proposicao.prioridade)}
           ${renderBadge(proposicao.correicaoId || "sem correição", "neutral")}
         </div>
       </div>
@@ -302,7 +310,7 @@ const renderModoFila = (proposicoesAguardandoReferendo, filtros) => {
     filtros.ramoMP ? `Ramo: <strong>${filtros.ramoMP}</strong>` : null,
     filtros.unidade ? `Unidade: <strong>${filtros.unidade}</strong>` : null,
     filtros.correicaoId ? `Correição: <strong>${filtros.correicaoId}</strong>` : null,
-    filtros.prioridade ? `Prioridade: <strong>${filtros.prioridade}</strong>` : null,
+    filtros.prioridade ? `Prioridade: <strong>${Labels.prioridade[filtros.prioridade] || filtros.prioridade}</strong>` : null,
     filtros.tematica ? `Temática: <strong>${filtros.tematica}</strong>` : null,
     filtros.uf ? `UF: <strong>${filtros.uf}</strong>` : null,
   ]

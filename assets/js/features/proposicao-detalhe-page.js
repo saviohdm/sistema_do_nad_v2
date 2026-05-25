@@ -14,6 +14,7 @@ import {
 import { criarDiligencia, registrarComprovacao } from "../domain/diligencias.js";
 import { Labels } from "../domain/enums.js";
 import {
+  editarMetadados,
   getAvaliacaoVigente,
   getAvailableActions,
   getAvailableActionsByPersona,
@@ -38,7 +39,7 @@ import {
   readApreciacaoForm,
   renderApreciacaoForm,
 } from "../ui/forms.js";
-import { openRelatorioFinalModal } from "../ui/modal.js";
+import { openEditarMetadadosModal, openRelatorioFinalModal } from "../ui/modal.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
 const veioDaFilaMembro = queryParam("fromMembro") === "1";
@@ -229,6 +230,23 @@ const bindHandlers = (proposicao) => {
     });
 
   document
+    .querySelector("[data-action='editar-metadados']")
+    ?.addEventListener("click", () => {
+      openEditarMetadadosModal({
+        proposicao,
+        onSave: ({ prioridade, sensivel }) => {
+          const persona = getCurrentPersona();
+          mutateState((draft) => {
+            const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+            if (item) editarMetadados(item, { prioridade, sensivel }, persona);
+            return draft;
+          });
+          render();
+        },
+      });
+    });
+
+  document
     .querySelector("[data-action='gerar-relatorio-final']")
     ?.addEventListener("click", () => {
       const currentState = state();
@@ -279,7 +297,11 @@ const render = () => {
     { label: "Número", value: proposicao.numero },
     { label: "Número ELO", value: proposicao.numeroElo },
     { label: "Tipo", value: proposicao.tipo },
-    { label: "Prioridade", value: proposicao.prioridade },
+    {
+      label: "Prioridade",
+      value: Labels.prioridade[proposicao.prioridade] || proposicao.prioridade || "—",
+    },
+    { label: "Sensível", value: proposicao.sensivel ? "Sim" : "Não" },
     { label: "Membro", value: proposicao.membro },
     { label: "Unidade", value: proposicao.unidade },
     { label: "Ramo do MP", value: proposicao.ramoMP },
@@ -305,7 +327,14 @@ const render = () => {
       <section class="stack">
         ${renderProposicaoHero(proposicao)}
         <section class="panel">
-          <h3 class="panel__title">Metadados do caso</h3>
+          <div class="panel__header-row">
+            <h3 class="panel__title">Metadados do caso</h3>
+            ${
+              available.podeEditarMetadados
+                ? `<button class="button button--ghost button--small" type="button" data-action="editar-metadados">Editar</button>`
+                : ""
+            }
+          </div>
           ${renderMetaList(meta)}
         </section>
 

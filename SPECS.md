@@ -122,6 +122,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 
 - `criacao`
 - `edicao`
+- `edicao_metadados`
 - `apagamento_proposicao`
 - `criacao_diligencia`
 - `comprovacao`
@@ -182,7 +183,8 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   "unidade": "Procuradoria-Geral de Justiça",
   "membro": "Dr. João Silva Santos",
   "descricao": "...",
-  "prioridade": "normal",
+  "prioridade": "normal", // "urgente" | "importante" | "normal"
+  "sensivel": false,
   "statusFluxo": "aguardando_decisao_corregedor",
   "apreciacaoDoCN": {
     "situacao": "concluida",
@@ -264,6 +266,9 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - `apreciacaoDoCN.existeProvidenciaSecretaria` só pode existir quando `tipoConclusao` for `parcialmente_cumprida` ou `nao_cumprida`.
 - A avaliação do membro auxiliar deve carregar o mesmo formato de invariantes da decisão final.
 - O sistema não deve manter simultaneamente uma avaliação vigente e um evento de remoção dessa mesma avaliação como conteúdo ativo.
+- `prioridade` admite apenas: `urgente`, `importante`, `normal` (padrão `normal`).
+- `sensivel` é booleano (padrão `false`); marcação visual apenas — não restringe acesso nem mascara conteúdo.
+- `prioridade` e `sensivel` são editáveis pelo Corregedor Nacional, Membro Auxiliar e Secretaria Processual em qualquer status ativo. Estão bloqueados em `baixa_definitiva`. Cada edição gera um evento `edicao_metadados` no histórico, registrando valores anteriores e novos.
 
 ## Cenários obrigatórios
 

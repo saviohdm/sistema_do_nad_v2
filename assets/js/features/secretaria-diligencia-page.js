@@ -1,7 +1,7 @@
 import { PERSONAS, getCurrentPersona, requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
-import { SituacaoApreciacao } from "../domain/enums.js";
+import { Labels, SituacaoApreciacao } from "../domain/enums.js";
 import {
   filtrarProposicoes,
   groupByCorreicao,
@@ -13,7 +13,13 @@ import {
   listGruposAguardandoDiligencia,
 } from "../domain/secretaria-filas.js";
 import { criarDiligenciaEmLote } from "../domain/diligencias.js";
-import { renderBadge, renderEmptyState, renderStatCard } from "../ui/components.js";
+import {
+  renderBadge,
+  renderEmptyState,
+  renderPrioridadeBadge,
+  renderSensivelBadge,
+  renderStatCard,
+} from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
 
 requireAuth();
@@ -281,11 +287,21 @@ const renderPainelFiltros = (aguardandoDiligencia, filtros) => {
     </div>
   `;
 
+  const prioridadeSelect = `
+    <div class="field">
+      <label for="filtro-prioridade">Prioridade</label>
+      <select id="filtro-prioridade" name="prioridade">
+        <option value="">Todas</option>
+        ${prioridades.map((v) => option(v, Labels.prioridade[v] || v, filtros.prioridade || "")).join("")}
+      </select>
+    </div>
+  `;
+
   return `
     <form class="panel stack" id="painel-filtros">
       <h3 class="panel__title">Filtros adicionais</h3>
       <div class="field-grid">
-        ${selectSimples("filtro-prioridade", "prioridade", "Prioridade", prioridades, filtros.prioridade)}
+        ${prioridadeSelect}
         ${selectSimples("filtro-tematica", "tematica", "Temática", tematicas, filtros.tematica)}
         ${selectSimples("filtro-uf", "uf", "UF", ufs, filtros.uf)}
         ${selectSimples("filtro-correicao", "correicaoId", "Correição", correicoes, filtros.correicaoId)}
@@ -328,10 +344,8 @@ const renderCardSelecionavel = (proposicao) => {
   const subStatusBadge = isRetornada(proposicao)
     ? renderBadge("Retornou · necessita mais informações", "warning")
     : renderBadge("Nova proposição", "primary");
-  const prioridadeBadge =
-    proposicao.prioridade === "alta"
-      ? renderBadge("Prioridade alta", "danger")
-      : renderBadge("Prioridade normal", "neutral");
+  const prioridadeBadge = renderPrioridadeBadge(proposicao.prioridade);
+  const sensivelBadge = renderSensivelBadge(proposicao.sensivel);
 
   return `
     <article class="proposicao-card proposicao-card--selecionavel ${selecionado ? "proposicao-card--selected" : ""}">
@@ -343,6 +357,7 @@ const renderCardSelecionavel = (proposicao) => {
             <div class="proposicao-card__tipo">${proposicao.tipo} · ${proposicao.ramoMP || "—"}</div>
           </div>
           <div class="pill-list">
+            ${sensivelBadge}
             ${prioridadeBadge}
             ${subStatusBadge}
           </div>
@@ -440,7 +455,7 @@ const renderModoFila = (aguardandoDiligencia, filtros) => {
     filtros.ramoMP ? `Ramo: <strong>${filtros.ramoMP}</strong>` : null,
     filtros.unidade ? `Unidade: <strong>${filtros.unidade}</strong>` : null,
     filtros.correicaoId ? `Correição: <strong>${filtros.correicaoId}</strong>` : null,
-    filtros.prioridade ? `Prioridade: <strong>${filtros.prioridade}</strong>` : null,
+    filtros.prioridade ? `Prioridade: <strong>${Labels.prioridade[filtros.prioridade] || filtros.prioridade}</strong>` : null,
     filtros.tematica ? `Temática: <strong>${filtros.tematica}</strong>` : null,
     filtros.uf ? `UF: <strong>${filtros.uf}</strong>` : null,
     filtros.membro ? `Membro: <strong>${filtros.membro}</strong>` : null,

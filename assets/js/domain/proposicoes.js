@@ -1,5 +1,19 @@
-import { Labels, SituacaoApreciacao, StatusFluxo, TipoConclusao, TipoHistorico } from "./enums.js";
+import {
+  Labels,
+  Prioridade,
+  SituacaoApreciacao,
+  StatusFluxo,
+  TipoConclusao,
+  TipoHistorico,
+} from "./enums.js";
 import { buildHistoryEvent, appendHistory } from "./historico.js";
+
+const PRIORIDADES_VALIDAS = new Set(Object.values(Prioridade));
+const PERSONAS_EDITAR_METADADOS = new Set([
+  "Corregedor Nacional",
+  "Membro Auxiliar da CN",
+  "Secretaria Processual da CN",
+]);
 
 export const listProposicoes = (state) => [...state.proposicoes];
 
@@ -207,6 +221,7 @@ export const getAvailableActions = (proposicao) => {
     podeEditarProposicao: emReferendo,
     podeApagarProposicao: emReferendo,
     podeGerarRelatorioFinal: emReferendo,
+    podeEditarMetadados: proposicao.statusFluxo !== StatusFluxo.BAIXA_DEFINITIVA,
   };
 };
 
@@ -228,6 +243,7 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeEditarProposicao: false,
       podeApagarProposicao: false,
       podeGerarRelatorioFinal: false,
+      podeEditarMetadados: baseActions.podeEditarMetadados,
     },
     "Secretaria Processual da CN": {
       podeCriarDiligencia: baseActions.podeCriarDiligencia,
@@ -239,6 +255,7 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeEditarProposicao: false,
       podeApagarProposicao: false,
       podeGerarRelatorioFinal: false,
+      podeEditarMetadados: baseActions.podeEditarMetadados,
     },
     Correicionado: {
       podeCriarDiligencia: false,
@@ -250,6 +267,7 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeEditarProposicao: false,
       podeApagarProposicao: false,
       podeGerarRelatorioFinal: false,
+      podeEditarMetadados: false,
     },
   };
 
@@ -420,6 +438,7 @@ export const criarProposicao = (
     membro,
     descricao,
     prioridade,
+    sensivel,
     correicaoId,
     numeroElo,
     ramoMP,
@@ -446,7 +465,8 @@ export const criarProposicao = (
     unidade,
     membro,
     descricao,
-    prioridade: prioridade || "normal",
+    prioridade: PRIORIDADES_VALIDAS.has(prioridade) ? prioridade : Prioridade.NORMAL,
+    sensivel: Boolean(sensivel),
     numeroElo: numeroElo || "",
     ramoMP: ramoMP || "",
     ramoMPNome: ramoMPNome || "",
@@ -476,6 +496,56 @@ export const criarProposicao = (
   return novaProposicao;
 };
 
+export const editarMetadados = (proposicao, { prioridade, sensivel }, persona) => {
+  if (proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA) {
+    throw new Error("Proposição encerrada não permite edição de metadados.");
+  }
+  if (!PERSONAS_EDITAR_METADADOS.has(persona)) {
+    throw new Error(`Persona "${persona}" não pode editar metadados da proposição.`);
+  }
+  if (!PRIORIDADES_VALIDAS.has(prioridade)) {
+    throw new Error(`Prioridade inválida: ${prioridade}.`);
+  }
+  if (typeof sensivel !== "boolean") {
+    throw new Error("Campo 'sensivel' deve ser booleano.");
+  }
+
+  const prioridadeAnterior = proposicao.prioridade;
+  const sensivelAnterior = Boolean(proposicao.sensivel);
+
+  if (prioridadeAnterior === prioridade && sensivelAnterior === sensivel) {
+    return proposicao;
+  }
+
+  proposicao.prioridade = prioridade;
+  proposicao.sensivel = sensivel;
+
+  const partes = [];
+  if (prioridadeAnterior !== prioridade) {
+    partes.push(
+      `prioridade: ${Labels.prioridade[prioridadeAnterior] || prioridadeAnterior} → ${Labels.prioridade[prioridade]}`,
+    );
+  }
+  if (sensivelAnterior !== sensivel) {
+    partes.push(
+      `sensível: ${Labels.sensivel[String(sensivelAnterior)]} → ${Labels.sensivel[String(sensivel)]}`,
+    );
+  }
+
+  appendHistory(
+    proposicao,
+    buildHistoryEvent(TipoHistorico.EDICAO_METADADOS, persona, {
+      descricao: `Metadados atualizados (${partes.join("; ")}).`,
+      prioridadeAnterior,
+      prioridadeNova: prioridade,
+      sensivelAnterior,
+      sensivelNovo: sensivel,
+    }),
+  );
+
+  return proposicao;
+};
+
 export const editarProposicao = (proposicao, camposEditaveis) => {
   const camposPermitidos = [
     "tipo",
@@ -483,6 +553,7 @@ export const editarProposicao = (proposicao, camposEditaveis) => {
     "membro",
     "descricao",
     "prioridade",
+    "sensivel",
     "numeroElo",
     "ramoMP",
     "ramoMPNome",

@@ -1,3 +1,5 @@
+import { Labels, Prioridade } from "../domain/enums.js";
+
 const MODAL_ROOT_ID = "nad-modal-root";
 
 const ensureRoot = () => {
@@ -15,9 +17,9 @@ export const closeModal = () => {
   if (root) root.innerHTML = "";
 };
 
-const renderShell = (title, bodyHtml) => `
+const renderShell = (title, bodyHtml, { size } = {}) => `
   <div class="modal-overlay" data-modal-overlay>
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-label="${title}">
+    <div class="modal-dialog${size === "compact" ? " modal-dialog--compact" : ""}" role="dialog" aria-modal="true" aria-label="${title}">
       <header class="modal-header">
         <h2 class="modal-title">${title}</h2>
         <button class="modal-close" type="button" data-modal-close aria-label="Fechar">×</button>
@@ -87,4 +89,75 @@ export const openRelatorioFinalModal = ({ correicaoId, ramoMP, proposicoes }) =>
 
   root.innerHTML = renderShell(titulo, body);
   bindClose(root);
+};
+
+export const openEditarMetadadosModal = ({ proposicao, onSave }) => {
+  const root = ensureRoot();
+  const titulo = "Editar metadados";
+
+  const prioridadeAtual = proposicao.prioridade || Prioridade.NORMAL;
+  const sensivelAtual = Boolean(proposicao.sensivel);
+
+  const opcoesPrioridade = [Prioridade.URGENTE, Prioridade.IMPORTANTE, Prioridade.NORMAL]
+    .map(
+      (valor) =>
+        `<option value="${valor}"${valor === prioridadeAtual ? " selected" : ""}>${Labels.prioridade[valor]}</option>`,
+    )
+    .join("");
+
+  const body = `
+    <p class="modal-caption muted">Proposição <strong>${proposicao.numero}</strong></p>
+    <form id="form-editar-metadados" class="stack">
+      <div class="field">
+        <label for="metadados-prioridade">Prioridade</label>
+        <select id="metadados-prioridade" name="prioridade">
+          ${opcoesPrioridade}
+        </select>
+      </div>
+
+      <div class="field field--checkbox">
+        <label for="metadados-sensivel">
+          <input id="metadados-sensivel" name="sensivel" type="checkbox" ${sensivelAtual ? "checked" : ""} />
+          Marcar como caso sensível
+        </label>
+        <p class="muted modal-helper">Sinaliza ao time tratamento com cautela adicional. Não afeta visibilidade ou acesso ao caso.</p>
+      </div>
+
+      <div class="button-row modal-footer">
+        <button class="button button--ghost" type="button" data-modal-close>Cancelar</button>
+        <button class="button" type="submit" data-role="salvar" disabled>Salvar alterações</button>
+      </div>
+    </form>
+  `;
+
+  root.innerHTML = renderShell(titulo, body, { size: "compact" });
+  bindClose(root);
+
+  const form = root.querySelector("#form-editar-metadados");
+  const selectPrioridade = form.querySelector("#metadados-prioridade");
+  const checkboxSensivel = form.querySelector("#metadados-sensivel");
+  const submitBtn = form.querySelector("[data-role='salvar']");
+
+  const sincronizarBotaoSalvar = () => {
+    const mudou =
+      selectPrioridade.value !== prioridadeAtual ||
+      checkboxSensivel.checked !== sensivelAtual;
+    submitBtn.disabled = !mudou;
+  };
+
+  selectPrioridade.addEventListener("change", sincronizarBotaoSalvar);
+  checkboxSensivel.addEventListener("change", sincronizarBotaoSalvar);
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (submitBtn.disabled) return;
+    const payload = {
+      prioridade: selectPrioridade.value,
+      sensivel: checkboxSensivel.checked,
+    };
+    closeModal();
+    if (typeof onSave === "function") onSave(payload);
+  });
+
+  setTimeout(() => selectPrioridade.focus(), 0);
 };

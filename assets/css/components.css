@@ -54,6 +54,18 @@
   font-size: 1.4rem;
 }
 
+.panel__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.panel__header-row .panel__title {
+  margin: 0;
+}
+
 .hero-card {
   padding: var(--space-6);
   border-radius: var(--radius-lg);
@@ -320,6 +332,21 @@
   color: var(--text-secondary);
 }
 
+.badge--sensivel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: rgba(217, 119, 6, 0.18);
+  color: #7c5200;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+}
+
 .table-wrap {
   overflow: auto;
 }
@@ -421,6 +448,17 @@
   font-size: 0.875rem;
 }
 
+.button:disabled,
+.button[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.button:disabled:hover,
+.button[disabled]:hover {
+  background: var(--primary);
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -438,7 +476,7 @@
   color: var(--text-secondary);
 }
 
-.field input,
+.field input:not([type="checkbox"]),
 .field textarea,
 .field select {
   width: 100%;
@@ -449,14 +487,14 @@
   color: var(--text);
 }
 
-.field input:focus,
+.field input:not([type="checkbox"]):focus,
 .field textarea:focus,
 .field select:focus {
   outline: none;
   border-color: var(--primary);
 }
 
-.field input:disabled,
+.field input:not([type="checkbox"]):disabled,
 .field textarea:disabled,
 .field select:disabled {
   opacity: 0.55;
@@ -647,6 +685,26 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.modal-dialog--compact {
+  width: min(480px, 100%);
+}
+
+.modal-caption {
+  margin: 0 0 var(--space-4);
+  font-size: 0.92rem;
+}
+
+.modal-helper {
+  margin: var(--space-1) 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.modal-footer {
+  margin-top: var(--space-4);
+  justify-content: flex-end;
 }
 
 .modal-header {
@@ -1044,8 +1102,9 @@
 
 .field--checkbox {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
   font-size: 0.9rem;
 }
 
@@ -1054,4 +1113,9 @@
   align-items: center;
   gap: var(--space-2);
   cursor: pointer;
+}
+
+.field--checkbox label span {
+  font-weight: 400;
+  color: var(--text);
 }

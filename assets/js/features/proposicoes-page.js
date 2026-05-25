@@ -1,6 +1,6 @@
 import { requireAuth, hasPermission } from "../app/auth.js";
 import { mountPage, state } from "../app/bootstrap.js";
-import { Labels, StatusFluxo, SituacaoApreciacao, TipoConclusao } from "../domain/enums.js";
+import { Labels, Prioridade, StatusFluxo, SituacaoApreciacao, TipoConclusao } from "../domain/enums.js";
 import { filtrarProposicoes, listProposicoes } from "../domain/proposicoes.js";
 import { renderAlert, renderEmptyState, renderProposicaoTable } from "../ui/components.js";
 
@@ -147,8 +147,9 @@ const renderFormFiltros = (opcoes, filtros) => {
             <label for="filtro-prioridade">Prioridade</label>
             <select id="filtro-prioridade" name="prioridade">
               <option value="">Todas</option>
-              ${option("alta", "Alta", filtros.prioridade || "")}
-              ${option("normal", "Normal", filtros.prioridade || "")}
+              ${option(Prioridade.URGENTE, Labels.prioridade[Prioridade.URGENTE], filtros.prioridade || "")}
+              ${option(Prioridade.IMPORTANTE, Labels.prioridade[Prioridade.IMPORTANTE], filtros.prioridade || "")}
+              ${option(Prioridade.NORMAL, Labels.prioridade[Prioridade.NORMAL], filtros.prioridade || "")}
             </select>
           </div>
         </div>

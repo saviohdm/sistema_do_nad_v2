@@ -2,7 +2,7 @@ import { requireAuth, hasPermission } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
 import { queryParam } from "../app/utils.js";
-import { StatusFluxo } from "../domain/enums.js";
+import { Prioridade, StatusFluxo } from "../domain/enums.js";
 import {
   criarProposicao,
   editarProposicao,
@@ -78,11 +78,19 @@ const render = () => {
           <div class="field">
             <label for="prioridade">Prioridade</label>
             <select id="prioridade" name="prioridade">
-              <option value="normal"${valor("prioridade") === "normal" ? " selected" : ""}>Normal</option>
-              <option value="alta"${valor("prioridade") === "alta" ? " selected" : ""}>Alta</option>
-              <option value="baixa"${valor("prioridade") === "baixa" ? " selected" : ""}>Baixa</option>
+              <option value="${Prioridade.URGENTE}"${valor("prioridade") === Prioridade.URGENTE ? " selected" : ""}>Urgente</option>
+              <option value="${Prioridade.IMPORTANTE}"${valor("prioridade") === Prioridade.IMPORTANTE ? " selected" : ""}>Importante</option>
+              <option value="${Prioridade.NORMAL}"${valor("prioridade") === Prioridade.NORMAL || !valor("prioridade") ? " selected" : ""}>Normal</option>
             </select>
           </div>
+        </div>
+
+        <div class="field field--checkbox">
+          <label for="sensivel">
+            <input id="sensivel" name="sensivel" type="checkbox" ${proposicaoParaEditar?.sensivel ? "checked" : ""} />
+            Marcar como caso sensível
+          </label>
+          <p class="muted modal-helper">Sinaliza ao time tratamento com cautela adicional. Não afeta visibilidade ou acesso ao caso.</p>
         </div>
 
         <div class="field">
@@ -211,6 +219,7 @@ const render = () => {
       membro: data.get("membro"),
       descricao: data.get("descricao"),
       prioridade: data.get("prioridade"),
+      sensivel: data.get("sensivel") === "on",
       numeroElo: data.get("numeroElo"),
       ramoMP: data.get("ramoMP"),
       ramoMPNome: data.get("ramoMPNome"),
