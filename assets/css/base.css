@@ -51,6 +51,47 @@ button {
   overflow-y: auto;
 }
 
+.sidebar-persona {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: var(--space-4);
+}
+
+.sidebar-persona__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sidebar-persona__text {
+  min-width: 0;
+}
+
+.sidebar-persona__label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.sidebar-persona__name {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-persona__switch {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.sidebar-persona__switch:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 .sidebar__title {
   font-family: var(--font-display);
   font-size: 1.8rem;
@@ -78,6 +119,19 @@ button {
   align-items: flex-start;
   gap: var(--space-4);
   margin-bottom: var(--space-6);
+}
+
+.page-header__content {
+  min-width: 0;
+}
+
+.page-actions {
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+
+.page-actions .button {
+  white-space: nowrap;
 }
 
 .page-title {
@@ -123,9 +177,69 @@ button {
   .sidebar {
     position: static;
     height: auto;
+    padding: var(--space-4);
+  }
+
+  .sidebar-persona {
+    padding-top: 0;
+  }
+
+  .sidebar__subtitle {
+    margin-bottom: var(--space-4);
+  }
+
+  .sidebar nav {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 
   .page-grid--two {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: var(--space-4);
+  }
+
+  .page-header {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+  }
+
+  .page-title {
+    font-size: 2.15rem;
+  }
+
+  .page-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .page-actions .button {
+    border-radius: var(--radius-md);
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .sidebar {
+    padding: var(--space-3);
+  }
+
+  .sidebar-persona__inner {
+    align-items: flex-start;
+  }
+
+  .sidebar nav {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  .sidebar__title {
+    font-size: 1.55rem;
   }
 }

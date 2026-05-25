@@ -174,18 +174,18 @@ const renderHeaderProposicao = (proposicao) => {
     : proposicao.uf || "";
 
   return `
-    <div class="panel__title-row">
+    <header class="providencia-group__header">
       <div>
-        <h3 class="panel__title">${proposicao.numero} · ${proposicao.unidade || "—"}</h3>
-        <div class="muted">${proposicao.tipo || ""}${
+        <h3 class="providencia-group__title">${proposicao.numero} · ${proposicao.unidade || "—"}</h3>
+        <p class="muted providencia-group__subtitle">${proposicao.tipo || ""}${
           proposicao.descricao
             ? ` — ${escapeAttr(proposicao.descricao).slice(0, 160)}${proposicao.descricao.length > 160 ? "…" : ""}`
             : ""
-        }</div>
+        }</p>
       </div>
       <a class="button button--ghost button--small" href="proposicao-detalhe.html?id=${escapeAttr(proposicao.id)}">Abrir proposição</a>
-    </div>
-    <div class="pill-list" style="margin-top: var(--space-2);">
+    </header>
+    <div class="pill-list">
       ${renderSensivelBadge(proposicao.sensivel)}
       ${proposicao.correicaoId ? renderBadge(`Correição ${proposicao.correicaoId}`, "primary") : ""}
       ${proposicao.ramoMP ? renderBadge(proposicao.ramoMP, "neutral") : ""}
@@ -204,22 +204,24 @@ const renderCardPendencia = (proposicao, pendencia, hoje) => {
   const labelTipo = Labels.tipoProvidencia[pendencia.tipoProvidencia] || pendencia.tipoProvidencia;
 
   return `
-    <article class="status-card">
-      <div class="pill-list">
-        ${renderBadge("Pendente", "warning")}
-        ${renderBadge(labelTipo, "neutral")}
-        ${
-          atrasada
-            ? renderBadge(`Há ${dias} dias em aberto`, "danger")
-            : dias !== null
-              ? renderBadge(`Há ${dias} dias em aberto`, "neutral")
-              : ""
-        }
+    <article class="providencia-item">
+      <div class="providencia-item__summary">
+        <div class="pill-list">
+          ${renderBadge("Pendente", "warning")}
+          ${renderBadge(labelTipo, "neutral")}
+          ${
+            atrasada
+              ? renderBadge(`Há ${dias} dias em aberto`, "danger")
+              : dias !== null
+                ? renderBadge(`Há ${dias} dias em aberto`, "neutral")
+                : ""
+          }
+        </div>
+        <h4 class="providencia-item__title">${escapeAttr(pendencia.descricao)}</h4>
+        <p class="muted providencia-item__meta">Criada em ${formatDateTime(pendencia.dataCriacao)}</p>
+        ${renderFundamentos(proposicao.apreciacaoDoCN, pendencia.id)}
       </div>
-      <p><strong>${escapeAttr(pendencia.descricao)}</strong></p>
-      <p class="muted">Criada em ${formatDateTime(pendencia.dataCriacao)}</p>
-      ${renderFundamentos(proposicao.apreciacaoDoCN, pendencia.id)}
-      <form class="stack" data-pendencia-form="${escapeAttr(proposicao.id)}:${escapeAttr(pendencia.id)}">
+      <form class="providencia-item__form" data-pendencia-form="${escapeAttr(proposicao.id)}:${escapeAttr(pendencia.id)}">
         <div class="field">
           <label>Data de cumprimento</label>
           <input type="date" name="dataCumprimento" required />
@@ -247,9 +249,9 @@ const renderFila = (grupos, hoje, totalCarregadoSemFiltro) => {
       ${grupos
         .map(
           (grupo) => `
-            <section class="panel">
+            <section class="providencia-group">
               ${renderHeaderProposicao(grupo.proposicao)}
-              <div class="cards-grid" style="margin-top: var(--space-3);">
+              <div class="providencia-list">
                 ${grupo.pendencias
                   .map((pendencia) => renderCardPendencia(grupo.proposicao, pendencia, hoje))
                   .join("")}
@@ -278,7 +280,7 @@ const renderToolbar = (filtros, counts, totalItens, correicoes) => {
   const tipoCheckboxes = TIPOS_PROVIDENCIA_ORDEM
     .map(
       (tipo) => `
-        <label class="field field--checkbox" style="margin: 0;">
+        <label class="filter-chip">
           <input type="checkbox" data-filtro-tipo value="${escapeAttr(tipo)}" ${tiposAtivos.has(tipo) ? "checked" : ""} />
           <span>${Labels.tipoProvidencia[tipo]}</span>
         </label>
@@ -296,7 +298,7 @@ const renderToolbar = (filtros, counts, totalItens, correicoes) => {
     .join("");
 
   return `
-    <form class="toolbar stack" data-toolbar style="gap: var(--space-3);">
+    <form class="filter-panel" data-toolbar>
       <div class="form-grid form-grid--two">
         <div class="field">
           <label for="filtro-correicao">Correição-mãe</label>
@@ -311,19 +313,21 @@ const renderToolbar = (filtros, counts, totalItens, correicoes) => {
             value="${escapeAttr(filtros.busca)}" />
         </div>
       </div>
-      <div class="pill-list" style="gap: var(--space-3); flex-wrap: wrap;">
+      <div class="filter-panel__checks">
         ${tipoCheckboxes}
-        <label class="field field--checkbox" style="margin: 0;">
+        <label class="filter-chip">
           <input type="checkbox" data-filtro-atrasadas ${filtros.atrasadas ? "checked" : ""} />
           <span>Somente atrasadas (mais de ${LIMITE_ATRASADAS} dias em aberto)</span>
         </label>
       </div>
-      <div class="button-row" style="align-items: center; gap: var(--space-3); flex-wrap: wrap;">
+      <div class="filter-summary">
+        <span><strong>${totalItens}</strong> providência(s) ${filtros.atrasadas ? "atrasada(s)" : "pendente(s)"}</span>
+        <span>·</span>
+        <span>${renderTotalizadores(counts)}</span>
+      </div>
+      <div class="button-row">
         <button class="button button--small" type="submit">Aplicar filtros</button>
         <button class="button button--ghost button--small" type="button" data-action="limpar">Limpar filtros</button>
-        <span class="muted" style="margin-left: auto;">
-          <strong>${totalItens}</strong> providência(s) ${filtros.atrasadas ? "atrasada(s)" : "pendente(s)"} · ${renderTotalizadores(counts)}
-        </span>
       </div>
     </form>
   `;
@@ -352,9 +356,11 @@ const render = () => {
     subtitle: subtitulo,
     actions: baseActions,
     content: `
-      <section class="panel">
-        <h2 class="panel__title">${titulo} ${renderBadge(`${itensFiltrados.length}`, itensFiltrados.length ? "warning" : "neutral")}</h2>
-        ${renderToolbar(filtros, counts, itensFiltrados.length, correicoes)}
+      <section class="stack">
+        <div class="panel">
+          <h2 class="panel__title">${titulo} ${renderBadge(`${itensFiltrados.length}`, itensFiltrados.length ? "warning" : "neutral")}</h2>
+          ${renderToolbar(filtros, counts, itensFiltrados.length, correicoes)}
+        </div>
         ${renderFila(grupos, hoje, todosItens.length)}
       </section>
     `,

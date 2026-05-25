@@ -40,15 +40,14 @@ export const renderPersonaBadge = () => {
   if (!persona) return "";
 
   return `
-    <div style="padding: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 1rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-        <div style="min-width: 0;">
-          <div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">Logado como:</div>
-          <div style="font-weight: 600; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; color: #ffffff;">${persona}</div>
+    <div class="sidebar-persona">
+      <div class="sidebar-persona__inner">
+        <div class="sidebar-persona__text">
+          <div class="sidebar-persona__label">Logado como:</div>
+          <div class="sidebar-persona__name">${persona}</div>
         </div>
         <button
-          class="button button--small"
-          style="flex-shrink: 0; background: rgba(255, 255, 255, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3);"
+          class="button button--small sidebar-persona__switch"
           onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/pages/login.html';"
         >
           Trocar
@@ -82,11 +81,11 @@ export const renderAppShell = ({ activePage, title, subtitle, content, actions =
       </aside>
       <main class="page">
         <header class="page-header">
-          <div>
+          <div class="page-header__content">
             <h1 class="page-title">${title}</h1>
             <p class="page-subtitle">${subtitle}</p>
           </div>
-          ${actions ? `<div class="toolbar">${actions}</div>` : ""}
+          ${actions ? `<div class="toolbar page-actions">${actions}</div>` : ""}
         </header>
         ${content}
       </main>

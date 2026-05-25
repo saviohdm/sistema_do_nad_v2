@@ -384,7 +384,7 @@ const renderCardSelecionavel = (proposicao) => {
           <div><strong>Membro:</strong> ${proposicao.membro || "—"}</div>
           <div class="proposicao-card__descricao">${(proposicao.descricao || "").substring(0, 200)}${(proposicao.descricao || "").length > 200 ? "..." : ""}</div>
         </div>
-        <div class="button-row" style="margin-top: var(--space-3);">
+        <div class="button-row proposicao-card__actions">
           <a class="button button--ghost button--small" href="/pages/proposicao-detalhe.html?id=${proposicao.id}">Abrir detalhe</a>
         </div>
       </div>
@@ -486,16 +486,14 @@ const renderModoFila = (aguardandoDiligencia, filtros, gruposCompletoCount) => {
   return `
     <section class="page-grid page-grid--two">
       <div class="stack">
-        <div class="panel">
-          <div class="button-row" style="justify-content: space-between; align-items: baseline;">
-            <div>
-              <h3 class="panel__title">Fila de diligência</h3>
-              <p class="muted">${contextoSelecao || "Todas as proposições aguardando diligência."}</p>
-            </div>
-            <div class="button-row">
-              <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
-              ${filtros.ramoMP ? `<button class="button button--ghost" type="button" data-action="voltar-ramo">Unidades do ramo</button>` : ""}
-            </div>
+        <div class="queue-header">
+          <div>
+            <h3 class="queue-header__title">Fila de diligência</h3>
+            <p class="muted queue-header__context">${contextoSelecao || "Todas as proposições aguardando diligência."}</p>
+          </div>
+          <div class="button-row queue-header__actions">
+            <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
+            ${filtros.ramoMP ? `<button class="button button--ghost" type="button" data-action="voltar-ramo">Unidades do ramo</button>` : ""}
           </div>
         </div>
 
@@ -505,15 +503,15 @@ const renderModoFila = (aguardandoDiligencia, filtros, gruposCompletoCount) => {
       </div>
 
       <aside class="stack">
-        <div class="panel">
+        <div class="panel queue-sidebar-card">
           <h3 class="panel__title">Contador</h3>
           <p class="muted">Visíveis com os filtros atuais:</p>
-          <div class="stat-card" style="margin-top: 0.5rem;">
+          <div class="stat-card">
             <span class="stat-card__value">${filtrados.length}</span>
             <span class="stat-card__label">proposição(ões)</span>
           </div>
           ${renderGruposCompletoToggle(gruposCompletoCount, !!filtros.gruposCompletos)}
-          <p class="muted" style="margin-top: 1rem;">Total aguardando diligência no sistema: <strong>${aguardandoDiligencia.length}</strong></p>
+          <p class="muted queue-sidebar-card__footer">Total aguardando diligência no sistema: <strong>${aguardandoDiligencia.length}</strong></p>
         </div>
 
         ${renderPainelFiltros(aguardandoDiligencia, filtros)}

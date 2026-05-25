@@ -409,7 +409,7 @@ const renderCardGrupo = (grupo) => {
 
   const providenciaLine =
     grupo.comProvidencia > 0
-      ? `<div class="muted" style="font-size: 0.85rem;">${grupo.comProvidencia} com pendência paralela</div>`
+      ? `<div class="muted proposicao-card__support">${grupo.comProvidencia} com pendência paralela</div>`
       : "";
 
   const proposicoesLista = grupo.proposicoes
@@ -417,7 +417,7 @@ const renderCardGrupo = (grupo) => {
     .join("");
 
   return `
-    <article class="proposicao-card proposicao-card--selecionavel ${selecionado ? "proposicao-card--selected" : ""}" ${podeSelecionar ? "" : 'style="opacity: 0.65;"'}>
+    <article class="proposicao-card proposicao-card--selecionavel ${selecionado ? "proposicao-card--selected" : ""} ${podeSelecionar ? "" : "proposicao-card--disabled"}">
       ${checkbox}
       <div>
         <div class="proposicao-card__header">
@@ -430,7 +430,7 @@ const renderCardGrupo = (grupo) => {
         <div class="proposicao-card__content">
           <div><strong>${grupo.prontas}</strong> de ${grupo.total} proposições prontas para ciência</div>
           ${providenciaLine}
-          <ul class="stack" style="padding-left: 1rem; margin-top: var(--space-2); font-size: 0.875rem;">
+          <ul class="stack proposicao-card__list">
             ${proposicoesLista}
           </ul>
         </div>
@@ -524,16 +524,14 @@ const renderModoGrupo = (grupos, filtros) => {
   return `
     <section class="page-grid page-grid--two">
       <div class="stack">
-        <div class="panel">
-          <div class="button-row" style="justify-content: space-between; align-items: baseline;">
-            <div>
-              <h3 class="panel__title">Fila de ciência</h3>
-              <p class="muted">${contextoSelecao || "Todos os grupos aguardando ciência."}</p>
-            </div>
-            <div class="button-row">
-              <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
-              ${filtros.ramoMP ? `<button class="button button--ghost" type="button" data-action="voltar-ramo">Correições do ramo</button>` : ""}
-            </div>
+        <div class="queue-header">
+          <div>
+            <h3 class="queue-header__title">Fila de ciência</h3>
+            <p class="muted queue-header__context">${contextoSelecao || "Todos os grupos aguardando ciência."}</p>
+          </div>
+          <div class="button-row queue-header__actions">
+            <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
+            ${filtros.ramoMP ? `<button class="button button--ghost" type="button" data-action="voltar-ramo">Correições do ramo</button>` : ""}
           </div>
         </div>
 
@@ -543,14 +541,14 @@ const renderModoGrupo = (grupos, filtros) => {
       </div>
 
       <aside class="stack">
-        <div class="panel">
+        <div class="panel queue-sidebar-card">
           <h3 class="panel__title">Contador</h3>
           <p class="muted">Visíveis com os filtros atuais:</p>
-          <div class="stat-card" style="margin-top: 0.5rem;">
+          <div class="stat-card">
             <span class="stat-card__value">${filtrados.length}</span>
             <span class="stat-card__label">grupo(s)</span>
           </div>
-          <p class="muted" style="margin-top: 1rem;">Total na fila: <strong>${grupos.length}</strong> grupo(s)</p>
+          <p class="muted queue-sidebar-card__footer">Total na fila: <strong>${grupos.length}</strong> grupo(s)</p>
         </div>
 
         ${renderPainelFiltros(grupos, filtros)}

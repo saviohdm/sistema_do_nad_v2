@@ -249,7 +249,7 @@ const renderBlockHeader = (titulo, contador) => `
 const renderGrupoDiligenciaRow = (grupo) => `
   <button
     type="button"
-    class="secretaria-dashboard__row"
+    class="secretaria-dashboard__row secretaria-dashboard__row--action secretaria-dashboard__row--diligencia"
     data-action="abrir-grupo-diligencia"
     data-correicao="${escapeAttr(grupo.correicaoId)}"
     data-unidade="${escapeAttr(grupo.unidade)}"
@@ -275,7 +275,7 @@ const renderGrupoCienciaRow = (grupo) => {
   return `
     <button
       type="button"
-      class="secretaria-dashboard__row"
+      class="secretaria-dashboard__row secretaria-dashboard__row--action secretaria-dashboard__row--ciencia"
       data-action="abrir-grupo-ciencia"
       data-correicao="${escapeAttr(grupo.correicaoId)}"
       data-unidade="${escapeAttr(grupo.unidade)}"
@@ -301,7 +301,7 @@ const renderProvidenciaRow = (item) => {
     .replace(/</g, "&lt;");
   const reticencias = (item.descricao || "").length > 80 ? "…" : "";
   return `
-    <a class="secretaria-dashboard__row" href="proposicao-detalhe.html?id=${escapeAttr(item.proposicaoId)}">
+    <a class="secretaria-dashboard__row secretaria-dashboard__row--action secretaria-dashboard__row--providencia" href="proposicao-detalhe.html?id=${escapeAttr(item.proposicaoId)}">
       <div class="secretaria-dashboard__row-main">
         <strong>${item.numero}</strong>
         <span class="muted">${item.unidade || "—"} · Correição ${item.correicaoId || "—"}</span>
@@ -319,7 +319,7 @@ const renderGrupoParcialRow = (grupo) => {
   const estadoLabel =
     grupo.estadoAlvo === "diligencia" ? "Diligência" : "Ciência";
   return `
-    <li class="secretaria-dashboard__row secretaria-dashboard__row--static">
+    <li class="secretaria-dashboard__row secretaria-dashboard__row--static secretaria-dashboard__row--action secretaria-dashboard__row--partial">
       <div class="secretaria-dashboard__row-main">
         <strong>${grupo.unidade || "—"}</strong>
         <span class="muted">${grupo.ramoMPNome || grupo.ramoMP || "—"} · Correição ${grupo.correicaoId || "—"}</span>
