@@ -5,6 +5,7 @@ export const StatusFluxo = {
   AGUARDANDO_COMPROVACAO: "aguardando_comprovacao",
   AGUARDANDO_AVALIACAO_MEMBRO: "aguardando_avaliacao_membro",
   AGUARDANDO_DECISAO_CORREGEDOR: "aguardando_decisao_corregedor",
+  RASCUNHO_DECISAO_CN: "rascunho_decisao_cn",
   AGUARDANDO_CIENCIA: "aguardando_ciencia",
   BAIXA_DEFINITIVA: "baixa_definitiva",
 };
@@ -49,6 +50,8 @@ export const TipoHistorico = {
   AVALIACAO_REMOVIDA: "avaliacao_removida_pelo_corregedor",
   CIENTIFICACAO: "cientificacao",
   CUMPRIMENTO_PENDENCIA_SECRETARIA: "cumprimento_pendencia_secretaria",
+  RASCUNHO_DECISAO_CN_SALVO: "rascunho_decisao_cn_salvo",
+  RASCUNHO_DECISAO_CN_DESCARTADO: "rascunho_decisao_cn_descartado",
 };
 
 export const Labels = {
@@ -59,6 +62,7 @@ export const Labels = {
     [StatusFluxo.AGUARDANDO_COMPROVACAO]: "Aguardando comprovação",
     [StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO]: "Aguardando avaliação do membro",
     [StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR]: "Aguardando decisão do Corregedor",
+    [StatusFluxo.RASCUNHO_DECISAO_CN]: "Rascunho de decisão do CN",
     [StatusFluxo.AGUARDANDO_CIENCIA]: "Aguardando ciência",
     [StatusFluxo.BAIXA_DEFINITIVA]: "Baixa definitiva",
   },

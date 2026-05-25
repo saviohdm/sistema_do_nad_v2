@@ -19,7 +19,8 @@
       "Bash(curl -sv http://localhost:8080/)",
       "Bash(lsof -iTCP:8080 -sTCP:LISTEN)",
       "Skill(grill-me)",
-      "Skill(grill-me:*)"
+      "Skill(grill-me:*)",
+      "Bash(grep -E \"\\\\.\\(js|ts|tsx|jsx|vue\\)$\")"
     ]
   }
 }

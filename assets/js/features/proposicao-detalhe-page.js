@@ -12,14 +12,16 @@ import {
   salvarAvaliacaoMembro,
 } from "../domain/avaliacoes.js";
 import { criarDiligencia, registrarComprovacao } from "../domain/diligencias.js";
-import { Labels } from "../domain/enums.js";
+import { Labels, StatusFluxo } from "../domain/enums.js";
 import {
+  descartarRascunhoDecisaoCN,
   editarMetadados,
   getAvaliacaoVigente,
   getAvailableActions,
   getAvailableActionsByPersona,
   getProposicaoById,
   markPropositionDeleted,
+  salvarRascunhoDecisaoCN,
 } from "../domain/proposicoes.js";
 import {
   obterRascunhoAvaliacao,
@@ -141,6 +143,36 @@ const bindHandlers = (proposicao) => {
         feedback.hidden = false;
         feedback.textContent = `Rascunho salvo às ${formatDateTime(payload.savedAt)}.`;
       }
+    });
+
+  ["form-decisao-corregedor", "form-avaliacao-direta"].forEach((formId) => {
+    document
+      .querySelector(`#${formId} [data-action='salvar-rascunho']`)
+      ?.addEventListener("click", () => {
+        const form = document.querySelector(`#${formId}`);
+        const juizoParcial = lerApreciacaoParcial(form);
+        mutateState((draft) => {
+          const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+          salvarRascunhoDecisaoCN(item, juizoParcial);
+          return draft;
+        });
+        const feedback = form.querySelector("[data-role='rascunho-feedback']");
+        if (feedback) {
+          feedback.hidden = false;
+          feedback.textContent = `Rascunho de decisão salvo às ${formatDateTime(new Date().toISOString())}.`;
+        }
+      });
+  });
+
+  document
+    .querySelector("[data-action='descartar-rascunho-decisao']")
+    ?.addEventListener("click", () => {
+      mutateState((draft) => {
+        const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+        descartarRascunhoDecisaoCN(item);
+        return draft;
+      });
+      render();
     });
 
   document.querySelector("[data-action='deferir-avaliacao']")?.addEventListener("click", () => {
@@ -467,6 +499,11 @@ const render = () => {
                       A avaliação vigente já está submetida. O Corregedor pode deferir rapidamente
                       ou indeferir, redefinindo integralmente as invariantes.
                     </p>
+                    ${
+                      proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN
+                        ? `<button class="button button--ghost" type="button" data-action="descartar-rascunho-decisao">Descartar rascunho de decisão</button>`
+                        : ""
+                    }
                     <button class="button" type="button" data-action="deferir-avaliacao">Deferir avaliação vigente</button>
                   </section>
                   ${renderApreciacaoForm({
@@ -474,6 +511,8 @@ const render = () => {
                     title: "Indeferir e redefinir invariantes",
                     submitLabel: "Registrar decisão de indeferimento",
                     includeDelete: true,
+                    includeRascunho: true,
+                    initialApreciacao: proposicao.rascunhoDecisaoCN || null,
                   })}
                 `
                 : ""
@@ -481,11 +520,20 @@ const render = () => {
 
             ${
               available.podeAvaliarDiretamente
-                ? renderApreciacaoForm({
+                ? `
+                  ${
+                    proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN
+                      ? `<div class="panel"><button class="button button--ghost" type="button" data-action="descartar-rascunho-decisao">Descartar rascunho de decisão</button></div>`
+                      : ""
+                  }
+                  ${renderApreciacaoForm({
                     formId: "form-avaliacao-direta",
                     title: "Avaliação com força de decisão",
                     submitLabel: "Avaliar diretamente",
-                  })
+                    includeRascunho: true,
+                    initialApreciacao: proposicao.rascunhoDecisaoCN || null,
+                  })}
+                `
                 : ""
             }
           </div>

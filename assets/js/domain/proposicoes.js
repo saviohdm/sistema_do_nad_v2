@@ -32,7 +32,9 @@ export const listProposicoesAguardandoReferendo = (state) =>
 
 export const listProposicoesAguardandoDecisao = (state) =>
   listProposicoes(state).filter(
-    (proposicao) => proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
+    (proposicao) =>
+      proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR ||
+      proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN,
   );
 
 const aggregateBy = (items, keyFn, extraFn = () => ({})) => {
@@ -189,6 +191,7 @@ export const getStatusBadgeTone = (status) =>
     [StatusFluxo.AGUARDANDO_COMPROVACAO]: "warning",
     [StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO]: "primary",
     [StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR]: "danger",
+    [StatusFluxo.RASCUNHO_DECISAO_CN]: "warning",
     [StatusFluxo.AGUARDANDO_CIENCIA]: "primary",
     [StatusFluxo.BAIXA_DEFINITIVA]: "success",
   }[status] || "neutral");
@@ -204,7 +207,9 @@ export const getApreciacaoBadgeTone = (apreciacao) => {
 export const getAvailableActions = (proposicao) => {
   const avaliacaoVigente = getAvaliacaoVigente(proposicao);
   const emReferendo = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
-  const emDecisao = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
+  const emDecisao =
+    proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR ||
+    proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN;
 
   return {
     podeCriarDiligencia: [
@@ -367,20 +372,17 @@ export const countProposicoesPorRamoMP = (state) => {
 
 export const countPendentesDoCorregedor = (state) => {
   const ativas = listProposicoes(state).filter(isProposicaoAtiva);
-  const intermediarios = [
-    StatusFluxo.AGUARDANDO_SECRETARIA,
-    StatusFluxo.AGUARDANDO_COMPROVACAO,
-    StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
-  ];
   return {
+    pendentesRascunho: ativas.filter((p) => p.statusFluxo === StatusFluxo.RASCUNHO_CN).length,
     pendentesReferendo: ativas.filter(
       (p) => p.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
     ).length,
-    pendentesValidacao: ativas.filter((p) => p.statusFluxo === StatusFluxo.RASCUNHO_CN).length,
     pendentesDecisao: ativas.filter(
       (p) => p.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
     ).length,
-    pendentesDiligencia: ativas.filter((p) => intermediarios.includes(p.statusFluxo)).length,
+    pendentesRascunhoDecisao: ativas.filter(
+      (p) => p.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN,
+    ).length,
   };
 };
 
@@ -402,6 +404,7 @@ export const countPendentesPorPersona = (state) => {
         StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
         StatusFluxo.RASCUNHO_CN,
         StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
+        StatusFluxo.RASCUNHO_DECISAO_CN,
       ].includes(p.statusFluxo),
     ).length,
     secretaria: ativas.filter(pertenceAFilaSecretaria).length,
@@ -607,6 +610,42 @@ export const encaminharParaSecretaria = (proposicao) => {
     proposicao,
     buildHistoryEvent(TipoHistorico.CRIACAO, "Corregedor Nacional", {
       descricao: "Proposição encaminhada para a Secretaria Processual.",
+    }),
+  );
+  return proposicao;
+};
+
+export const salvarRascunhoDecisaoCN = (proposicao, apreciacao) => {
+  if (
+    proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR &&
+    proposicao.statusFluxo !== StatusFluxo.RASCUNHO_DECISAO_CN
+  ) {
+    throw new Error("Rascunho de decisão só pode ser salvo quando a proposição está aguardando decisão.");
+  }
+  const entrando = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
+  proposicao.rascunhoDecisaoCN = apreciacao;
+  proposicao.statusFluxo = StatusFluxo.RASCUNHO_DECISAO_CN;
+  if (entrando) {
+    appendHistory(
+      proposicao,
+      buildHistoryEvent(TipoHistorico.RASCUNHO_DECISAO_CN_SALVO, "Corregedor Nacional", {
+        descricao: "Rascunho de decisão iniciado pelo Corregedor Nacional.",
+      }),
+    );
+  }
+  return proposicao;
+};
+
+export const descartarRascunhoDecisaoCN = (proposicao) => {
+  if (proposicao.statusFluxo !== StatusFluxo.RASCUNHO_DECISAO_CN) {
+    throw new Error("Não há rascunho de decisão ativo para descartar.");
+  }
+  proposicao.rascunhoDecisaoCN = null;
+  proposicao.statusFluxo = StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
+  appendHistory(
+    proposicao,
+    buildHistoryEvent(TipoHistorico.RASCUNHO_DECISAO_CN_DESCARTADO, "Corregedor Nacional", {
+      descricao: "Rascunho de decisão descartado pelo Corregedor Nacional.",
     }),
   );
   return proposicao;

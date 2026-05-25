@@ -17,6 +17,7 @@ const finalizarOuRetornar = (proposicao, eventType, usuario, juizo, descricao, m
   });
 
   appendHistory(proposicao, event);
+  proposicao.rascunhoDecisaoCN = null;
   proposicao.apreciacaoDoCN = cloneJuizo(juizo);
   proposicao.avaliacaoVigenteId = eventType === TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR ? event.id : null;
 
@@ -83,6 +84,7 @@ export const removerAvaliacao = (proposicao, usuario = "Corregedor Nacional") =>
   const avaliacaoId = proposicao.avaliacaoVigenteId;
   removeHistoryEvent(proposicao, avaliacaoId);
   proposicao.avaliacaoVigenteId = null;
+  proposicao.rascunhoDecisaoCN = null;
   proposicao.statusFluxo = StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO;
 
   appendHistory(
