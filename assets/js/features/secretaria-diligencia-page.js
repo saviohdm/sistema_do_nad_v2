@@ -320,12 +320,6 @@ const renderPainelFiltros = (aguardandoDiligencia, filtros) => {
             placeholder="Número, número ELO, descrição ou observações"
             value="${escapeAttr(filtros.textoBusca || "")}" />
         </div>
-        <div class="field field--checkbox" style="grid-column: span 2;">
-          <label>
-            <input type="checkbox" name="gruposCompletos" value="1" ${filtros.gruposCompletos ? "checked" : ""} />
-            <span>Somente grupos completos (todas as proposições da unidade aguardando a Secretaria)</span>
-          </label>
-        </div>
       </div>
       <div class="button-row">
         <button class="button" type="submit">Aplicar filtros</button>
@@ -334,6 +328,28 @@ const renderPainelFiltros = (aguardandoDiligencia, filtros) => {
     </form>
   `;
 };
+
+const renderGruposCompletoToggle = (countCompletos, ativo) => `
+  <div class="grupos-toggle${ativo ? " is-active" : ""}">
+    <label class="grupos-toggle__label" for="toggle-grupos-completos">
+      <span class="grupos-toggle__info">
+        <strong class="grupos-toggle__title">Somente grupos completos</strong>
+        <small class="grupos-toggle__sub">todas as prop. da unidade prontas para diligência</small>
+      </span>
+      <span class="grupos-toggle__badge">${countCompletos}</span>
+    </label>
+    <div class="grupos-toggle__control">
+      <input
+        type="checkbox"
+        id="toggle-grupos-completos"
+        data-action="toggle-grupos-completos"
+        ${ativo ? "checked" : ""}
+        aria-label="Filtrar somente grupos completos"
+      />
+      <span class="grupos-toggle__switch" aria-hidden="true"></span>
+    </div>
+  </div>
+`;
 
 // ---------------------------------------------------------------------------
 // Modo Fila — cards e sticky bar
@@ -442,7 +458,7 @@ const renderStickyBar = (totalSelecionados, ocultas) => {
 // Modo Fila — orquestração
 // ---------------------------------------------------------------------------
 
-const renderModoFila = (aguardandoDiligencia, filtros) => {
+const renderModoFila = (aguardandoDiligencia, filtros, gruposCompletoCount) => {
   const filtrados = filtrarProposicoes(aguardandoDiligencia, filtros);
   const idsFiltradosSet = new Set(filtrados.map((p) => p.id));
   const ocultas = Array.from(selecaoIds).filter((id) => !idsFiltradosSet.has(id)).length;
@@ -496,6 +512,7 @@ const renderModoFila = (aguardandoDiligencia, filtros) => {
             <span class="stat-card__value">${filtrados.length}</span>
             <span class="stat-card__label">proposição(ões)</span>
           </div>
+          ${renderGruposCompletoToggle(gruposCompletoCount, !!filtros.gruposCompletos)}
           <p class="muted" style="margin-top: 1rem;">Total aguardando diligência no sistema: <strong>${aguardandoDiligencia.length}</strong></p>
         </div>
 
@@ -596,9 +613,12 @@ const render = () => {
 
   const currentState = state();
   let aguardandoDiligencia = listFilaAguardandoDiligencia(currentState);
+  const todosGrupos = listGruposAguardandoDiligencia(currentState);
+  const gruposCompletoCount = todosGrupos.filter((g) => g.completo).length;
   if (filtros.gruposCompletos) {
-    const completos = listGruposAguardandoDiligencia(currentState).filter((g) => g.completo);
-    const idsCompletos = new Set(completos.flatMap((g) => g.proposicoes.map((p) => p.id)));
+    const idsCompletos = new Set(
+      todosGrupos.filter((g) => g.completo).flatMap((g) => g.proposicoes.map((p) => p.id)),
+    );
     aguardandoDiligencia = aguardandoDiligencia.filter((p) => idsCompletos.has(p.id));
   }
   const idsValidos = new Set(aguardandoDiligencia.map((p) => p.id));
@@ -623,7 +643,7 @@ const render = () => {
     content = renderModoRamo(aguardandoDiligencia, filtros);
     subtitle = "Escolha uma unidade dentro do ramo para entrar na fila.";
   } else {
-    content = renderModoFila(aguardandoDiligencia, filtros);
+    content = renderModoFila(aguardandoDiligencia, filtros, gruposCompletoCount);
     subtitle =
       "Selecione múltiplas proposições e crie diligências em lote com um único prazo e descrição.";
   }
@@ -674,6 +694,16 @@ const bindHandlers = (filtros, aguardandoDiligencia) => {
 
   document.querySelector("[data-action='voltar-ramo']")?.addEventListener("click", () => {
     aplicarFiltros({ ramoMP: filtros.ramoMP });
+  });
+
+  document.querySelector("[data-action='toggle-grupos-completos']")?.addEventListener("change", (e) => {
+    const novosFiltros = { ...filtros };
+    if (e.target.checked) {
+      novosFiltros.gruposCompletos = true;
+    } else {
+      delete novosFiltros.gruposCompletos;
+    }
+    aplicarFiltros(novosFiltros);
   });
 
   document.querySelector("[data-action='limpar-filtros']")?.addEventListener("click", () => {
