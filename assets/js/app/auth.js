@@ -34,7 +34,6 @@ const PERMISSIONS = {
 
 const PERSONA_MENU_OVERRIDES = {
   [PERSONAS.MEMBRO]: [
-    { href: "dashboard.html", label: "Dashboard" },
     { href: "membro-auxiliar.html", label: "Minha fila" },
     { href: "proposicoes-lista.html", label: "Consulta" },
   ],

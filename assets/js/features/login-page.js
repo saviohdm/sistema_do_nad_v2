@@ -30,7 +30,11 @@ const render = () => {
     const persona = data.get("persona");
     if (persona) {
       setCurrentPersona(persona);
-      window.location.href = "/pages/dashboard.html";
+      const destino =
+        persona === PERSONAS.MEMBRO
+          ? "/pages/membro-auxiliar.html"
+          : "/pages/dashboard.html";
+      window.location.href = destino;
     }
   });
 };

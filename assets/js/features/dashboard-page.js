@@ -29,8 +29,13 @@ import {
 
 requireAuth();
 
-const currentState = state();
 const persona = getCurrentPersona();
+
+if (persona === PERSONAS.MEMBRO) {
+  window.location.href = "/pages/membro-auxiliar.html";
+}
+
+const currentState = state();
 const recentes = listProposicoes(currentState).slice(0, 4);
 const comPendencia = findPropWithPendingProvidence(currentState);
 
