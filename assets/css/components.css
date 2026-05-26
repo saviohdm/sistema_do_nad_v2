@@ -1685,3 +1685,250 @@
     padding: var(--space-3);
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Dashboard do Corregedor Nacional — "Mesa do Corregedor"
+   Hierarquia: Hero editorial → 01 Mesa → 02 Pauta → 03 Panorama → 04 Ramo
+   ──────────────────────────────────────────────────────────────────── */
+
+.cn-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.cn-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ─── Hero editorial ────────────────────────────────────────────────── */
+.cn-hero {
+  position: relative;
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, var(--surface-warm), #f4eeeb 100%);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.cn-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 64px;
+  background: var(--primary);
+}
+
+.cn-hero__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.cn-hero__dateline {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cn-hero__mark {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary-dark);
+  font-style: italic;
+}
+
+.cn-hero__body {
+  margin: var(--space-5) 0 var(--space-5);
+  max-width: 60ch;
+}
+
+.cn-hero__saudacao {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.cn-hero__headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3.4vw, 2.5rem);
+  line-height: 1.15;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.cn-hero__headline strong {
+  color: var(--primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cn-hero__kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-4) var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(166, 26, 26, 0.15);
+}
+
+.cn-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.cn-kpi__value {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.cn-kpi__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cn-kpi--destaque .cn-kpi__value {
+  color: var(--primary);
+}
+
+.cn-kpi--destaque .cn-kpi__label {
+  color: var(--primary-dark);
+}
+
+/* ─── KPI clicável ──────────────────────────────────────────────────── */
+.cn-kpi--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, color 160ms ease;
+}
+
+.cn-kpi--link:hover .cn-kpi__value,
+.cn-kpi--link:focus-visible .cn-kpi__value {
+  color: var(--primary);
+}
+
+.cn-kpi--link:hover .cn-kpi__label,
+.cn-kpi--link:focus-visible .cn-kpi__label {
+  color: var(--primary-dark);
+}
+
+.cn-kpi--link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+/* ─── Títulos de seção (substituem o eyebrow editorial) ─────────────── */
+.cn-section__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.cn-section__subtitle {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+  max-width: 70ch;
+}
+
+/* ─── Painel "Panorama" (gráficos donut existentes) ─────────────────── */
+.cn-panorama-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+/* ─── Chart card solo (1 número grande + CTA, sem donut) ────────────── */
+.chart-card--solo {
+  justify-content: space-between;
+}
+
+.chart-card__solo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
+.chart-card__solo-value {
+  font-family: var(--font-display);
+  font-size: 4rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-card__solo-caption {
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 30ch;
+  line-height: 1.4;
+}
+
+/* ─── Responsividade ───────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .cn-panorama-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .cn-hero {
+    padding: var(--space-5);
+  }
+
+  .cn-hero__body {
+    margin: var(--space-4) 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .cn-hero__kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cn-kpi__value {
+    font-size: 1.85rem;
+  }
+
+  .chart-card__solo-value {
+    font-size: 3rem;
+  }
+}

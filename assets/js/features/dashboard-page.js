@@ -17,10 +17,13 @@ import {
   listGruposParciaisSecretaria,
   listProvidenciasAtrasadas,
 } from "../domain/secretaria-filas.js";
+import { formatDatelineEditorial, saudacaoPorHora } from "../app/utils.js";
 import {
   renderChartCard,
+  renderCnHero,
   renderProposicaoTable,
   renderRamoMPTable,
+  renderSoloChartCard,
   renderStatCard,
 } from "../ui/components.js";
 
@@ -66,30 +69,57 @@ const atalhosPanel = `
   </section>
 `;
 
+const buildHeadlineCN = ({ pendentesDecisao, pendentesRascunhoDecisao, pendentesReferendo, pendentesRascunho }) => {
+  const ordem = [
+    { valor: pendentesDecisao, singular: "decisão para tomar", plural: "decisões para tomar" },
+    { valor: pendentesRascunhoDecisao, singular: "rascunho de decisão em aberto", plural: "rascunhos de decisão em aberto" },
+    { valor: pendentesReferendo, singular: "referendo aguardando", plural: "referendos aguardando" },
+    { valor: pendentesRascunho, singular: "rascunho de criação pendente", plural: "rascunhos de criação pendentes" },
+  ];
+  const foco = ordem.find((item) => item.valor > 0);
+  if (!foco) {
+    return `Sua mesa está limpa. <strong>Bom trabalho.</strong>`;
+  }
+  const noun = foco.valor === 1 ? foco.singular : foco.plural;
+  return `Você tem <strong>${foco.valor}</strong> ${noun} hoje.`;
+};
+
 const buildCorregedorContent = () => {
   const proposicoes = countProposicoesPorAtividade(currentState);
   const correicoes = countCorreicoesPorAtividade(currentState);
   const porRamo = countProposicoesPorRamoMP(currentState);
   const pendentesCN = countPendentesDoCorregedor(currentState);
   const pendentesPersona = countPendentesPorPersona(currentState);
-  const totalPendentesMinhaAcao =
-    pendentesCN.pendentesRascunho +
-    pendentesCN.pendentesReferendo +
-    pendentesCN.pendentesDecisao +
-    pendentesCN.pendentesRascunhoDecisao;
+  const providenciasAbertas = findPropWithPendingProvidence(currentState).length;
 
-  const heroKpis = `
-    <div class="hero-card__kpis">
-      <div class="hero-kpi">
-        <span class="hero-kpi__value">${proposicoes.ativas}</span>
-        <span class="hero-kpi__label">Proposições ativas</span>
-      </div>
-      <div class="hero-kpi">
-        <span class="hero-kpi__value">${totalPendentesMinhaAcao}</span>
-        <span class="hero-kpi__label">Pendentes minha ação</span>
-      </div>
-    </div>
-  `;
+  const heroHtml = renderCnHero({
+    dateline: formatDatelineEditorial(),
+    saudacao: `${saudacaoPorHora()}, Corregedor.`,
+    headline: buildHeadlineCN(pendentesCN),
+    kpis: [
+      {
+        valor: pendentesCN.pendentesDecisao,
+        label: "Aguardando decisão",
+        destaque: true,
+        href: "corregedor-decisao.html",
+      },
+      {
+        valor: pendentesCN.pendentesRascunhoDecisao,
+        label: "Em rascunho de decisão",
+        href: "proposicoes-lista.html?buscar=1&status=rascunho_decisao_cn",
+      },
+      {
+        valor: pendentesCN.pendentesReferendo,
+        label: "Referendos abertos",
+        href: "corregedor-referendo.html",
+      },
+      {
+        valor: pendentesCN.pendentesRascunho,
+        label: "Rascunhos de criação",
+        href: "proposicoes-lista.html?buscar=1&status=rascunho_cn",
+      },
+    ],
+  });
 
   const proposicoesCard = renderChartCard(
     "Proposições",
@@ -109,23 +139,6 @@ const buildCorregedorContent = () => {
     { showPercent: false },
   );
 
-  const pendentesCNCard = renderChartCard(
-    "Pendentes de ação do Corregedor Nacional",
-    [
-      { label: "Rascunho", value: pendentesCN.pendentesRascunho, color: "var(--chart-1)" },
-      { label: "Referendo", value: pendentesCN.pendentesReferendo, color: "var(--chart-2)" },
-      { label: "Decisão", value: pendentesCN.pendentesDecisao, color: "var(--chart-3)" },
-      { label: "Rascunho de decisão", value: pendentesCN.pendentesRascunhoDecisao, color: "var(--chart-4)" },
-    ],
-    {
-      highlight: true,
-      actions: [
-        { href: "corregedor-referendo.html", label: "Ver referendos" },
-        { href: "corregedor-decisao.html", label: "Ver decisões" },
-      ],
-    },
-  );
-
   const pendentesPersonaCard = renderChartCard(
     "Proposições ativas por persona responsável",
     [
@@ -136,41 +149,43 @@ const buildCorregedorContent = () => {
     ],
   );
 
-  return `
-    <section class="stack stack--loose">
-      <article class="hero-card">
-        <h2>Painel do Corregedor Nacional</h2>
-        <p>
-          Visão consolidada do acervo de proposições e correições, com destaque para as filas
-          que dependem de ação direta da Corregedoria Nacional.
-        </p>
-        ${heroKpis}
-      </article>
+  const providenciasCard = renderSoloChartCard(
+    "Providências paralelas",
+    providenciasAbertas,
+    {
+      caption: providenciasAbertas === 1 ? "proposição com providência em aberto" : "proposições com providência em aberto",
+      subtitle: "Pendências administrativas da Secretaria em andamento, sob sua supervisão.",
+      actions: [{ href: "secretaria-providencia.html", label: "Acompanhar providências" }],
+    },
+  );
 
-      <section class="metric-section">
-        <header class="metric-section__header">
-          <h3 class="panel__title">Visão analítica</h3>
-          <p class="muted">
-            Acervo ativo e inativo à esquerda; filas de ação e distribuição por persona à direita.
-            Proposição inativa: cientificada ou apagada, com todas as providências da Secretaria concluídas.
-          </p>
-        </header>
-        <div class="dashboard-charts-grid">
-          ${proposicoesCard}
-          ${correicoesCard}
-          ${pendentesCNCard}
-          ${pendentesPersonaCard}
-        </div>
-      </section>
-
-      <section class="metric-section">
-        <header class="metric-section__header">
-          <h3 class="panel__title">Proposições por ramo do MP</h3>
-          <p class="muted">Distribuição entre ativas e inativas em cada ramo.</p>
-        </header>
-        ${renderRamoMPTable(porRamo)}
-      </section>
+  const panoramaSection = `
+    <section class="cn-section">
+      <h2 class="cn-section__title">Panorama</h2>
+      <p class="cn-section__subtitle">Acervo ativo e inativo, carga por persona responsável e supervisão de providências.</p>
+      <div class="cn-panorama-grid">
+        ${proposicoesCard}
+        ${correicoesCard}
+        ${pendentesPersonaCard}
+        ${providenciasCard}
+      </div>
     </section>
+  `;
+
+  const ramoSection = `
+    <section class="cn-section">
+      <h2 class="cn-section__title">Distribuição por ramo do MP</h2>
+      <p class="cn-section__subtitle">Proposições ativas e inativas em cada ramo do Ministério Público.</p>
+      ${renderRamoMPTable(porRamo)}
+    </section>
+  `;
+
+  return `
+    <div class="cn-dashboard">
+      ${heroHtml}
+      ${panoramaSection}
+      ${ramoSection}
+    </div>
   `;
 };
 
@@ -536,7 +551,8 @@ let subtitle;
 
 if (isCorregedor) {
   content = buildCorregedorContent();
-  subtitle = "Painel analítico do Corregedor Nacional: acervo, filas e pendências por persona.";
+  subtitle =
+    "Pulso da Corregedoria Nacional: pendências em aberto, acervo e supervisão de providências.";
 } else if (isSecretaria) {
   content = buildSecretariaContent();
   subtitle =

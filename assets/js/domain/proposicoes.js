@@ -37,6 +37,50 @@ export const listProposicoesAguardandoDecisao = (state) =>
       proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN,
   );
 
+const EVENTOS_INGRESSO_MESA = new Set([
+  TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR,
+  TipoHistorico.AVALIACAO_COM_FORCA_DE_DECISAO,
+  TipoHistorico.RASCUNHO_DECISAO_CN_DESCARTADO,
+  TipoHistorico.RASCUNHO_DECISAO_CN_SALVO,
+]);
+
+export const getTempoAguardandoDecisao = (proposicao) => {
+  const eventos = proposicao.historico || [];
+  for (let i = eventos.length - 1; i >= 0; i -= 1) {
+    if (EVENTOS_INGRESSO_MESA.has(eventos[i].tipo)) {
+      return eventos[i].data || null;
+    }
+  }
+  return null;
+};
+
+const PRIORIDADE_ORDEM = {
+  [Prioridade.URGENTE]: 0,
+  [Prioridade.IMPORTANTE]: 1,
+  [Prioridade.NORMAL]: 2,
+};
+
+export const listMesaDecisaoCN = (state) => {
+  const itens = listProposicoesAguardandoDecisao(state).filter(isProposicaoAtiva);
+  return itens
+    .map((proposicao) => ({
+      proposicao,
+      tempoAguardando: getTempoAguardandoDecisao(proposicao),
+    }))
+    .sort((a, b) => {
+      const sensDiff =
+        (b.proposicao.sensivel ? 1 : 0) - (a.proposicao.sensivel ? 1 : 0);
+      if (sensDiff !== 0) return sensDiff;
+      const prioDiff =
+        (PRIORIDADE_ORDEM[a.proposicao.prioridade] ?? 9) -
+        (PRIORIDADE_ORDEM[b.proposicao.prioridade] ?? 9);
+      if (prioDiff !== 0) return prioDiff;
+      const ta = a.tempoAguardando ? new Date(a.tempoAguardando).getTime() : 0;
+      const tb = b.tempoAguardando ? new Date(b.tempoAguardando).getTime() : 0;
+      return ta - tb;
+    });
+};
+
 const aggregateBy = (items, keyFn, extraFn = () => ({})) => {
   const map = new Map();
   items.forEach((item) => {

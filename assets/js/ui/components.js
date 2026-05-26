@@ -123,6 +123,27 @@ export const renderChartCard = (title, slices, { subtitle, showPercent = true, h
   `;
 };
 
+export const renderSoloChartCard = (title, value, { caption, subtitle, actions = [] } = {}) => {
+  const footerHtml = actions.length
+    ? `<footer class="chart-card__footer">
+        ${actions.map((a) => `<a class="chart-card__action-link" href="${a.href}">${a.label} →</a>`).join("")}
+      </footer>`
+    : "";
+  return `
+    <article class="chart-card chart-card--solo">
+      <header class="chart-card__header">
+        <h3 class="chart-card__title">${title}</h3>
+        ${subtitle ? `<p class="chart-card__subtitle">${subtitle}</p>` : ""}
+      </header>
+      <div class="chart-card__solo">
+        <span class="chart-card__solo-value">${value}</span>
+        ${caption ? `<span class="chart-card__solo-caption">${caption}</span>` : ""}
+      </div>
+      ${footerHtml}
+    </article>
+  `;
+};
+
 export const renderMetricSection = (title, cardsHtml, { subtitle } = {}) => `
   <section class="metric-section">
     <header class="metric-section__header">
@@ -352,6 +373,35 @@ export const renderEmptyState = (message) => `
     <p>${message}</p>
   </div>
 `;
+
+export const renderCnHero = ({ dateline, saudacao, headline, kpis = [] }) => {
+  const kpisHtml = kpis
+    .map((kpi) => {
+      const classes = `cn-kpi${kpi.destaque ? " cn-kpi--destaque" : ""}${kpi.href ? " cn-kpi--link" : ""}`;
+      const inner = `
+          <span class="cn-kpi__value">${kpi.valor}</span>
+          <span class="cn-kpi__label">${kpi.label}</span>`;
+      return kpi.href
+        ? `<a class="${classes}" href="${kpi.href}">${inner}</a>`
+        : `<div class="${classes}">${inner}</div>`;
+    })
+    .join("");
+
+  return `
+    <section class="cn-hero" aria-label="Resumo do dia para o Corregedor Nacional">
+      <div class="cn-hero__top">
+        <p class="cn-hero__dateline">${dateline}</p>
+        <span class="cn-hero__mark" aria-hidden="true">NAD · CN</span>
+      </div>
+      <div class="cn-hero__body">
+        <p class="cn-hero__saudacao">${saudacao}</p>
+        <p class="cn-hero__headline">${headline}</p>
+      </div>
+      <div class="cn-hero__kpis">${kpisHtml}</div>
+    </section>
+  `;
+};
+
 
 export const renderProposicaoCard = (proposicao) => {
   const statusBadge = renderStatusBadge(proposicao.statusFluxo);
