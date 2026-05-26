@@ -2,6 +2,7 @@ import { Labels, getPrioridadeBadgeTone } from "../domain/enums.js";
 import {
   formatDate,
   formatDateTime,
+  formatTempoRelativo,
 } from "../app/utils.js";
 import {
   getHumanSummary,
@@ -427,4 +428,175 @@ export const renderProposicaoCard = (proposicao) => {
       </div>
     </a>
   `;
+};
+
+export const renderEditorialOverline = (text, { tag = "p", className = "" } = {}) => {
+  const classes = ["acervo-overline", className].filter(Boolean).join(" ");
+  return `<${tag} class="${classes}">${text}</${tag}>`;
+};
+
+const PRIORIDADE_CLASS = {
+  urgente: "acervo-row--prio-urgente",
+  importante: "acervo-row--prio-importante",
+  normal: "acervo-row--prio-normal",
+};
+
+const getUltimaMovimentacao = (proposicao) => {
+  const eventos = proposicao.historico || [];
+  if (eventos.length === 0) return null;
+  const ordenados = [...eventos].sort(
+    (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime(),
+  );
+  return ordenados[0]?.data || null;
+};
+
+const contarPendenciasAbertas = (proposicao) =>
+  (proposicao.pendenciasSecretaria || []).filter((p) => p.status === "pendente").length;
+
+const splitNumeroCapitular = (numero) => {
+  const str = String(numero || "");
+  const match = str.match(/^([A-Za-z]+)(.*)$/);
+  if (match) {
+    return { capitular: match[1].charAt(0), resto: match[1].slice(1) + match[2] };
+  }
+  return { capitular: str.charAt(0) || "·", resto: str.slice(1) };
+};
+
+export const renderFilterToggleChip = ({ label, value, count, active }) => `
+  <button
+    type="button"
+    class="acervo-filter-chip${active ? " is-active" : ""}"
+    data-toggle-status="${value}"
+    aria-pressed="${active ? "true" : "false"}"
+  >
+    <span class="acervo-filter-chip__label">${label}</span>
+    ${typeof count === "number" ? `<span class="acervo-filter-chip__count">${count}</span>` : ""}
+  </button>
+`;
+
+export const renderPresetChip = ({ label, href, count, icon = "›" }) => `
+  <a class="acervo-preset-chip" href="${href}">
+    <span class="acervo-preset-chip__mark" aria-hidden="true">${icon}</span>
+    <span class="acervo-preset-chip__label">${label}</span>
+    ${typeof count === "number" ? `<span class="acervo-preset-chip__count">${count}</span>` : ""}
+  </a>
+`;
+
+export const renderActiveFilterChip = ({ label, removeHref }) => `
+  <a class="acervo-active-chip" href="${removeHref}" title="Remover filtro" aria-label="Remover filtro ${label}">
+    <span class="acervo-active-chip__label">${label}</span>
+    <span class="acervo-active-chip__remove" aria-hidden="true">×</span>
+  </a>
+`;
+
+export const renderProposicaoTableEditorial = (proposicoes) => {
+  if (!proposicoes.length) {
+    return "";
+  }
+
+  const rows = proposicoes
+    .map((item, idx) => {
+      const prioClass = PRIORIDADE_CLASS[item.prioridade] || "acervo-row--prio-normal";
+      const { capitular, resto } = splitNumeroCapitular(item.numero);
+      const ultima = getUltimaMovimentacao(item);
+      const idade = formatTempoRelativo(ultima);
+      const pendencias = contarPendenciasAbertas(item);
+      const sens = item.sensivel
+        ? `<span class="acervo-row__sensivel" title="Caso sensível" aria-label="Caso sensível">●</span>`
+        : "";
+      const delay = Math.min(idx, 24);
+      return `
+        <tr class="acervo-row ${prioClass}" style="--reveal-delay:${delay * 30}ms;">
+          <td class="acervo-row__numero-cell">
+            <a href="proposicao-detalhe.html?id=${item.id}" class="acervo-row__numero">
+              <span class="acervo-row__capitular" aria-hidden="true">${capitular}</span>
+              <span class="acervo-row__numero-rest">${resto}</span>
+            </a>
+            <span class="acervo-row__tipo">${item.tipo}${sens}</span>
+          </td>
+          <td class="acervo-row__unidade">
+            <span class="acervo-row__unidade-name">${item.unidade}</span>
+            <span class="acervo-row__unidade-meta">${item.ramoMP || ""}${item.tematica ? ` · ${item.tematica}` : ""}</span>
+          </td>
+          <td class="acervo-row__membro">${item.membro || "—"}</td>
+          <td class="acervo-row__status">${renderStatusBadge(item.statusFluxo)}</td>
+          <td class="acervo-row__apreciacao">${renderApreciacaoBadge(item.apreciacaoDoCN)}</td>
+          <td class="acervo-row__pend">
+            ${
+              pendencias > 0
+                ? `<span class="acervo-row__pend-count" title="Pendências abertas">${pendencias}</span>`
+                : `<span class="acervo-row__pend-zero">—</span>`
+            }
+          </td>
+          <td class="acervo-row__idade">${idade}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="acervo-table-wrap">
+      <table class="acervo-table-editorial">
+        <thead>
+          <tr>
+            <th scope="col" class="acervo-th-numero">Proposição</th>
+            <th scope="col">Unidade</th>
+            <th scope="col">Membro</th>
+            <th scope="col">Status</th>
+            <th scope="col">Apreciação do CN</th>
+            <th scope="col" class="acervo-th-pend">Pend.</th>
+            <th scope="col" class="acervo-th-idade">Última movimentação</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+};
+
+export const renderProposicaoCardGrid = (proposicoes) => {
+  if (!proposicoes.length) {
+    return "";
+  }
+  const cards = proposicoes
+    .map((item, idx) => {
+      const { capitular, resto } = splitNumeroCapitular(item.numero);
+      const prioClass = PRIORIDADE_CLASS[item.prioridade] || "acervo-row--prio-normal";
+      const ultima = getUltimaMovimentacao(item);
+      const idade = formatTempoRelativo(ultima);
+      const pendencias = contarPendenciasAbertas(item);
+      const sens = item.sensivel
+        ? `<span class="acervo-card__sensivel" title="Caso sensível">● Sensível</span>`
+        : "";
+      const delay = Math.min(idx, 24);
+      return `
+        <a class="acervo-card ${prioClass}" href="proposicao-detalhe.html?id=${item.id}" style="--reveal-delay:${delay * 30}ms;">
+          <header class="acervo-card__head">
+            <div class="acervo-card__numero">
+              <span class="acervo-card__capitular" aria-hidden="true">${capitular}</span>
+              <span class="acervo-card__numero-rest">${resto}</span>
+            </div>
+            <div class="acervo-card__badges">
+              ${renderStatusBadge(item.statusFluxo)}
+              ${renderApreciacaoBadge(item.apreciacaoDoCN)}
+            </div>
+          </header>
+          <p class="acervo-card__tipo">${item.tipo}${item.prioridade && item.prioridade !== "normal" ? ` · ${Labels.prioridade[item.prioridade]}` : ""}</p>
+          <p class="acervo-card__unidade">${item.unidade}</p>
+          <dl class="acervo-card__meta">
+            <div><dt>Ramo</dt><dd>${item.ramoMP || "—"}</dd></div>
+            <div><dt>Temática</dt><dd>${item.tematica || "—"}</dd></div>
+            <div><dt>Membro</dt><dd>${item.membro || "—"}</dd></div>
+            <div><dt>Última mov.</dt><dd>${idade}</dd></div>
+          </dl>
+          <footer class="acervo-card__foot">
+            ${sens}
+            ${pendencias > 0 ? `<span class="acervo-card__pend">${pendencias} pendência${pendencias > 1 ? "s" : ""}</span>` : ""}
+            <span class="acervo-card__cta" aria-hidden="true">Abrir →</span>
+          </footer>
+        </a>
+      `;
+    })
+    .join("");
+  return `<div class="acervo-card-grid">${cards}</div>`;
 };
