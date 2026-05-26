@@ -85,6 +85,39 @@
   max-width: 65ch;
 }
 
+.hero-card__kpis {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 400px;
+  gap: var(--space-5) var(--space-6);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hero-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.hero-kpi__value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+  line-height: 1;
+  color: #ffffff;
+}
+
+.hero-kpi__label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.72);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
 .stats-grid,
 .summary-grid {
   display: grid;
@@ -246,7 +279,39 @@
   line-height: 1.3;
 }
 
-@media (max-width: 960px) {
+/* Variant: destaca o card mais acionável */
+.chart-card--highlight {
+  border-left: 4px solid var(--primary);
+  background: var(--surface-warm);
+}
+
+/* Footer com links de ação rápida */
+.chart-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+}
+
+.chart-card__action-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: color 150ms ease;
+}
+
+.chart-card__action-link:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
   .dashboard-charts-grid {
     grid-template-columns: 1fr;
   }
@@ -278,9 +343,33 @@
     font-size: 1.6rem;
   }
 
+  .hero-kpi__value {
+    font-size: 1.75rem;
+  }
+
+  .hero-card__kpis {
+    gap: var(--space-4) var(--space-5);
+  }
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Mini-barra proporcional na tabela de ramos do MP */
+.table-bar-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.table-bar {
+  height: 3px;
+  border-radius: 999px;
+  background: var(--primary);
+  opacity: 0.55;
+  max-width: 64px;
+  min-width: 2px;
 }
 
 .metric-section {

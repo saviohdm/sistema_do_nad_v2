@@ -72,6 +72,24 @@ const buildCorregedorContent = () => {
   const porRamo = countProposicoesPorRamoMP(currentState);
   const pendentesCN = countPendentesDoCorregedor(currentState);
   const pendentesPersona = countPendentesPorPersona(currentState);
+  const totalPendentesMinhaAcao =
+    pendentesCN.pendentesRascunho +
+    pendentesCN.pendentesReferendo +
+    pendentesCN.pendentesDecisao +
+    pendentesCN.pendentesRascunhoDecisao;
+
+  const heroKpis = `
+    <div class="hero-card__kpis">
+      <div class="hero-kpi">
+        <span class="hero-kpi__value">${proposicoes.ativas}</span>
+        <span class="hero-kpi__label">Proposições ativas</span>
+      </div>
+      <div class="hero-kpi">
+        <span class="hero-kpi__value">${totalPendentesMinhaAcao}</span>
+        <span class="hero-kpi__label">Pendentes minha ação</span>
+      </div>
+    </div>
+  `;
 
   const proposicoesCard = renderChartCard(
     "Proposições",
@@ -99,6 +117,13 @@ const buildCorregedorContent = () => {
       { label: "Decisão", value: pendentesCN.pendentesDecisao, color: "var(--chart-3)" },
       { label: "Rascunho de decisão", value: pendentesCN.pendentesRascunhoDecisao, color: "var(--chart-4)" },
     ],
+    {
+      highlight: true,
+      actions: [
+        { href: "corregedor-referendo.html", label: "Ver referendos" },
+        { href: "corregedor-decisao.html", label: "Ver decisões" },
+      ],
+    },
   );
 
   const pendentesPersonaCard = renderChartCard(
@@ -112,13 +137,14 @@ const buildCorregedorContent = () => {
   );
 
   return `
-    <section class="stack">
+    <section class="stack stack--loose">
       <article class="hero-card">
         <h2>Painel do Corregedor Nacional</h2>
         <p>
           Visão consolidada do acervo de proposições e correições, com destaque para as filas
           que dependem de ação direta da Corregedoria Nacional.
         </p>
+        ${heroKpis}
       </article>
 
       <section class="metric-section">

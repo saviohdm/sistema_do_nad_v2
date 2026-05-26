@@ -42,7 +42,7 @@ export const renderStatCard = (label, value) => `
   </article>
 `;
 
-export const renderChartCard = (title, slices, { subtitle, showPercent = true } = {}) => {
+export const renderChartCard = (title, slices, { subtitle, showPercent = true, highlight = false, actions = [] } = {}) => {
   const total = slices.reduce((s, d) => s + d.value, 0);
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
@@ -94,8 +94,14 @@ export const renderChartCard = (title, slices, { subtitle, showPercent = true } 
   const summary = slices.map((s) => `${s.value} ${s.label}`).join(", ");
   const description = `${title}: ${summary}. Total de ${total}.`;
 
+  const footerHtml = actions.length
+    ? `<footer class="chart-card__footer">
+        ${actions.map((a) => `<a class="chart-card__action-link" href="${a.href}">${a.label} →</a>`).join("")}
+      </footer>`
+    : "";
+
   return `
-    <article class="chart-card">
+    <article class="chart-card${highlight ? " chart-card--highlight" : ""}">
       <header class="chart-card__header">
         <h3 class="chart-card__title">${title}</h3>
         ${subtitle ? `<p class="chart-card__subtitle">${subtitle}</p>` : ""}
@@ -112,6 +118,7 @@ export const renderChartCard = (title, slices, { subtitle, showPercent = true } 
         </div>
         <div class="chart-card__legend">${legendItems}</div>
       </div>
+      ${footerHtml}
     </article>
   `;
 };
@@ -126,43 +133,50 @@ export const renderMetricSection = (title, cardsHtml, { subtitle } = {}) => `
   </section>
 `;
 
-export const renderRamoMPTable = (linhas) => `
-  <div class="panel">
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Ramo do MP</th>
-            <th>Ativas</th>
-            <th>Inativas</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${
-            linhas.length
-              ? linhas
-                  .map(
-                    (linha) => `
-                      <tr>
-                        <td>
-                          <strong>${linha.ramoMP}</strong>
-                          <div class="muted">${linha.ramoMPNome}</div>
-                        </td>
-                        <td>${linha.ativas}</td>
-                        <td>${linha.inativas}</td>
-                        <td>${linha.ativas + linha.inativas}</td>
-                      </tr>
-                    `,
-                  )
-                  .join("")
-              : `<tr><td colspan="4"><div class="empty-state">Sem proposições registradas.</div></td></tr>`
-          }
-        </tbody>
-      </table>
+export const renderRamoMPTable = (linhas) => {
+  const maxAtivas = linhas.length ? Math.max(...linhas.map((l) => l.ativas), 1) : 1;
+  const rows = linhas.length
+    ? linhas
+        .map((linha) => {
+          const pct = Math.round((linha.ativas / maxAtivas) * 100);
+          return `
+            <tr>
+              <td>
+                <strong>${linha.ramoMP}</strong>
+                <div class="muted">${linha.ramoMPNome}</div>
+              </td>
+              <td>
+                <div class="table-bar-cell">
+                  <span>${linha.ativas}</span>
+                  <span class="table-bar" style="width:${pct}%"></span>
+                </div>
+              </td>
+              <td>${linha.inativas}</td>
+              <td>${linha.ativas + linha.inativas}</td>
+            </tr>
+          `;
+        })
+        .join("")
+    : `<tr><td colspan="4"><div class="empty-state">Sem proposições registradas.</div></td></tr>`;
+
+  return `
+    <div class="panel">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Ramo do MP</th>
+              <th>Ativas</th>
+              <th>Inativas</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     </div>
-  </div>
-`;
+  `;
+};
 
 export const renderProposicaoTable = (proposicoes) => `
   <div class="panel">
