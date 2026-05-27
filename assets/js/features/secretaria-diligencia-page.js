@@ -13,6 +13,8 @@ import {
   listGruposAguardandoDiligencia,
 } from "../domain/secretaria-filas.js";
 import { criarDiligenciaEmLote } from "../domain/diligencias.js";
+import { adicionarEmailDiligencia, previewEmailDiligencia } from "../domain/caixa-de-saida.js";
+import { resolveDestinatarioCorreicionado } from "../domain/correicionados.js";
 import {
   renderBadge,
   renderEmptyState,
@@ -542,25 +544,40 @@ const ensureModalRoot = () => {
 
 const abrirModalConfirmacao = (proposicoesSelecionadas, prazo, descricao) => {
   const root = ensureModalRoot();
+  const currentState = state();
   const itens = proposicoesSelecionadas
-    .map(
-      (p) =>
-        `<li><strong>${p.numero}</strong> · ${p.unidade} · ${p.ramoMP || "—"}</li>`,
-    )
+    .map((p) => {
+      const destinatario = resolveDestinatarioCorreicionado(currentState, p);
+      const dest = destinatario
+        ? `${destinatario.nome} &lt;${destinatario.email}&gt;`
+        : `<em>(sem destinatário cadastrado — unidade ${p.unidade})</em>`;
+      return `<li><strong>${p.numero}</strong> · ${p.unidade} · ${p.ramoMP || "—"}<br><span class="muted" style="font-size: 0.85rem;">E-mail para: ${dest}</span></li>`;
+    })
     .join("");
+
+  const semDestinatario = proposicoesSelecionadas.filter(
+    (p) => !resolveDestinatarioCorreicionado(currentState, p),
+  );
+
+  const avisoSemDestinatario = semDestinatario.length > 0
+    ? `<div class="alert alert--warning" role="alert" style="margin-top: var(--space-3);">
+        ${semDestinatario.length} proposição(ões) não têm destinatário identificável no diretório CNMP. O e-mail será registrado na caixa de saída como "sem destinatário", e o evento de envio constará no histórico para auditoria.
+      </div>`
+    : "";
 
   const body = `
     <p>Você está prestes a criar <strong>${proposicoesSelecionadas.length}</strong> diligência(s) com os seguintes dados:</p>
     <p><strong>Prazo:</strong> ${formatBR(prazo)}</p>
     <p><strong>Descrição:</strong></p>
     <blockquote class="muted" style="border-left: 3px solid var(--line); padding-left: var(--space-3); margin: var(--space-2) 0;">${descricao.replace(/\n/g, "<br>")}</blockquote>
-    <p><strong>Proposições selecionadas:</strong></p>
+    <p><strong>Cada proposição também disparará um e-mail ao correicionado:</strong></p>
     <div class="lote-resumo-list">
       <ul>${itens}</ul>
     </div>
+    ${avisoSemDestinatario}
     <div class="button-row" style="justify-content: flex-end; margin-top: var(--space-4);">
       <button class="button button--ghost" type="button" data-modal-close>Cancelar</button>
-      <button class="button button--primary" type="button" data-action="confirmar-lote">Confirmar criação</button>
+      <button class="button button--primary" type="button" data-action="confirmar-lote">Confirmar criação e envio</button>
     </div>
   `;
 
@@ -592,7 +609,11 @@ const confirmarCriacaoEmLote = (prazo, descricao) => {
   mutateState((draft) => {
     const proposicoesAlvo = draft.proposicoes.filter((p) => idsParaCriar.includes(p.id));
     if (proposicoesAlvo.length === 0) return draft;
-    criarDiligenciaEmLote(proposicoesAlvo, { prazo, descricao });
+    const { criadas } = criarDiligenciaEmLote(proposicoesAlvo, { prazo, descricao });
+    criadas.forEach(({ proposicao, diligencia }) => {
+      const destinatario = resolveDestinatarioCorreicionado(draft, proposicao);
+      adicionarEmailDiligencia(draft, proposicao, diligencia, destinatario);
+    });
     return draft;
   });
   selecaoIds.clear();

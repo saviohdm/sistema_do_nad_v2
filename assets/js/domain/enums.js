@@ -52,6 +52,22 @@ export const TipoHistorico = {
   CUMPRIMENTO_PENDENCIA_SECRETARIA: "cumprimento_pendencia_secretaria",
   RASCUNHO_DECISAO_CN_SALVO: "rascunho_decisao_cn_salvo",
   RASCUNHO_DECISAO_CN_DESCARTADO: "rascunho_decisao_cn_descartado",
+  RASCUNHO_COMPROVACAO_SALVO: "rascunho_comprovacao_salvo",
+  PRAZO_COMPROVACAO_EXPIRADO: "prazo_comprovacao_expirado",
+  EMAIL_DILIGENCIA_ENVIADO: "email_diligencia_enviado",
+  EMAIL_CIENCIA_ENVIADO: "email_ciencia_enviado",
+  VISUALIZACAO_CIENCIA_CORREICIONADO: "visualizacao_ciencia_correicionado",
+};
+
+export const StatusDiligencia = {
+  ABERTA: "aberta",
+  COMPROVADA: "comprovada",
+  EXPIRADA: "expirada",
+};
+
+export const TipoCaixaSaida = {
+  DILIGENCIA: "diligencia",
+  CIENCIA: "ciencia",
 };
 
 export const Labels = {

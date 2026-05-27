@@ -69,9 +69,16 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
 
 ### Correicionado
 
-1. Após a criação da diligência, o correicionado `RASCUNHA comprovação`.
-2. Em seguida, o correicionado `COMPROVA`.
-3. A comprovação retorna ao fluxo interno da Corregedoria Nacional para nova avaliação.
+1. O correicionado faz login no sistema com sua identidade do diretório do CNMP (em produção, via SSO). No protótipo, escolhe um membro na tela de login.
+2. O sistema, aplicando a regra Modelo C, lhe apresenta:
+   - **Minhas comprovações**: proposições em `aguardando_comprovacao` em seu nome (`membroId`) ou em unidades onde ele é chefe (`chefiaDeUnidadeIds`).
+   - **Minhas ciências**: proposições em `baixa_definitiva` cuja ciência foi disponibilizada a ele.
+3. Após a Secretaria criar uma diligência, o sistema **dispara e-mail** para o correicionado (entrada em `state.caixaDeSaida[]`, evento `email_diligencia_enviado` no histórico) com link para acesso direto à comprovação.
+4. O correicionado pode `RASCUNHAR comprovação`, anexando narrativa, observações e arquivos (metadata-only no protótipo). Há apenas um rascunho ativo por proposição. Salvar rascunho gera evento `rascunho_comprovacao_salvo` (oculto na visão dele).
+5. Em seguida, o correicionado `COMPROVA`. O ato consome o rascunho, persiste anexos no evento `comprovacao` e transita a proposição para `aguardando_avaliacao_membro`.
+6. **Expiração**: se o prazo da diligência passa sem comprovação, o sistema marca a diligência como `expirada`, registra `prazo_comprovacao_expirado` e transita para `aguardando_avaliacao_membro` (o membro auxiliar avaliará a omissão). O rascunho, se existir, é preservado para auditoria.
+7. Quando a Secretaria abre ciência (cientificarGrupo), o sistema **dispara e-mail agregado por destinatário** (entrada em `state.caixaDeSaida[]`, evento `email_ciencia_enviado` em cada proposição). O ato da Secretaria já transita a proposição para `baixa_definitiva`.
+8. O correicionado acessa **Minhas ciências**, abre o detalhe da proposição e visualiza a apreciação final do CN, fundamentos e eventuais providências paralelas. Esse acesso registra `visualizacao_ciencia_correicionado` no histórico (sem transição de status). Ele pode revisitar a proposição quantas vezes quiser; o evento é gravado uma única vez por usuário.
 
 ### Membro Auxiliar da CN
 

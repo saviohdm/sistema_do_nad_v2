@@ -1,4 +1,7 @@
+import { loadState } from "./store.js";
+
 const PERSONA_KEY = "nad-persona-atual";
+const CURRENT_USER_KEY = "nad-current-user-id";
 
 export const PERSONAS = {
   CORREGEDOR: "Corregedor Nacional",
@@ -17,6 +20,7 @@ const PERMISSIONS = {
     "remover_avaliacao",
     "avaliacao_com_forca_decisao",
     "editar_metadados",
+    "ver_caixa_de_saida",
   ],
   [PERSONAS.MEMBRO]: [
     "avaliar_como_membro",
@@ -28,8 +32,16 @@ const PERMISSIONS = {
     "registrar_cientificacao",
     "cumprir_pendencia_secretaria",
     "editar_metadados",
+    "ver_caixa_de_saida",
+    "avancar_tempo_sistema",
   ],
-  [PERSONAS.CORREICIONADO]: ["registrar_comprovacao"],
+  [PERSONAS.CORREICIONADO]: [
+    "registrar_comprovacao",
+    "salvar_rascunho_comprovacao",
+    "ver_minhas_comprovacoes",
+    "ver_minhas_ciencias",
+    "tomar_ciencia",
+  ],
 };
 
 const PERSONA_MENU_OVERRIDES = {
@@ -43,6 +55,7 @@ const PERSONA_MENU_OVERRIDES = {
     { href: "corregedor-decisao.html", label: "Aguardando decisão" },
     { href: "proposicoes-lista.html", label: "Consulta" },
     { href: "proposicoes-criar.html", label: "Criar proposição" },
+    { href: "caixa-de-saida.html", label: "Caixa de saída (demo)" },
   ],
   [PERSONAS.SECRETARIA]: [
     { href: "dashboard.html", label: "Dashboard" },
@@ -53,6 +66,20 @@ const PERSONA_MENU_OVERRIDES = {
       badgeKey: "gruposCompletosProntos",
     },
     { href: "secretaria-providencia.html", label: "Providências pendentes" },
+    { href: "proposicoes-lista.html", label: "Consulta" },
+    { href: "caixa-de-saida.html", label: "Caixa de saída (demo)" },
+  ],
+  [PERSONAS.CORREICIONADO]: [
+    {
+      href: "correicionado-comprovacoes.html",
+      label: "Minhas comprovações",
+      badgeKey: "minhasComprovacoesPendentes",
+    },
+    {
+      href: "correicionado-ciencias.html",
+      label: "Minhas ciências",
+      badgeKey: "minhasCienciasNaoVisualizadas",
+    },
     { href: "proposicoes-lista.html", label: "Consulta" },
   ],
 };
@@ -72,6 +99,26 @@ export const getCurrentPersona = () => {
 
 export const clearPersona = () => {
   localStorage.removeItem(PERSONA_KEY);
+  localStorage.removeItem(CURRENT_USER_KEY);
+};
+
+export const setCurrentUser = (userId) => {
+  if (userId) localStorage.setItem(CURRENT_USER_KEY, userId);
+  else localStorage.removeItem(CURRENT_USER_KEY);
+};
+
+export const getCurrentUserId = () => localStorage.getItem(CURRENT_USER_KEY) || null;
+
+export const clearCurrentUser = () => {
+  localStorage.removeItem(CURRENT_USER_KEY);
+};
+
+export const getCurrentUser = () => {
+  const userId = getCurrentUserId();
+  if (!userId) return null;
+  const state = loadState();
+  const membros = state.diretorioCnmp?.membros || [];
+  return membros.find((m) => m.id === userId) || null;
 };
 
 export const hasPermission = (action) => {
@@ -82,6 +129,10 @@ export const hasPermission = (action) => {
 
 export const requireAuth = () => {
   if (!getCurrentPersona()) {
+    window.location.href = "/pages/login.html";
+    return false;
+  }
+  if (getCurrentPersona() === PERSONAS.CORREICIONADO && !getCurrentUserId()) {
     window.location.href = "/pages/login.html";
     return false;
   }

@@ -254,13 +254,23 @@ export const getAvailableActions = (proposicao) => {
   const emDecisao =
     proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR ||
     proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN;
+  const temDiligenciaAberta = proposicao.diligencias.some(
+    (diligencia) => diligencia.status === "aberta",
+  );
+  const temCienciaDisponivel =
+    proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA &&
+    (proposicao.historico || []).some(
+      (event) => event.tipo === TipoHistorico.EMAIL_CIENCIA_ENVIADO,
+    );
 
   return {
     podeCriarDiligencia: [
       StatusFluxo.AGUARDANDO_SECRETARIA,
       StatusFluxo.RASCUNHO_CN,
     ].includes(proposicao.statusFluxo),
-    podeRegistrarComprovacao: proposicao.diligencias.some((diligencia) => diligencia.status === "aberta"),
+    podeRegistrarComprovacao: temDiligenciaAberta,
+    podeSalvarRascunhoComprovacao: temDiligenciaAberta,
+    podeVisualizarCiencia: temCienciaDisponivel,
     podeAvaliarComoMembro:
       proposicao.statusFluxo === StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO ||
       proposicao.statusFluxo === StatusFluxo.AGUARDANDO_COMPROVACAO,
@@ -309,6 +319,8 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
     Correicionado: {
       podeCriarDiligencia: false,
       podeRegistrarComprovacao: baseActions.podeRegistrarComprovacao,
+      podeSalvarRascunhoComprovacao: baseActions.podeSalvarRascunhoComprovacao,
+      podeVisualizarCiencia: baseActions.podeVisualizarCiencia,
       podeAvaliarComoMembro: false,
       podeDecidir: false,
       podeRemoverAvaliacao: false,

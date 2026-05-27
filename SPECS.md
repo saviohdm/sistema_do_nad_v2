@@ -10,8 +10,57 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 
 - `Corregedor Nacional`: autoridade decisória final. Pode criar, editar e apagar proposição, decidir sobre avaliação do membro auxiliar, remover avaliação e praticar avaliação com força de decisão.
 - `Membro Auxiliar da CN`: pratica avaliação técnica com as mesmas invariantes de conteúdo da decisão final, mas sem produzir efeitos concretos.
-- `Secretaria Processual da CN`: cria diligência, operacionaliza comunicações e informa cumprimento de providências paralelas.
-- `Correicionado`: presta informações e pratica a comprovação.
+- `Secretaria Processual da CN`: cria diligência, operacionaliza comunicações (incluindo disparo de e-mail ao correicionado), e informa cumprimento de providências paralelas.
+- `Correicionado`: membro do MP submetido à correição. Acessa o sistema com login do diretório CNMP para (a) comprovar diligências vinculadas ao seu nome ou às unidades que chefia (Modelo C de visibilidade) e (b) tomar ciência das proposições com baixa definitiva, visualizando a apreciação final do Corregedor Nacional e eventuais providências paralelas.
+
+## Diretório CNMP e identidade do correicionado
+
+- O sistema mantém um diretório de membros (`state.diretorioCnmp.membros`) e unidades (`state.diretorioCnmp.unidades`).
+- Cada membro tem `id`, `nome`, `cpf`, `email`, `cargo`, `lotacaoUnidadeId` e `chefiaDeUnidadeIds[]`.
+- Cada proposição carrega `unidadeId` (obrigatório) e `membroId` (opcional, `null` quando a proposição é "da unidade").
+- **Regra de visibilidade Modelo C**: o correicionado logado vê uma proposição quando
+  `proposicao.membroId === user.id` **OU** `proposicao.unidadeId` está em `user.chefiaDeUnidadeIds`.
+- Em produção, o login é via SSO do CNMP; no protótipo, simulado por um seletor de membro na tela de login.
+
+## Comprovação pelo correicionado
+
+- O correicionado pode **salvar rascunho** de comprovação (`rascunhoComprovacao`) com narrativa (`descricao`), `observacoes` adicionais e `anexos: [{nome, tamanhoBytes, mimeType, anexadoEm}]`.
+- Apenas um rascunho ativo por proposição. Salvar rascunho não altera `statusFluxo` (permanece em `aguardando_comprovacao`).
+- A primeira vez que um rascunho é salvo, registra-se `rascunho_comprovacao_salvo` no histórico (oculto para o correicionado em sua visão).
+- O ato de `COMPROVAR` consome o rascunho, persiste `anexos` no evento `comprovacao` e transita a proposição para `aguardando_avaliacao_membro`.
+
+## Expiração de prazo da diligência
+
+- Toda diligência tem `prazo`. Quando o prazo passa sem comprovação, o sistema dispara automaticamente a expiração:
+  - `diligencia.status` passa a `expirada` (além de `aberta` e `comprovada`).
+  - Evento `prazo_comprovacao_expirado` é registrado, com `diligenciaId`, `prazoOriginal` e `rascunhoExistia`.
+  - A proposição transita para `aguardando_avaliacao_membro` (mesmo destino do `comprovacao`).
+  - Eventual `rascunhoComprovacao` é **preservado** como prova de auditoria de que o correicionado iniciou (mas não submeteu) a comprovação.
+- No protótipo, a expiração é avaliada *lazy* a cada carga de state, e pode ser provocada manualmente pelo botão "Avançar tempo do sistema" no shell (visível apenas a Corregedor e Secretaria).
+
+## E-mail simulado e caixa de saída
+
+- Ações da Secretaria que comunicam o correicionado disparam um e-mail simulado:
+  - `criar diligência` → evento `email_diligencia_enviado` + entrada em `state.caixaDeSaida[]` do tipo `diligencia`.
+  - `cientificar` → evento `email_ciencia_enviado` em cada proposição cientificada + entrada em `state.caixaDeSaida[]` do tipo `ciencia` (agregada por destinatário).
+- Estrutura da caixa de saída: `{id, tipo, destinatarioId, destinatarioNome, destinatarioEmail, proposicaoIds[], assunto, corpoResumo, linkAcesso, enviadoEm, enviadoPor}`.
+- A página "Caixa de saída (demo)" é acessível apenas a Secretaria e Corregedor.
+- O destinatário de cada e-mail é resolvido por `resolveDestinatarioCorreicionado`: `proposicao.membroId` (se houver), senão o primeiro chefe da `proposicao.unidadeId` encontrado no diretório.
+
+## Ciência e visualização pelo correicionado
+
+- O ato de `cientificarGrupo` da Secretaria continua transitando cada proposição para `baixa_definitiva` (Modelo 1 — passo único); o "abrir ciência" da Secretaria coincide com a cientificação formal.
+- Quando o correicionado acessa o detalhe de uma proposição em `baixa_definitiva` cuja ciência foi disponibilizada a ele e ainda não foi visualizada por ele, o sistema registra `visualizacao_ciencia_correicionado` (auditoria; sem transição de status).
+- O correicionado vê na tela:
+  - Apreciação final do CN (`apreciacaoDoCN`) com `tipoConclusao` e `observacoes` (fundamentos).
+  - Providências paralelas em `pendenciasSecretaria[]`, somente visualização.
+  - Histórico filtrado (ver "Visibilidade").
+
+## Visibilidade do histórico para o correicionado
+
+- **Sempre visível**: `criacao`, `edicao`, `referendo_cnmp`, `criacao_diligencia`, `comprovacao`, `prazo_comprovacao_expirado`, `decisao` (incluindo `necessita_mais_informacoes`, com fundamentos completos), `avaliacao_com_forca_de_decisao`, `cientificacao`, `cumprimento_pendencia_secretaria`, `email_diligencia_enviado`, `email_ciencia_enviado`, `apagamento_proposicao`.
+- **Sempre oculto**: `avaliacao_membro_auxiliar`, `avaliacao_removida_pelo_corregedor`, `rascunho_decisao_cn_salvo`, `rascunho_decisao_cn_descartado`, `rascunho_comprovacao_salvo`, `edicao_metadados`.
+- Em caso de **deferimento** da avaliação do membro auxiliar, a `DECISAO` deve carregar a apreciação inteira (incluindo `observacoes` — os fundamentos) — implementação via clone JSON no `deferirAvaliacao`, garantindo que o correicionado veja os fundamentos completos via o evento `DECISAO`, mesmo que o evento `AVALIACAO_MEMBRO_AUXILIAR` original esteja oculto.
 
 ## Fluxo principal
 
@@ -132,6 +181,11 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - `avaliacao_removida_pelo_corregedor`
 - `cientificacao`
 - `cumprimento_pendencia_secretaria`
+- `rascunho_comprovacao_salvo`
+- `prazo_comprovacao_expirado`
+- `email_diligencia_enviado`
+- `email_ciencia_enviado`
+- `visualizacao_ciencia_correicionado`
 
 ### Regras do histórico
 

@@ -3,6 +3,8 @@ import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
 import { listFilaAguardandoCiencia } from "../domain/secretaria-filas.js";
 import { cientificarGrupo } from "../domain/ciencia.js";
+import { StatusFluxo } from "../domain/enums.js";
+import { resolveDestinatarioCorreicionado } from "../domain/correicionados.js";
 import { renderBadge, renderEmptyState, renderStatCard } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
 
@@ -594,6 +596,24 @@ const showToast = (mensagem) => {
   }, 3500);
 };
 
+const computarDestinatariosDoLote = (currentState, gruposSelecionados) => {
+  const proposicoesAlvo = currentState.proposicoes.filter((p) => {
+    if (p.statusFluxo !== StatusFluxo.AGUARDANDO_CIENCIA) return false;
+    return gruposSelecionados.some(
+      (g) => g.correicaoId === p.correicaoId && g.unidade === p.unidade,
+    );
+  });
+  const map = new Map();
+  proposicoesAlvo.forEach((p) => {
+    const dest = resolveDestinatarioCorreicionado(currentState, p);
+    const chave = dest?.id || `sem-destinatario:${p.unidadeId || p.unidade}`;
+    const bucket = map.get(chave) || { destinatario: dest, proposicoes: [] };
+    bucket.proposicoes.push(p);
+    map.set(chave, bucket);
+  });
+  return Array.from(map.values());
+};
+
 const abrirModalCiencia = (gruposSelecionados) => {
   const root = ensureModalRoot();
   const totalProposicoes = gruposSelecionados.reduce((s, g) => s + g.prontas, 0);
@@ -610,6 +630,22 @@ const abrirModalCiencia = (gruposSelecionados) => {
     )
     .join("");
 
+  const destinatarios = computarDestinatariosDoLote(state(), gruposSelecionados);
+  const emailsHtml = destinatarios
+    .map(({ destinatario, proposicoes }) => {
+      const dest = destinatario
+        ? `${destinatario.nome} &lt;${destinatario.email}&gt;`
+        : `<em>(sem destinatário cadastrado)</em>`;
+      const numeros = proposicoes.map((p) => p.numero).join(", ");
+      return `
+        <li>
+          <strong>Para:</strong> ${dest}<br>
+          <span class="muted" style="font-size: 0.85rem;">${proposicoes.length} proposição(ões): ${numeros}</span>
+        </li>
+      `;
+    })
+    .join("");
+
   const providenciaLine =
     totalProvidencias > 0
       ? `<p class="muted">Após a ciência, <strong>${totalProvidencias}</strong> proposição(ões) permanecerão com pendência paralela em acompanhamento (não bloqueiam a baixa definitiva).</p>`
@@ -622,9 +658,13 @@ const abrirModalCiencia = (gruposSelecionados) => {
     <div class="lote-resumo-list">
       <ul>${itens}</ul>
     </div>
+    <p style="margin-top: var(--space-3);"><strong>E-mails de ciência que serão disparados (${destinatarios.length}):</strong></p>
+    <div class="lote-resumo-list">
+      <ul>${emailsHtml}</ul>
+    </div>
     <div class="button-row" style="justify-content: flex-end; margin-top: var(--space-4);">
       <button class="button button--ghost" type="button" data-modal-close>Cancelar</button>
-      <button class="button button--primary" type="button" data-action="confirmar-ciencia">Confirmar ciência</button>
+      <button class="button button--primary" type="button" data-action="confirmar-ciencia">Confirmar ciência e envio</button>
     </div>
   `;
 

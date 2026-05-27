@@ -1,4 +1,4 @@
-import { requireAuth, getCurrentPersona } from "../app/auth.js";
+import { PERSONAS, requireAuth, getCurrentPersona, getCurrentUser } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
 import { formatDate, formatDateTime, queryParam } from "../app/utils.js";
@@ -11,7 +11,19 @@ import {
   removerAvaliacao,
   salvarAvaliacaoMembro,
 } from "../domain/avaliacoes.js";
-import { criarDiligencia, registrarComprovacao } from "../domain/diligencias.js";
+import {
+  criarDiligencia,
+  descartarRascunhoComprovacao,
+  registrarComprovacao,
+  salvarRascunhoComprovacao,
+} from "../domain/diligencias.js";
+import {
+  filtrarHistoricoParaCorreicionado,
+  proposicaoVisivelPara,
+  registrarVisualizacaoCiencia,
+  cienciaJaVisualizadaPor,
+  getDataVisualizacaoCiencia,
+} from "../domain/correicionados.js";
 import { Labels, StatusFluxo } from "../domain/enums.js";
 import {
   descartarRascunhoDecisaoCN,
@@ -29,7 +41,10 @@ import {
   salvarRascunhoAvaliacao,
 } from "../domain/rascunhos-avaliacao.js";
 import {
+  renderApreciacaoBadge,
+  renderBadge,
   renderDiligenciasCards,
+  renderEmptyState,
   renderMetaList,
   renderPendenciasCards,
   renderProposicaoHero,
@@ -306,6 +321,263 @@ const bindHandlers = (proposicao) => {
   });
 };
 
+const renderAnexoChips = (anexos) =>
+  (anexos || [])
+    .map(
+      (a) => `
+        <li class="pill">
+          <strong>${a.nome}</strong>
+          <span class="muted" style="font-size: 0.8rem;">${a.mimeType || "application/octet-stream"} · ${Math.round((a.tamanhoBytes || 0) / 1024)} KB</span>
+        </li>
+      `,
+    )
+    .join("");
+
+const collectAnexosFromInput = (input) =>
+  Array.from(input?.files || []).map((file) => ({
+    nome: file.name,
+    tamanhoBytes: file.size,
+    mimeType: file.type || "application/octet-stream",
+    anexadoEm: new Date().toISOString(),
+  }));
+
+const renderCorreicionadoApreciacaoCard = (proposicao, user) => {
+  const ap = proposicao.apreciacaoDoCN;
+  if (!ap) return "";
+  const tipoLabel = ap.tipoConclusao
+    ? Labels.tipoConclusao[ap.tipoConclusao]
+    : Labels.situacaoApreciacao[ap.situacao];
+  const visualizada = cienciaJaVisualizadaPor(proposicao, user.id);
+  const dataViz = getDataVisualizacaoCiencia(proposicao, user.id);
+
+  return `
+    <section class="panel stack" style="border-left: 4px solid var(--color-primary, #2563eb);">
+      <header class="button-row" style="justify-content: space-between;">
+        <h3 class="panel__title" style="margin: 0;">Apreciação final do Corregedor Nacional</h3>
+        ${renderApreciacaoBadge(ap)}
+      </header>
+      <p style="margin: 0;"><strong>Resultado:</strong> ${tipoLabel}</p>
+      ${
+        ap.observacoes
+          ? `<div class="panel" style="padding: 0.75rem; background: var(--color-surface-muted);">
+              <strong>Fundamentos:</strong>
+              <p style="margin: 0.25rem 0 0;">${ap.observacoes}</p>
+            </div>`
+          : ""
+      }
+      ${
+        ap.existeProvidenciaSecretaria
+          ? `<p class="muted" style="margin: 0;">Há providência paralela a cargo da Secretaria Processual da CN. Acompanhe abaixo.</p>`
+          : ""
+      }
+      <p class="muted" style="margin: 0; font-size: 0.85rem;">
+        ${visualizada ? `Ciência visualizada por você em ${formatDateTime(dataViz)}.` : "Esta é a primeira vez que você acessa essa ciência."}
+      </p>
+    </section>
+  `;
+};
+
+const renderCorreicionadoComprovacaoForm = (proposicao) => {
+  const diligenciaAberta = proposicao.diligencias.find((d) => d.status === "aberta");
+  if (!diligenciaAberta) return "";
+  const rascunho = proposicao.rascunhoComprovacao;
+
+  return `
+    <section class="panel stack" style="border-left: 4px solid var(--color-warning, #d97706);">
+      <h3 class="panel__title">Comprovação da diligência</h3>
+      <div class="panel" style="padding: 0.75rem; background: var(--color-surface-muted);">
+        <p style="margin: 0;"><strong>Diligência:</strong> ${diligenciaAberta.descricao}</p>
+        <p class="muted" style="margin: 0.25rem 0 0; font-size: 0.85rem;">Prazo: ${formatDate(diligenciaAberta.prazo)}</p>
+      </div>
+      ${
+        rascunho
+          ? `<div class="alert alert--info" role="alert">
+              Há um rascunho salvo em ${formatDateTime(rascunho.salvoEm)}. Você pode continuá-lo abaixo.
+            </div>`
+          : ""
+      }
+      <form id="form-comprovacao-correicionado" class="stack">
+        <div class="field">
+          <label for="descricao-comprovacao">Descrição da comprovação</label>
+          <textarea id="descricao-comprovacao" name="descricao" required rows="4">${rascunho?.descricao || ""}</textarea>
+        </div>
+        <div class="field">
+          <label for="observacoes-comprovacao">Observações adicionais (opcional)</label>
+          <textarea id="observacoes-comprovacao" name="observacoes" rows="2">${rascunho?.observacoes || ""}</textarea>
+        </div>
+        <div class="field">
+          <label for="anexos-comprovacao">Anexos</label>
+          <input id="anexos-comprovacao" name="anexos" type="file" multiple />
+          ${
+            rascunho?.anexos?.length
+              ? `<p class="muted" style="font-size: 0.85rem; margin: 0.25rem 0 0;">Anexos do rascunho (${rascunho.anexos.length}):</p>
+                 <ul class="pill-list" style="flex-wrap: wrap;">${renderAnexoChips(rascunho.anexos)}</ul>`
+              : ""
+          }
+          <p class="form-help" style="font-size: 0.8rem; color: var(--color-text-muted); margin: 0.25rem 0 0;">
+            Os arquivos selecionados aqui adicionam-se aos do rascunho. O sistema registra apenas o nome, tamanho e tipo (protótipo).
+          </p>
+        </div>
+        <div class="button-row">
+          <button class="button" type="submit">Confirmar comprovação</button>
+          <button class="button button--ghost" type="button" data-action="salvar-rascunho-comprovacao">Salvar rascunho</button>
+          ${
+            rascunho
+              ? `<button class="button button--ghost button--danger" type="button" data-action="descartar-rascunho-comprovacao">Descartar rascunho</button>`
+              : ""
+          }
+        </div>
+        <p class="muted" data-role="rascunho-feedback" hidden style="font-size: 0.85rem;"></p>
+      </form>
+    </section>
+  `;
+};
+
+const renderCorreicionadoContent = (proposicao, user) => {
+  const historicoVisivel = filtrarHistoricoParaCorreicionado(proposicao.historico);
+  const podeComprovar = proposicao.diligencias.some((d) => d.status === "aberta");
+  const emBaixa = proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA;
+  const meta = [
+    { label: "Número", value: proposicao.numero },
+    { label: "Tipo", value: proposicao.tipo },
+    { label: "Unidade", value: proposicao.unidade },
+    { label: "Membro nomeado", value: proposicao.membro },
+    { label: "Ramo do MP", value: proposicao.ramoMPNome || proposicao.ramoMP },
+    { label: "Temática", value: proposicao.tematica },
+    {
+      label: "Status atual",
+      value: Labels.statusFluxo[proposicao.statusFluxo] || proposicao.statusFluxo,
+    },
+  ];
+
+  return `
+    <section class="stack">
+      ${renderProposicaoHero(proposicao)}
+      <section class="panel">
+        <h3 class="panel__title">Metadados do caso</h3>
+        ${renderMetaList(meta)}
+      </section>
+
+      ${emBaixa ? renderCorreicionadoApreciacaoCard(proposicao, user) : ""}
+
+      ${podeComprovar ? renderCorreicionadoComprovacaoForm(proposicao) : ""}
+
+      ${
+        proposicao.diligencias.length > 0
+          ? `
+            <section class="panel detail-section">
+              <h3 class="panel__title">Diligências</h3>
+              ${renderDiligenciasCards(proposicao.diligencias)}
+            </section>
+          `
+          : ""
+      }
+
+      ${
+        proposicao.pendenciasSecretaria.length > 0
+          ? `
+            <section class="panel detail-section">
+              <h3 class="panel__title">Providências paralelas (Secretaria)</h3>
+              <p class="muted">Estas providências são cumpridas pela Secretaria da CN fora do sistema. Você apenas as visualiza.</p>
+              <ul class="stack" style="list-style: none; padding: 0;">
+                ${proposicao.pendenciasSecretaria
+                  .map(
+                    (p) => `
+                      <li class="panel" style="padding: 0.75rem;">
+                        <div class="button-row">
+                          ${renderBadge(Labels.tipoProvidencia[p.tipoProvidencia] || p.descricao, p.status === "cumprida" ? "success" : "warning")}
+                          ${renderBadge(p.status === "cumprida" ? `Cumprida em ${formatDate(p.dataCumprimento)}` : "Em curso", p.status === "cumprida" ? "success" : "warning")}
+                        </div>
+                        <p style="margin: 0.25rem 0 0;">${p.descricao}</p>
+                        ${p.observacoes ? `<p class="muted" style="margin: 0.25rem 0 0; font-size: 0.85rem;">${p.observacoes}</p>` : ""}
+                      </li>
+                    `,
+                  )
+                  .join("")}
+              </ul>
+            </section>
+          `
+          : ""
+      }
+
+      <section class="panel detail-section">
+        <h3 class="panel__title">Histórico visível</h3>
+        <p class="muted" style="font-size: 0.85rem;">
+          São exibidos os atos formais e comunicações dirigidas a você. Avaliações internas da CN e rascunhos não constam desta visão.
+        </p>
+        ${
+          historicoVisivel.length > 0
+            ? renderTimeline(historicoVisivel)
+            : renderEmptyState("Sem eventos relevantes nesta proposição.")
+        }
+      </section>
+    </section>
+  `;
+};
+
+const bindCorreicionadoHandlers = (proposicao, user) => {
+  const form = document.querySelector("#form-comprovacao-correicionado");
+  if (!form) return;
+
+  const anexosInput = form.querySelector("#anexos-comprovacao");
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(form);
+    const anexos = collectAnexosFromInput(anexosInput);
+    mutateState((draft) => {
+      const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+      registrarComprovacao(item, {
+        descricao: data.get("descricao"),
+        observacoes: data.get("observacoes"),
+        anexos,
+        usuario: user.nome,
+      });
+      return draft;
+    });
+    window.alert("Comprovação registrada. A proposição segue agora para avaliação do membro auxiliar.");
+    window.location.href = "/pages/correicionado-comprovacoes.html";
+  });
+
+  document
+    .querySelector("[data-action='salvar-rascunho-comprovacao']")
+    ?.addEventListener("click", () => {
+      const data = new FormData(form);
+      const novosAnexos = collectAnexosFromInput(anexosInput);
+      mutateState((draft) => {
+        const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+        const existentes = item.rascunhoComprovacao?.anexos || [];
+        salvarRascunhoComprovacao(
+          item,
+          {
+            descricao: data.get("descricao"),
+            observacoes: data.get("observacoes"),
+            anexos: [...existentes, ...novosAnexos],
+          },
+          user,
+        );
+        return draft;
+      });
+      const feedback = form.querySelector("[data-role='rascunho-feedback']");
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.textContent = `Rascunho salvo às ${formatDateTime(new Date().toISOString())}.`;
+      }
+    });
+
+  document
+    .querySelector("[data-action='descartar-rascunho-comprovacao']")
+    ?.addEventListener("click", () => {
+      if (!window.confirm("Descartar o rascunho atual de comprovação?")) return;
+      mutateState((draft) => {
+        const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+        descartarRascunhoComprovacao(item);
+        return draft;
+      });
+      window.location.reload();
+    });
+};
+
 const render = () => {
   const currentState = state();
   const proposicao = getProposicaoById(currentState, proposicaoId);
@@ -321,8 +593,48 @@ const render = () => {
     return;
   }
 
-  const avaliacaoVigente = getAvaliacaoVigente(proposicao);
   const persona = getCurrentPersona();
+
+  if (persona === PERSONAS.CORREICIONADO) {
+    const user = getCurrentUser();
+    if (!user) {
+      window.location.href = "/pages/login.html";
+      return;
+    }
+    if (!proposicaoVisivelPara(proposicao, user)) {
+      mountPage({
+        activePage: "proposicao-detalhe",
+        title: "Proposição não vinculada a você",
+        subtitle: "Você só pode visualizar proposições nominadas a você ou de unidades em que é chefe.",
+        actions: `<a class="button button--ghost" href="correicionado-comprovacoes.html">Voltar</a>`,
+        content: `<div class="empty-state">Esta proposição não pertence a você.</div>`,
+      });
+      return;
+    }
+    if (proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA && !cienciaJaVisualizadaPor(proposicao, user.id)) {
+      mutateState((draft) => {
+        const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+        if (item) registrarVisualizacaoCiencia(item, user);
+        return draft;
+      });
+    }
+
+    const propAtualizada = getProposicaoById(state(), proposicaoId);
+    mountPage({
+      activePage:
+        proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA
+          ? "correicionado-ciencias"
+          : "correicionado-comprovacoes",
+      title: "Detalhe da proposição",
+      subtitle: "Visão do correicionado: acompanhe diligências, comprove ou tome ciência da apreciação final.",
+      actions: `<a class="button button--ghost" href="correicionado-comprovacoes.html">Comprovações</a><a class="button button--ghost" href="correicionado-ciencias.html">Ciências</a>`,
+      content: renderCorreicionadoContent(propAtualizada, user),
+    });
+    bindCorreicionadoHandlers(propAtualizada, user);
+    return;
+  }
+
+  const avaliacaoVigente = getAvaliacaoVigente(proposicao);
   const available = getAvailableActionsByPersona(proposicao, persona);
 
   const meta = [
