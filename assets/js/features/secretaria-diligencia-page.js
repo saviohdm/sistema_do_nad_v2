@@ -1,6 +1,7 @@
 import { PERSONAS, getCurrentPersona, requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
+import { hydrateProposicao } from "../domain/correicoes.js";
 import { Labels, SituacaoApreciacao } from "../domain/enums.js";
 import {
   filtrarProposicoes,
@@ -546,6 +547,7 @@ const abrirModalConfirmacao = (proposicoesSelecionadas, prazo, descricao) => {
   const root = ensureModalRoot();
   const currentState = state();
   const itens = proposicoesSelecionadas
+    .map((p) => hydrateProposicao(currentState, p))
     .map((p) => {
       const destinatario = resolveDestinatarioCorreicionado(currentState, p);
       const dest = destinatario
@@ -631,7 +633,9 @@ const render = () => {
   persistirFiltros(filtros);
 
   const currentState = state();
-  let aguardandoDiligencia = listFilaAguardandoDiligencia(currentState);
+  let aguardandoDiligencia = listFilaAguardandoDiligencia(currentState).map((p) =>
+    hydrateProposicao(currentState, p),
+  );
   const todosGrupos = listGruposAguardandoDiligencia(currentState);
   const gruposCompletoCount = todosGrupos.filter((g) => g.completo).length;
   if (filtros.gruposCompletos) {

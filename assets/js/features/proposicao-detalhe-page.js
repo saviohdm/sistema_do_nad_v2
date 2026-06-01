@@ -1,6 +1,7 @@
 import { PERSONAS, requireAuth, getCurrentPersona, getCurrentUser } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
+import { hydrateProposicao } from "../domain/correicoes.js";
 import { formatDate, formatDateTime, queryParam } from "../app/utils.js";
 
 requireAuth();
@@ -297,11 +298,13 @@ const bindHandlers = (proposicao) => {
     .querySelector("[data-action='gerar-relatorio-final']")
     ?.addEventListener("click", () => {
       const currentState = state();
-      const proposicoesDaCorreicao = currentState.proposicoes.filter(
-        (p) =>
-          p.correicaoId === proposicao.correicaoId &&
-          p.statusFluxo === "aguardando_referendo_cnmp",
-      );
+      const proposicoesDaCorreicao = currentState.proposicoes
+        .filter(
+          (p) =>
+            p.correicaoId === proposicao.correicaoId &&
+            p.statusFluxo === "aguardando_referendo_cnmp",
+        )
+        .map((p) => hydrateProposicao(currentState, p));
       openRelatorioFinalModal({
         correicaoId: proposicao.correicaoId,
         ramoMP: proposicao.ramoMPNome || proposicao.ramoMP,
@@ -580,7 +583,7 @@ const bindCorreicionadoHandlers = (proposicao, user) => {
 
 const render = () => {
   const currentState = state();
-  const proposicao = getProposicaoById(currentState, proposicaoId);
+  const proposicao = hydrateProposicao(currentState, getProposicaoById(currentState, proposicaoId));
 
   if (!proposicao) {
     mountPage({
@@ -619,7 +622,8 @@ const render = () => {
       });
     }
 
-    const propAtualizada = getProposicaoById(state(), proposicaoId);
+    const stAtual = state();
+    const propAtualizada = hydrateProposicao(stAtual, getProposicaoById(stAtual, proposicaoId));
     mountPage({
       activePage:
         proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA

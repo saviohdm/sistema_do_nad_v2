@@ -1,4 +1,4 @@
-import { Labels, getPrioridadeBadgeTone } from "../domain/enums.js";
+import { Labels, getPrioridadeBadgeTone, getStatusCorreicaoBadgeTone } from "../domain/enums.js";
 import {
   formatDate,
   formatDateTime,
@@ -16,6 +16,9 @@ export const renderBadge = (label, tone = "neutral") =>
 
 export const renderStatusBadge = (status) =>
   renderBadge(Labels.statusFluxo[status] || status, getStatusBadgeTone(status));
+
+export const renderStatusCorreicaoBadge = (status) =>
+  renderBadge(Labels.statusCorreicao[status] || status, getStatusCorreicaoBadgeTone(status));
 
 export const renderApreciacaoBadge = (apreciacao) => {
   if (!apreciacao) return renderBadge("Aguardando decisão", "neutral");

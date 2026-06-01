@@ -10,6 +10,12 @@ export const StatusFluxo = {
   BAIXA_DEFINITIVA: "baixa_definitiva",
 };
 
+export const StatusCorreicao = {
+  ATIVO: "ativo",
+  REFERENDADA: "referendada",
+  ENCERRADA: "encerrada",
+};
+
 export const SituacaoApreciacao = {
   NECESSITA_MAIS_INFORMACOES: "necessita_mais_informacoes",
   CONCLUIDA: "concluida",
@@ -107,6 +113,11 @@ export const Labels = {
     true: "Sim",
     false: "Não",
   },
+  statusCorreicao: {
+    [StatusCorreicao.ATIVO]: "Ativa",
+    [StatusCorreicao.REFERENDADA]: "Referendada",
+    [StatusCorreicao.ENCERRADA]: "Encerrada",
+  },
 };
 
 export const getPrioridadeBadgeTone = (prioridade) =>
@@ -115,3 +126,10 @@ export const getPrioridadeBadgeTone = (prioridade) =>
     [Prioridade.IMPORTANTE]: "warning",
     [Prioridade.NORMAL]: "neutral",
   }[prioridade] || "neutral");
+
+export const getStatusCorreicaoBadgeTone = (status) =>
+  ({
+    [StatusCorreicao.ATIVO]: "warning",
+    [StatusCorreicao.REFERENDADA]: "primary",
+    [StatusCorreicao.ENCERRADA]: "success",
+  }[status] || "neutral");

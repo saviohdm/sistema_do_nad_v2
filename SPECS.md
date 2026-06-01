@@ -8,7 +8,7 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 
 ## Personas e competências
 
-- `Corregedor Nacional`: autoridade decisória final. Pode criar, editar e apagar proposição, decidir sobre avaliação do membro auxiliar, remover avaliação e praticar avaliação com força de decisão.
+- `Corregedor Nacional`: autoridade decisória final. Pode criar, editar e apagar proposição, decidir sobre avaliação do membro auxiliar, remover avaliação e praticar avaliação com força de decisão. Também pode **registrar e editar correições** no NAD (gestão de contingência de migração e de correições de legado — ver "Origem da proposição").
 - `Membro Auxiliar da CN`: pratica avaliação técnica com as mesmas invariantes de conteúdo da decisão final, mas sem produzir efeitos concretos.
 - `Secretaria Processual da CN`: cria diligência, operacionaliza comunicações (incluindo disparo de e-mail ao correicionado), e informa cumprimento de providências paralelas.
 - `Correicionado`: membro do MP submetido à correição. Acessa o sistema com login do diretório CNMP para (a) comprovar diligências vinculadas ao seu nome ou às unidades que chefia (Modelo C de visibilidade) e (b) tomar ciência das proposições com baixa definitiva, visualizando a apreciação final do Corregedor Nacional e eventuais providências paralelas.
@@ -73,6 +73,13 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
   - `APAGAR proposição`
 - `APAGAR proposição` extingue a própria proposição e encerra seu ciclo de vida.
 - Após `CRIAR` ou `EDITAR`, a proposição é `ENCAMINHADA para a Secretaria`.
+
+#### Correição como agregado autônomo (gestão no NAD)
+
+- A `Correição` é um **agregado de primeira classe** em `state.correicoes[]`. A proposição referencia-a apenas por `correicaoId`; os dados descritivos (ramo do MP, temática, número ELO, UF e período) vivem **somente na correição** e são projetados sobre a proposição na leitura (*hydrate*), nunca duplicados/armazenados nela.
+- O caminho **prioritário** de origem continua sendo a **migração do SCI**. Como contingência (falhas de migração) e para **correições de legado** não migradas, o `Corregedor Nacional` pode **registrar e editar** correições diretamente no NAD (telas `correicoes-lista` e `correicoes-criar`, exclusivas dessa persona).
+- O `numero` da correição (`COR-AAAA-NN`) é gerado automaticamente; o identificador real do processo permanece em `numeroElo`.
+- Editar uma correição **propaga** automaticamente aos dados exibidos em todas as suas proposições (fonte única), por projeção na leitura.
 
 ### 2. Diligência e comprovação
 
@@ -226,7 +233,12 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 }
 ```
 
+- `status` ∈ `ativo` (aguardando referendo do CNMP) | `referendada` (referendo registrado). O estado `encerrada` é **derivado** (não armazenado): a correição está encerrada quando **todas** as suas proposições estão inativas.
+- **Referendar** é uma transição do agregado `Correição`: marca `status = referendada` e encaminha as proposições filhas à Secretaria. Ocorre na fila de referendo (`corregedor-referendo`).
+
 ### Proposições
+
+> A proposição guarda apenas `correicaoId` como vínculo à correição. Ramo do MP, nome do ramo, temática, número ELO, UF e datas **não são armazenados** na proposição — vivem na correição e são projetados na leitura (*hydrate*).
 
 ```json
 {

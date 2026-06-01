@@ -10,6 +10,7 @@ import {
   markPropositionDeleted,
   referendarCorreicao,
 } from "../domain/proposicoes.js";
+import { hydrateProposicao } from "../domain/correicoes.js";
 import { Labels } from "../domain/enums.js";
 import {
   renderBadge,
@@ -135,7 +136,7 @@ const renderCardFila = (proposicao) => `
         <div class="pill-list">
           ${renderSensivelBadge(proposicao.sensivel)}
           ${renderPrioridadeBadge(proposicao.prioridade)}
-          ${renderBadge(proposicao.correicaoId || "sem correição", "neutral")}
+          ${renderBadge(proposicao.correicao?.numero || proposicao.correicaoId || "sem correição", "neutral")}
         </div>
       </div>
       <div class="proposicao-card__content">
@@ -362,7 +363,9 @@ const render = () => {
   persistirFiltros(filtros);
 
   const currentState = state();
-  const proposicoesAguardandoReferendo = listProposicoesAguardandoReferendo(currentState);
+  const proposicoesAguardandoReferendo = listProposicoesAguardandoReferendo(currentState).map((p) =>
+    hydrateProposicao(currentState, p),
+  );
 
   const modo = determinarModo(filtros);
 
@@ -434,9 +437,9 @@ const handleApagar = (proposicaoId) => {
 };
 
 const handleGerarRelatorio = (correicaoId, currentState) => {
-  const proposicoesAguardandoReferendo = listProposicoesAguardandoReferendo(currentState).filter(
-    (p) => p.correicaoId === correicaoId,
-  );
+  const proposicoesAguardandoReferendo = listProposicoesAguardandoReferendo(currentState)
+    .map((p) => hydrateProposicao(currentState, p))
+    .filter((p) => p.correicaoId === correicaoId);
   openRelatorioFinalModal({
     correicaoId,
     ramoMP: proposicoesAguardandoReferendo[0]?.ramoMP || "",

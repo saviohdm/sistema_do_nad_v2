@@ -1,7 +1,7 @@
 import { requireAuth, hasPermission } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
-import { queryParam } from "../app/utils.js";
+import { queryParam, formatDate } from "../app/utils.js";
 import { Prioridade, StatusFluxo } from "../domain/enums.js";
 import {
   criarProposicao,
@@ -9,6 +9,8 @@ import {
   encaminharParaSecretaria,
   getProposicaoById,
 } from "../domain/proposicoes.js";
+import { listCorreicoes } from "../domain/correicoes.js";
+import { renderAlert } from "../ui/components.js";
 
 requireAuth();
 
@@ -48,8 +50,46 @@ const valor = (campo) => {
 };
 
 const escapeAttr = (s) => String(s).replaceAll('"', "&quot;");
+const escapeHtml = (s) =>
+  String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const correicoesDisponiveis = listCorreicoes(state());
+const correicoesById = new Map(correicoesDisponiveis.map((c) => [c.id, c]));
+let correicaoSelecionadaId = isEdicao ? proposicaoParaEditar.correicaoId || "" : "";
+
+const renderPreview = (c) => {
+  if (!c) return `<p class="muted">Selecione uma correição para ver os dados herdados.</p>`;
+  return `
+    <div class="meta-list">
+      <div class="meta-item"><span>Número ELO</span><strong>${escapeHtml(c.numeroElo)}</strong></div>
+      <div class="meta-item"><span>Ramo do MP</span><strong>${escapeHtml(c.ramoMP)} — ${escapeHtml(c.ramoMPNome)}</strong></div>
+      <div class="meta-item"><span>Temática</span><strong>${escapeHtml(c.tematica)}</strong></div>
+      <div class="meta-item"><span>UF</span><strong>${(c.uf || []).join(", ")}</strong></div>
+      <div class="meta-item"><span>Período</span><strong>${formatDate(c.dataInicio)} – ${formatDate(c.dataFim)}</strong></div>
+    </div>
+  `;
+};
 
 const render = () => {
+  if (!isEdicao && correicoesDisponiveis.length === 0) {
+    mountPage({
+      activePage: "proposicoes-criar",
+      title: "Criar nova proposição",
+      subtitle: "É preciso ter ao menos uma correição cadastrada para vincular a proposição.",
+      actions: baseActions,
+      content: `
+        <div class="panel stack">
+          ${renderAlert("Nenhuma correição cadastrada. A proposição precisa estar vinculada a uma correição.", "warning")}
+          <div class="button-row">
+            <a class="button" href="correicoes-criar.html">Criar correição primeiro</a>
+            <a class="button button--secondary" href="dashboard.html">Voltar</a>
+          </div>
+        </div>
+      `,
+    });
+    return;
+  }
+
   const title = isEdicao
     ? `Editar proposição ${proposicaoParaEditar.numero}`
     : "Criar nova proposição";
@@ -113,59 +153,24 @@ const render = () => {
                     placeholder="Descreva a proposição...">${valor("descricao")}</textarea>
         </div>
 
-        <h3 class="panel__title">Dados da Correição Vinculada</h3>
-
-        <div class="field-grid">
-          <div class="field">
-            <label for="numeroElo">Número ELO *</label>
-            <input type="text" id="numeroElo" name="numeroElo" required
-                   placeholder="Ex: 1234567-89.2026.1.01.0001"
-                   value="${escapeAttr(valor("numeroElo"))}" />
-          </div>
-
-          <div class="field">
-            <label for="ramoMP">Ramo do MP *</label>
-            <input type="text" id="ramoMP" name="ramoMP" required
-                   placeholder="Ex: MPBA"
-                   value="${escapeAttr(valor("ramoMP"))}" />
-          </div>
-        </div>
+        <h3 class="panel__title">Correição vinculada *</h3>
+        <p class="muted">Selecione a correição de origem. Ramo do MP, temática, número ELO, UF e período são herdados dela (fonte única).</p>
 
         <div class="field">
-          <label for="ramoMPNome">Nome do Ramo do MP *</label>
-          <input type="text" id="ramoMPNome" name="ramoMPNome" required
-                 placeholder="Ex: Ministério Público do Estado da Bahia"
-                 value="${escapeAttr(valor("ramoMPNome"))}" />
+          <label for="correicaoId">Correição</label>
+          <select id="correicaoId" name="correicaoId" required>
+            <option value="">Selecione uma correição…</option>
+            ${correicoesDisponiveis
+              .map(
+                (c) =>
+                  `<option value="${c.id}"${correicaoSelecionadaId === c.id ? " selected" : ""}>${escapeAttr(`${c.numero} — ${c.ramoMP} — ${c.tematica}`)}</option>`,
+              )
+              .join("")}
+          </select>
         </div>
 
-        <div class="field-grid">
-          <div class="field">
-            <label for="tematica">Temática *</label>
-            <input type="text" id="tematica" name="tematica" required
-                   placeholder="Ex: Gestão administrativa e fluxos internos"
-                   value="${escapeAttr(valor("tematica"))}" />
-          </div>
-
-          <div class="field">
-            <label for="uf">UF *</label>
-            <input type="text" id="uf" name="uf" required
-                   placeholder="Ex: BA"
-                   value="${escapeAttr(valor("uf"))}" />
-          </div>
-        </div>
-
-        <div class="field-grid">
-          <div class="field">
-            <label for="dataInicioCorreicao">Data de início da correição *</label>
-            <input type="date" id="dataInicioCorreicao" name="dataInicioCorreicao" required
-                   value="${escapeAttr(valor("dataInicioCorreicao"))}" />
-          </div>
-
-          <div class="field">
-            <label for="dataFimCorreicao">Data de fim da correição *</label>
-            <input type="date" id="dataFimCorreicao" name="dataFimCorreicao" required
-                   value="${escapeAttr(valor("dataFimCorreicao"))}" />
-          </div>
+        <div id="correicao-preview" class="stack">
+          ${renderPreview(correicoesById.get(correicaoSelecionadaId))}
         </div>
 
         <div class="field">
@@ -207,6 +212,15 @@ const render = () => {
     window.location.href = "/pages/proposicoes-lista.html";
   });
 
+  const selectCorreicao = document.querySelector("#correicaoId");
+  if (selectCorreicao) {
+    selectCorreicao.addEventListener("change", (e) => {
+      correicaoSelecionadaId = e.target.value;
+      const preview = document.querySelector("#correicao-preview");
+      if (preview) preview.innerHTML = renderPreview(correicoesById.get(correicaoSelecionadaId));
+    });
+  }
+
   document.querySelector("#form-criar-proposicao").addEventListener("submit", (e) => {
     e.preventDefault();
     const submitter = e.submitter;
@@ -220,18 +234,14 @@ const render = () => {
       descricao: data.get("descricao"),
       prioridade: data.get("prioridade"),
       sensivel: data.get("sensivel") === "on",
-      numeroElo: data.get("numeroElo"),
-      ramoMP: data.get("ramoMP"),
-      ramoMPNome: data.get("ramoMPNome"),
-      tematica: data.get("tematica"),
-      uf: String(data.get("uf") || "")
-        .split(",")
-        .map((item) => item.trim().toUpperCase())
-        .filter(Boolean),
-      dataInicioCorreicao: data.get("dataInicioCorreicao"),
-      dataFimCorreicao: data.get("dataFimCorreicao"),
+      correicaoId: data.get("correicaoId"),
       observacoesGerais: data.get("observacoesGerais"),
     };
+
+    if (!dados.correicaoId) {
+      alert("Selecione a correição vinculada.");
+      return;
+    }
 
     if (isEdicao) {
       mutateState((draft) => {

@@ -2,11 +2,13 @@ import {
   Labels,
   Prioridade,
   SituacaoApreciacao,
+  StatusCorreicao,
   StatusFluxo,
   TipoConclusao,
   TipoHistorico,
 } from "./enums.js";
 import { buildHistoryEvent, appendHistory } from "./historico.js";
+import { getCorreicaoById, marcarReferendada, hydrateProposicao } from "./correicoes.js";
 
 const PRIORIDADES_VALIDAS = new Set(Object.values(Prioridade));
 const PERSONAS_EDITAR_METADADOS = new Set([
@@ -127,13 +129,8 @@ export const listCorreicoesAguardandoReferendo = (state) =>
 
 export const correicaoEstaReferendada = (state, correicaoId) => {
   if (!correicaoId) return false;
-  const proposicoesDaCorreicao = listProposicoes(state).filter(
-    (p) => p.correicaoId === correicaoId,
-  );
-  if (proposicoesDaCorreicao.length === 0) return false;
-  return proposicoesDaCorreicao.some(
-    (p) => p.statusFluxo !== StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
-  );
+  const correicao = getCorreicaoById(state, correicaoId);
+  return correicao?.status === StatusCorreicao.REFERENDADA;
 };
 
 export const filtrarProposicoes = (proposicoes, filtros = {}) => {
@@ -405,7 +402,9 @@ export const countCorreicoesPorAtividade = (state) => {
 
 export const countProposicoesPorRamoMP = (state) => {
   const map = new Map();
-  listProposicoes(state).forEach((proposicao) => {
+  listProposicoes(state)
+    .map((proposicao) => hydrateProposicao(state, proposicao))
+    .forEach((proposicao) => {
     const key = proposicao.ramoMP || "Sem ramo";
     const entry =
       map.get(key) || {
@@ -499,19 +498,16 @@ export const criarProposicao = (
     prioridade,
     sensivel,
     correicaoId,
-    numeroElo,
-    ramoMP,
-    ramoMPNome,
-    tematica,
-    uf,
-    dataInicioCorreicao,
-    dataFimCorreicao,
     observacoesGerais,
   },
 ) => {
+  if (!correicaoId) {
+    throw new Error(
+      "Proposição precisa estar vinculada a uma correição (correicaoId ausente).",
+    );
+  }
   const numero = `PROP-${String(state.proposicoes.length + 1).padStart(4, "0")}`;
-  const correicaoIdFinal = correicaoId || "corr-001";
-  const correicaoJaReferendada = correicaoEstaReferendada(state, correicaoIdFinal);
+  const correicaoJaReferendada = correicaoEstaReferendada(state, correicaoId);
   const statusInicial = correicaoJaReferendada
     ? StatusFluxo.AGUARDANDO_SECRETARIA
     : StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
@@ -519,20 +515,13 @@ export const criarProposicao = (
   const novaProposicao = {
     id: `prop-${crypto.randomUUID().slice(0, 8)}`,
     numero,
-    correicaoId: correicaoIdFinal,
+    correicaoId,
     tipo,
     unidade,
     membro,
     descricao,
     prioridade: PRIORIDADES_VALIDAS.has(prioridade) ? prioridade : Prioridade.NORMAL,
     sensivel: Boolean(sensivel),
-    numeroElo: numeroElo || "",
-    ramoMP: ramoMP || "",
-    ramoMPNome: ramoMPNome || "",
-    tematica: tematica || "",
-    uf: uf || [],
-    dataInicioCorreicao: dataInicioCorreicao || "",
-    dataFimCorreicao: dataFimCorreicao || "",
     observacoesGerais: observacoesGerais || "",
     statusFluxo: statusInicial,
     apreciacaoDoCN: null,
@@ -613,13 +602,6 @@ export const editarProposicao = (proposicao, camposEditaveis) => {
     "descricao",
     "prioridade",
     "sensivel",
-    "numeroElo",
-    "ramoMP",
-    "ramoMPNome",
-    "tematica",
-    "uf",
-    "dataInicioCorreicao",
-    "dataFimCorreicao",
     "observacoesGerais",
     "correicaoId",
   ];
@@ -639,6 +621,7 @@ export const editarProposicao = (proposicao, camposEditaveis) => {
 
 export const referendarCorreicao = (state, correicaoId, usuario = "Corregedor Nacional") => {
   if (!correicaoId) return 0;
+  marcarReferendada(getCorreicaoById(state, correicaoId));
   let afetadas = 0;
   state.proposicoes.forEach((proposicao) => {
     if (

@@ -7,6 +7,7 @@ import {
   getEmailCienciaEvent,
   listProposicoesCorreicionadoCiencias,
 } from "../domain/correicionados.js";
+import { hydrateProposicao } from "../domain/correicoes.js";
 import { Labels } from "../domain/enums.js";
 import { formatDateTime } from "../app/utils.js";
 import {
@@ -107,7 +108,9 @@ const renderCardCiencia = (proposicao) => {
 
 const render = () => {
   const state = loadState();
-  const proposicoes = listProposicoesCorreicionadoCiencias(state, user).sort((a, b) => {
+  const proposicoes = listProposicoesCorreicionadoCiencias(state, user)
+    .map((p) => hydrateProposicao(state, p))
+    .sort((a, b) => {
     const ea = getEmailCienciaEvent(a);
     const eb = getEmailCienciaEvent(b);
     const ta = ea?.data ? new Date(ea.data).getTime() : 0;

@@ -1,5 +1,6 @@
 import { PERSONAS, getCurrentPersona, requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
+import { hydrateProposicao } from "../domain/correicoes.js";
 import {
   filtrarProposicoes,
   groupByCorreicao,
@@ -346,7 +347,9 @@ const render = () => {
   persistirFiltros(filtros);
 
   const currentState = state();
-  const aguardandoDecisao = listProposicoesAguardandoDecisao(currentState);
+  const aguardandoDecisao = listProposicoesAguardandoDecisao(currentState).map((p) =>
+    hydrateProposicao(currentState, p),
+  );
 
   const modo = determinarModo(filtros);
 

@@ -1,5 +1,6 @@
 import { PERSONAS, getCurrentPersona, requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
+import { hydrateProposicao } from "../domain/correicoes.js";
 import {
   filtrarProposicoes,
   groupByCorreicao,
@@ -348,7 +349,9 @@ const render = () => {
   persistirFiltros(filtros);
 
   const currentState = state();
-  const pendentes = listProposicoesParaAvaliar(currentState);
+  const pendentes = listProposicoesParaAvaliar(currentState).map((p) =>
+    hydrateProposicao(currentState, p),
+  );
   const idsComRascunho = listarIdsComRascunho();
 
   const modo = determinarModo(filtros);

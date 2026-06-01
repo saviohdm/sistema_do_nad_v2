@@ -1,5 +1,6 @@
 import { requireAuth, hasPermission } from "../app/auth.js";
 import { mountPage, state } from "../app/bootstrap.js";
+import { hydrateProposicao } from "../domain/correicoes.js";
 import {
   Labels,
   Prioridade,
@@ -708,7 +709,11 @@ const renderEmptyState = (filtros) => {
 const renderResults = (lista, sort, view, filtros) => {
   const ordenada = aplicarOrdenacao(lista, sort);
   const toolbar = renderResultsToolbar(lista, sort, view);
-  const activeChips = buildActiveFiltersChips(filtros, extrairOpcoes(listProposicoes(state())));
+  const stChips = state();
+  const activeChips = buildActiveFiltersChips(
+    filtros,
+    extrairOpcoes(listProposicoes(stChips).map((p) => hydrateProposicao(stChips, p))),
+  );
   if (!ordenada.length) {
     return `
       <section class="stack" aria-label="Resultados da consulta">
@@ -773,7 +778,7 @@ const renderEstadoInicial = (todas) => {
 const render = () => {
   const filtros = getFiltrosFromUrl();
   const currentState = state();
-  const todas = listProposicoes(currentState);
+  const todas = listProposicoes(currentState).map((p) => hydrateProposicao(currentState, p));
   const opcoes = extrairOpcoes(todas);
   const view = getView();
   const sort = getSort();

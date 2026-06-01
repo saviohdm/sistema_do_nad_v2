@@ -2,6 +2,7 @@ import { PERSONAS, getCurrentPersona, getCurrentUser, requireAuth } from "../app
 import { mountPage } from "../app/bootstrap.js";
 import { loadState } from "../app/store.js";
 import { listProposicoesCorreicionadoPendentes } from "../domain/correicionados.js";
+import { hydrateProposicao } from "../domain/correicoes.js";
 import { formatDate } from "../app/utils.js";
 import { renderBadge, renderEmptyState, renderPrioridadeBadge, renderSensivelBadge } from "../ui/components.js";
 
@@ -76,7 +77,9 @@ const renderCardComprovacao = (proposicao) => {
 
 const render = () => {
   const state = loadState();
-  const proposicoes = listProposicoesCorreicionadoPendentes(state, user).sort((a, b) => {
+  const proposicoes = listProposicoesCorreicionadoPendentes(state, user)
+    .map((p) => hydrateProposicao(state, p))
+    .sort((a, b) => {
     const dilA = (a.diligencias || []).find((d) => d.status === "aberta");
     const dilB = (b.diligencias || []).find((d) => d.status === "aberta");
     const pa = dilA?.prazo ? new Date(dilA.prazo).getTime() : Infinity;

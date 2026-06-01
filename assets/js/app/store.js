@@ -1,7 +1,7 @@
 import { seedState } from "../../data/seed.js";
 import { expirarDiligenciasVencidas } from "../domain/diligencias.js";
 
-const STORAGE_KEY = "nad-sistema-state-v2";
+const STORAGE_KEY = "nad-sistema-state-v3";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
