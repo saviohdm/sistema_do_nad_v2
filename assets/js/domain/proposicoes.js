@@ -139,6 +139,7 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     unidade,
     correicaoId,
     prioridade,
+    sensivel,
     tematica,
     uf,
     idsComRascunho,
@@ -167,6 +168,8 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     if (unidade && p.unidade !== unidade) return false;
     if (correicaoId && p.correicaoId !== correicaoId) return false;
     if (prioridade && p.prioridade !== prioridade) return false;
+    if (sensivel === "sim" && !p.sensivel) return false;
+    if (sensivel === "nao" && p.sensivel) return false;
     if (tematica && p.tematica !== tematica) return false;
     if (uf && !(p.uf || []).includes(uf)) return false;
     if (idsComRascunho && !idsComRascunho.includes(p.id)) return false;
