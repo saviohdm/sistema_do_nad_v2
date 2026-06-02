@@ -81,6 +81,15 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 - O `numero` da correição (`COR-AAAA-NN`) é gerado automaticamente; o identificador real do processo permanece em `numeroElo`.
 - Editar uma correição **propaga** automaticamente aos dados exibidos em todas as suas proposições (fonte única), por projeção na leitura.
 
+#### Panorama operacional por correição
+
+- As cinco bandejas `Por correição` (`aguardando referendo`, `aguardando diligência`, `avaliação`, `decisão` e `aguardando ciência`) exibem `Proposições aguardando` e `Unidades prontas / total`.
+- Para esses indicadores, o fluxo principal está aberto enquanto `statusFluxo !== baixa_definitiva`. Proposições cientificadas ou apagadas não entram no numerador, no denominador nem bloqueiam a prontidão, mesmo se ainda houver providência paralela pendente.
+- A unidade operacional é identificada por `(correicaoId × unidadeId)`. Dados legados sem `unidadeId` usam temporariamente o nome da unidade como fallback.
+- `Proposições aguardando` contabiliza as proposições abertas presentes na bandeja. Rascunhos da persona contam como presentes em `aguardando referendo` (`rascunho_cn`) e `decisão` (`rascunho_decisao_cn`).
+- `Unidades prontas / total` compara: (a) unidades cujas proposições abertas estão todas na bandeja; e (b) todas as unidades da correição que possuem ao menos uma proposição com fluxo principal aberto.
+- Os indicadores são informativos. Apenas a ciência exige grupo completo por regra de negócio.
+
 ### 2. Diligência e comprovação
 
 - A `Secretaria Processual da CN` pratica `CRIAR DILIGÊNCIA`.
@@ -145,7 +154,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   - reinicia o ciclo de comprovação
 - Toda decisão do tipo `concluída` transita a proposição para `aguardando_ciencia` e leva a `CIENTIFICAR`.
 - O ato de ciência (evento `CIENTIFICACAO`) transita o `statusFluxo` para `baixa_definitiva` e encerra o fluxo principal da proposição.
-- A ciência ocorre em bloco por `(correição × unidade)`: só é liberada quando todas as proposições daquela unidade naquela correição estão em `aguardando_ciencia`. Pendências em `pendenciasSecretaria[]` são ortogonais e **não bloqueiam** a transição para `baixa_definitiva`.
+- A ciência ocorre em bloco por `(correição × unidadeId)`: só é liberada quando todas as proposições daquela unidade naquela correição estão em `aguardando_ciencia`. Pendências em `pendenciasSecretaria[]` são ortogonais e **não bloqueiam** a transição para `baixa_definitiva`.
 - Se o resultado for `parcialmente cumprida` ou `não cumprida` e houver providência adicional:
   - a proposição segue para `CIENTIFICAR`; e
   - em paralelo, o sistema cria uma pendência para a `Secretaria Processual da CN` informar o cumprimento da providência
@@ -234,7 +243,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 ```
 
 - `status` ∈ `ativo` (aguardando referendo do CNMP) | `referendada` (referendo registrado). O estado `encerrada` é **derivado** (não armazenado): a correição está encerrada quando **todas** as suas proposições estão inativas.
-- **Referendar** é uma transição do agregado `Correição`: marca `status = referendada` e encaminha as proposições filhas à Secretaria. Ocorre na fila de referendo (`corregedor-referendo`).
+- **Referendar** é uma transição do agregado `Correição`: marca `status = referendada` e encaminha as proposições filhas à Secretaria. Ocorre na fila de referendo (`corregedor-referendo`). A ação e a geração do relatório final ficam bloqueadas enquanto houver proposição filha em `rascunho_cn`.
 
 ### Proposições
 
@@ -246,7 +255,9 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   "numero": "PROP-2024-0001",
   "correicaoId": "ObjectId",
   "tipo": "Determinação",
+  "unidadeId": "ObjectId",
   "unidade": "Procuradoria-Geral de Justiça",
+  "membroId": "ObjectId|null",
   "membro": "Dr. João Silva Santos",
   "descricao": "...",
   "prioridade": "normal", // "urgente" | "importante" | "normal"

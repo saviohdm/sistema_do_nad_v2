@@ -298,7 +298,7 @@ const renderGrupoDiligenciaRow = (grupo) => `
     class="secretaria-dashboard__row secretaria-dashboard__row--action secretaria-dashboard__row--diligencia"
     data-action="abrir-grupo-diligencia"
     data-correicao="${escapeAttr(grupo.correicaoId)}"
-    data-unidade="${escapeAttr(grupo.unidade)}"
+    data-unidade-ref="${escapeAttr(grupo.unidadeRef)}"
     data-ids="${escapeAttr(grupo.proposicoes.map((p) => p.id).join(","))}"
   >
     <div class="secretaria-dashboard__row-main">
@@ -324,7 +324,7 @@ const renderGrupoCienciaRow = (grupo) => {
       class="secretaria-dashboard__row secretaria-dashboard__row--action secretaria-dashboard__row--ciencia"
       data-action="abrir-grupo-ciencia"
       data-correicao="${escapeAttr(grupo.correicaoId)}"
-      data-unidade="${escapeAttr(grupo.unidade)}"
+      data-unidade-ref="${escapeAttr(grupo.unidadeRef)}"
       data-key="${escapeAttr(grupo.key)}"
     >
       <div class="secretaria-dashboard__row-main">
@@ -519,12 +519,12 @@ const bindSecretariaHandlers = () => {
   document.querySelectorAll('[data-action="abrir-grupo-diligencia"]').forEach((row) => {
     row.addEventListener("click", () => {
       const correicao = row.dataset.correicao || "";
-      const unidade = row.dataset.unidade || "";
+      const unidadeRef = row.dataset.unidadeRef || "";
       const ids = (row.dataset.ids || "").split(",").filter(Boolean);
       sessionStorage.setItem(SELECAO_DILIGENCIA_KEY, JSON.stringify(ids));
       const params = new URLSearchParams();
       if (correicao) params.set("correicaoId", correicao);
-      if (unidade) params.set("unidade", unidade);
+      if (unidadeRef) params.set("unidadeRef", unidadeRef);
       params.set("fila", "1");
       window.location.href = `secretaria-diligencia.html?${params.toString()}`;
     });

@@ -5,6 +5,7 @@ import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
 import { Labels, SituacaoApreciacao } from "../domain/enums.js";
 import { filtrarProposicoes } from "../domain/proposicoes.js";
+import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import {
   listFilaAguardandoDiligencia,
   listGruposAguardandoDiligencia,
@@ -256,6 +257,7 @@ const abrirModalConfirmacao = (proposicoesSelecionadas, prazo, descricao, render
 
 // --- Config do módulo compartilhado ---
 montarFilaNavegavel({
+  statusFila: StatusFilaOperacional.DILIGENCIA,
   persona: PERSONAS.SECRETARIA,
   activePage: "secretaria-diligencia",
   title: "Aguardando diligência",
@@ -367,7 +369,7 @@ montarFilaNavegavel({
       .querySelector("[data-action='toggle-grupos-completos']")
       ?.addEventListener("change", (event) => {
         const novos = { ...ctx.filtros, gruposCompletos: event.target.checked };
-        if (!novos.unidade) novos.filaForcada = true;
+        if (!novos.unidadeRef && !novos.unidade) novos.filaForcada = true;
         ctx.aplicarFiltros(novos);
       });
 

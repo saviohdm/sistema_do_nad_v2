@@ -6,6 +6,7 @@ import {
   listProposicoesParaAvaliar,
 } from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
+import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import { listarIdsComRascunho } from "../domain/rascunhos-avaliacao.js";
 import {
   renderBadge,
@@ -36,6 +37,7 @@ const renderCard = (proposicao, temRascunho) => `
 `;
 
 montarFilaNavegavel({
+  statusFila: StatusFilaOperacional.AVALIACAO,
   persona: PERSONAS.MEMBRO,
   activePage: "membro-auxiliar",
   title: "Minha fila de avaliação",

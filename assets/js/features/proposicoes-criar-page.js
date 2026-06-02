@@ -7,10 +7,10 @@ import {
   confirmarRascunhoCN,
   criarProposicao,
   editarProposicao,
-  encaminharParaSecretaria,
   getProposicaoById,
 } from "../domain/proposicoes.js";
 import { listCorreicoes } from "../domain/correicoes.js";
+import { listMembros, listUnidades } from "../domain/correicionados.js";
 import { renderAlert } from "../ui/components.js";
 
 requireAuth();
@@ -63,7 +63,77 @@ const escapeHtml = (s) =>
 
 const correicoesDisponiveis = listCorreicoes(state());
 const correicoesById = new Map(correicoesDisponiveis.map((c) => [c.id, c]));
+const unidadesDiretorio = listUnidades(state());
+const unidadesById = new Map(unidadesDiretorio.map((unidade) => [unidade.id, unidade]));
+const membrosDiretorio = listMembros(state());
+const membrosById = new Map(membrosDiretorio.map((membro) => [membro.id, membro]));
+const LEGADO_VALUE = "__legado__";
+const correicaoOriginalId = proposicaoParaEditar?.correicaoId || "";
 let correicaoSelecionadaId = isEdicao ? proposicaoParaEditar.correicaoId || "" : "";
+
+const getUnidadesDisponiveis = () => {
+  const ramoMP = correicoesById.get(correicaoSelecionadaId)?.ramoMP;
+  if (!ramoMP) return [];
+  return unidadesDiretorio.filter((unidade) => unidade.ramoMP === ramoMP);
+};
+
+const resolveUnidadeIdLegada = () => {
+  if (!proposicaoParaEditar) return "";
+  if (proposicaoParaEditar.unidadeId) return proposicaoParaEditar.unidadeId;
+  return (
+    getUnidadesDisponiveis().find((unidade) => unidade.nome === proposicaoParaEditar.unidade)?.id ||
+    ""
+  );
+};
+
+let unidadeSelecionada = resolveUnidadeIdLegada();
+if (!unidadeSelecionada && valor("unidade")) unidadeSelecionada = LEGADO_VALUE;
+
+const resolveMembroIdLegado = () => {
+  if (!proposicaoParaEditar) return "";
+  if (proposicaoParaEditar.membroId) return proposicaoParaEditar.membroId;
+  return (
+    membrosDiretorio.find(
+      (membro) =>
+        membro.nome === proposicaoParaEditar.membro &&
+        membro.lotacaoUnidadeId === unidadeSelecionada,
+    )?.id || ""
+  );
+};
+
+let membroSelecionado = resolveMembroIdLegado();
+if (!membroSelecionado && valor("membro")) membroSelecionado = LEGADO_VALUE;
+
+const getMembrosDisponiveis = () =>
+  membrosDiretorio.filter((membro) => membro.lotacaoUnidadeId === unidadeSelecionada);
+
+const renderUnidadesOptions = () => {
+  const legado =
+    isEdicao && unidadeSelecionada === LEGADO_VALUE
+      ? `<option value="${LEGADO_VALUE}"${unidadeSelecionada === LEGADO_VALUE ? " selected" : ""}>Manter unidade legada: ${escapeHtml(valor("unidade"))}</option>`
+      : "";
+  const options = getUnidadesDisponiveis()
+    .map(
+      (unidade) =>
+        `<option value="${escapeAttr(unidade.id)}"${unidadeSelecionada === unidade.id ? " selected" : ""}>${escapeHtml(unidade.nome)}</option>`,
+    )
+    .join("");
+  return `<option value="">Selecione uma unidade…</option>${legado}${options}`;
+};
+
+const renderMembrosOptions = () => {
+  const legado =
+    isEdicao && membroSelecionado === LEGADO_VALUE
+      ? `<option value="${LEGADO_VALUE}"${membroSelecionado === LEGADO_VALUE ? " selected" : ""}>Manter membro legado: ${escapeHtml(valor("membro"))}</option>`
+      : "";
+  const options = getMembrosDisponiveis()
+    .map(
+      (membro) =>
+        `<option value="${escapeAttr(membro.id)}"${membroSelecionado === membro.id ? " selected" : ""}>${escapeHtml(membro.nome)}</option>`,
+    )
+    .join("");
+  return `<option value="">Proposição da unidade</option>${legado}${options}`;
+};
 
 const renderPreview = (c) => {
   if (!c) return `<p class="muted">Selecione uma correição para ver os dados herdados.</p>`;
@@ -105,7 +175,7 @@ const render = () => {
     ? "Atualize o rascunho desta proposição. Você pode salvá-lo como rascunho (sem confirmar) ou confirmar e encaminhá-lo ao referendo do CNMP. Histórico e demais campos são preservados."
     : isEdicao
       ? "Atualize os dados da proposição enquanto ela aguarda referendo do CNMP. Campos sensíveis (histórico, apreciação, diligências) são preservados."
-      : "Preencha os dados da proposição e os metadados da correição de origem. Você pode salvar como rascunho ou criar e encaminhar diretamente para a Secretaria.";
+      : "Preencha os dados da proposição e os metadados da correição de origem. Você pode salvar como rascunho ou criar e encaminhar ao referendo do CNMP (ou diretamente à Secretaria, se a correição já estiver referendada).";
 
   mountPage({
     activePage: "proposicoes-criar",
@@ -144,20 +214,6 @@ const render = () => {
         </div>
 
         <div class="field">
-          <label for="unidade">Unidade *</label>
-          <input type="text" id="unidade" name="unidade" required
-                 placeholder="Ex: Procuradoria-Geral de Justiça"
-                 value="${escapeAttr(valor("unidade"))}" />
-        </div>
-
-        <div class="field">
-          <label for="membro">Membro *</label>
-          <input type="text" id="membro" name="membro" required
-                 placeholder="Ex: Dr. João Silva Santos"
-                 value="${escapeAttr(valor("membro"))}" />
-        </div>
-
-        <div class="field">
           <label for="descricao">Descrição *</label>
           <textarea id="descricao" name="descricao" rows="6" required
                     placeholder="Descreva a proposição...">${valor("descricao")}</textarea>
@@ -181,6 +237,22 @@ const render = () => {
 
         <div id="correicao-preview" class="stack">
           ${renderPreview(correicoesById.get(correicaoSelecionadaId))}
+        </div>
+
+        <div class="field">
+          <label for="unidadeId">Unidade *</label>
+          <select id="unidadeId" name="unidadeId" required>
+            ${renderUnidadesOptions()}
+          </select>
+          <p class="muted modal-helper">Somente unidades do mesmo ramo da correição selecionada.</p>
+        </div>
+
+        <div class="field">
+          <label for="membroId">Membro</label>
+          <select id="membroId" name="membroId">
+            ${renderMembrosOptions()}
+          </select>
+          <p class="muted modal-helper">Opcional. Selecione um membro lotado na unidade ou mantenha a proposição vinculada à unidade.</p>
         </div>
 
         <div class="field">
@@ -232,13 +304,41 @@ const render = () => {
   });
 
   const selectCorreicao = document.querySelector("#correicaoId");
+  const selectUnidade = document.querySelector("#unidadeId");
+  const selectMembro = document.querySelector("#membroId");
+
+  const atualizarSeletoresDiretorio = () => {
+    if (selectUnidade) selectUnidade.innerHTML = renderUnidadesOptions();
+    if (selectMembro) selectMembro.innerHTML = renderMembrosOptions();
+  };
+
   if (selectCorreicao) {
     selectCorreicao.addEventListener("change", (e) => {
       correicaoSelecionadaId = e.target.value;
+      const idsPermitidos = new Set(getUnidadesDisponiveis().map((unidade) => unidade.id));
+      if (
+        (unidadeSelecionada === LEGADO_VALUE && correicaoSelecionadaId !== correicaoOriginalId) ||
+        (unidadeSelecionada !== LEGADO_VALUE && !idsPermitidos.has(unidadeSelecionada))
+      ) {
+        unidadeSelecionada = "";
+        membroSelecionado = "";
+      }
       const preview = document.querySelector("#correicao-preview");
       if (preview) preview.innerHTML = renderPreview(correicoesById.get(correicaoSelecionadaId));
+      atualizarSeletoresDiretorio();
     });
   }
+
+  selectUnidade?.addEventListener("change", (e) => {
+    const unidadeAnterior = unidadeSelecionada;
+    unidadeSelecionada = e.target.value;
+    if (unidadeSelecionada !== unidadeAnterior) membroSelecionado = "";
+    atualizarSeletoresDiretorio();
+  });
+
+  selectMembro?.addEventListener("change", (e) => {
+    membroSelecionado = e.target.value;
+  });
 
   document.querySelector("#form-criar-proposicao").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -246,10 +346,32 @@ const render = () => {
     const action = submitter?.value || (isEdicao ? "editar" : "rascunho");
 
     const data = new FormData(e.currentTarget);
+    const unidadeValue = data.get("unidadeId");
+    const unidadeDiretorio = unidadesById.get(unidadeValue);
+    const membroValue = data.get("membroId");
+    const membroDiretorio = membrosById.get(membroValue);
+    const mantendoUnidadeLegada = unidadeValue === LEGADO_VALUE && isEdicao;
+    const mantendoMembroLegado = membroValue === LEGADO_VALUE && isEdicao;
+
+    if (!unidadeDiretorio && !mantendoUnidadeLegada) {
+      alert("Selecione uma unidade vinculada ao ramo da correição.");
+      return;
+    }
+    if (
+      membroDiretorio &&
+      unidadeDiretorio &&
+      membroDiretorio.lotacaoUnidadeId !== unidadeDiretorio.id
+    ) {
+      alert("Selecione um membro lotado na unidade escolhida.");
+      return;
+    }
+
     const dados = {
       tipo: data.get("tipo"),
-      unidade: data.get("unidade"),
-      membro: data.get("membro"),
+      unidadeId: unidadeDiretorio?.id || null,
+      unidade: unidadeDiretorio?.nome || valor("unidade"),
+      membroId: membroDiretorio?.id || null,
+      membro: membroDiretorio?.nome || (mantendoMembroLegado ? valor("membro") : ""),
       descricao: data.get("descricao"),
       prioridade: data.get("prioridade"),
       sensivel: data.get("sensivel") === "on",
@@ -291,9 +413,6 @@ const render = () => {
     mutateState((draft) => {
       const prop = criarProposicao(draft, dados, { comoRascunho: action === "rascunho" });
       novaProposicaoId = prop.id;
-      if (action === "encaminhar") {
-        encaminharParaSecretaria(prop);
-      }
       return draft;
     });
 

@@ -2,6 +2,7 @@ import { PERSONAS } from "../app/auth.js";
 import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
 import { listProposicoesAguardandoDecisao } from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
+import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import {
   renderBadge,
   renderPrioridadeBadge,
@@ -45,6 +46,7 @@ const renderCard = (proposicao) => {
 };
 
 montarFilaNavegavel({
+  statusFila: StatusFilaOperacional.DECISAO,
   persona: PERSONAS.CORREGEDOR,
   activePage: "corregedor-decisao",
   title: "Aguardando decisão",

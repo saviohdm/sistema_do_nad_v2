@@ -7,6 +7,12 @@ import { StatusFluxo } from "../domain/enums.js";
 import { resolveDestinatarioCorreicionado } from "../domain/correicionados.js";
 import { renderBadge, renderEmptyState, renderStatCard } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
+import {
+  StatusFilaOperacional,
+  getGrupoOperacionalKey,
+  getUnidadeRef,
+  listPanoramaFilaPorCorreicao,
+} from "../domain/filas-operacionais.js";
 
 requireAuth();
 
@@ -41,7 +47,7 @@ const hidratarSelecao = () => {
 hidratarSelecao();
 
 const escapeAttr = (value) => String(value).replace(/"/g, "&quot;");
-const grupoKey = (g) => `${g.correicaoId || "sem-correicao"}::${g.unidade || "sem-unidade"}`;
+const grupoKey = (g) => g.key || getGrupoOperacionalKey(g.correicaoId, g.unidadeRef);
 
 const getFiltrosFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
@@ -129,38 +135,13 @@ const filtrarGrupos = (grupos, filtros) =>
 // Overview
 // ---------------------------------------------------------------------------
 
-const aggregateBy = (grupos, keyFn, init) => {
-  const map = new Map();
-  grupos.forEach((g) => {
-    const key = keyFn(g);
-    const entry = map.get(key) || init(g);
-    entry.proposicoesAguardando += g.prontas;
-    entry.unidadesTotal += 1;
-    if (g.completo) entry.unidadesProntas += 1;
-    map.set(key, entry);
-  });
-  return Array.from(map.values()).sort(
-    (a, b) => b.proposicoesAguardando - a.proposicoesAguardando,
-  );
-};
-
-const renderOverview = (grupos) => {
+const renderOverview = (grupos, currentState) => {
   const totalProposicoes = grupos.reduce((s, g) => s + g.prontas, 0);
   const completos = grupos.filter((g) => g.completo).length;
   const parciais = grupos.filter((g) => !g.completo).length;
   const prontosHoje = grupos.filter((g) => g.completo && isHoje(g.prontoEm)).length;
 
-  const correicoes = aggregateBy(
-    grupos,
-    (g) => g.correicaoId || "—",
-    (g) => ({
-      correicaoId: g.correicaoId,
-      ramoMP: g.ramoMP,
-      proposicoesAguardando: 0,
-      unidadesTotal: 0,
-      unidadesProntas: 0,
-    }),
-  );
+  const correicoes = listPanoramaFilaPorCorreicao(currentState, StatusFilaOperacional.CIENCIA);
 
   const correicaoRows = correicoes.length
     ? correicoes
@@ -465,7 +446,7 @@ const computarDestinatariosDoLote = (currentState, gruposSelecionados) => {
   const proposicoesAlvo = currentState.proposicoes.filter((p) => {
     if (p.statusFluxo !== StatusFluxo.AGUARDANDO_CIENCIA) return false;
     return gruposSelecionados.some(
-      (g) => g.correicaoId === p.correicaoId && g.unidade === p.unidade,
+      (g) => g.correicaoId === p.correicaoId && g.unidadeRef === getUnidadeRef(p),
     );
   });
   const map = new Map();
@@ -559,13 +540,14 @@ const abrirModalCiencia = (gruposSelecionados) => {
 const confirmarCienciaEmLote = (gruposSelecionados) => {
   const snapshot = gruposSelecionados.map((g) => ({
     correicaoId: g.correicaoId,
+    unidadeRef: g.unidadeRef,
     unidade: g.unidade,
     prontas: g.prontas,
   }));
 
   mutateState((draft) => {
-    snapshot.forEach(({ correicaoId, unidade }) => {
-      cientificarGrupo(draft, correicaoId, unidade);
+    snapshot.forEach(({ correicaoId, unidadeRef }) => {
+      cientificarGrupo(draft, correicaoId, unidadeRef);
     });
     return draft;
   });
@@ -607,7 +589,7 @@ const render = () => {
   let content;
   let subtitle;
   if (modo === "overview") {
-    content = renderOverview(grupos);
+    content = renderOverview(grupos, currentState);
     subtitle =
       "Grupos (correição × unidade) com proposições aguardando ciência. A ciência só pode ser efetuada quando o grupo está completo.";
   } else {

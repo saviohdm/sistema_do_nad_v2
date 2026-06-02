@@ -498,7 +498,9 @@ export const criarProposicao = (
   state,
   {
     tipo,
+    unidadeId,
     unidade,
+    membroId,
     membro,
     descricao,
     prioridade,
@@ -526,8 +528,10 @@ export const criarProposicao = (
     numero,
     correicaoId,
     tipo,
+    unidadeId: unidadeId || null,
     unidade,
-    membro,
+    membroId: membroId || null,
+    membro: membro || "",
     descricao,
     prioridade: PRIORIDADES_VALIDAS.has(prioridade) ? prioridade : Prioridade.NORMAL,
     sensivel: Boolean(sensivel),
@@ -633,7 +637,9 @@ export const editarMetadados = (proposicao, { prioridade, sensivel }, persona) =
 export const editarProposicao = (proposicao, camposEditaveis) => {
   const camposPermitidos = [
     "tipo",
+    "unidadeId",
     "unidade",
+    "membroId",
     "membro",
     "descricao",
     "prioridade",
@@ -657,6 +663,14 @@ export const editarProposicao = (proposicao, camposEditaveis) => {
 
 export const referendarCorreicao = (state, correicaoId, usuario = "Corregedor Nacional") => {
   if (!correicaoId) return 0;
+  const temRascunhos = state.proposicoes.some(
+    (proposicao) =>
+      proposicao.correicaoId === correicaoId &&
+      proposicao.statusFluxo === StatusFluxo.RASCUNHO_CN,
+  );
+  if (temRascunhos) {
+    throw new Error("Confirme ou apague os rascunhos da correição antes de registrar o referendo.");
+  }
   marcarReferendada(getCorreicaoById(state, correicaoId));
   let afetadas = 0;
   state.proposicoes.forEach((proposicao) => {

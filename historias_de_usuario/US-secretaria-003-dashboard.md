@@ -14,10 +14,10 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`).
 ## Fluxo principal
 1. Acessa **Dashboard** → vê duas seções verticais: **Hoje** e **Acompanhar**.
 2. Seção **Hoje** lista três blocos com Top 5 itens cada, ordenados por urgência:
-   - **Grupos prontos para diligência**: grupos `(correição × unidade)` onde todas as proposições não-`BAIXA_DEFINITIVA` estão em `AGUARDANDO_SECRETARIA`. Mostra ramo, contagem, split *novas/retornadas* e *"Pronto há N dias"*.
+   - **Grupos prontos para diligência**: grupos `(correição × unidadeId)` onde todas as proposições não-`BAIXA_DEFINITIVA` estão em `AGUARDANDO_SECRETARIA`. Mostra ramo, contagem, split *novas/retornadas* e *"Pronto há N dias"*.
    - **Grupos prontos para ciência**: grupos onde todas estão em `AGUARDANDO_CIENCIA`. Mostra ramo, contagem, *"K com pendência paralela"* e *"Pronto há N dias"*.
    - **Providências atrasadas (>10 dias)**: pendências em aberto há mais de 10 dias. Lista plana com tipo (Local/COCI/Outras) e badge *"Há N dias em aberto"*.
-3. Cada linha de grupo é clicável: pré-seleciona os checkboxes na tela-fila correspondente (via `sessionStorage`) e abre filtrada por `(correicaoId, unidade)`.
+3. Cada linha de grupo é clicável: pré-seleciona os checkboxes na tela-fila correspondente (via `sessionStorage`) e abre filtrada por `(correicaoId, unidadeId)`.
 4. "Ver todos (N)" de cada bloco leva à tela-fila aplicando filtro de contexto (grupos completos / atrasadas).
 5. Seção **Acompanhar** mostra **Grupos parciais** (com mistura de estados — algumas em estado-Secretaria, outras em fluxo anterior), Top 5, ordenado por % de conclusão. "Ver mais" expande inline.
 
@@ -27,7 +27,7 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`).
 - **Outras personas**: dashboard original (Corregedor ou default) permanece inalterado.
 
 ## Regras de negócio
-- *Grupo completo* = todas as proposições não-`BAIXA_DEFINITIVA` da combinação `(correicaoId, unidade)` estão em um mesmo estado-Secretaria.
+- *Grupo completo* = todas as proposições não-`BAIXA_DEFINITIVA` da combinação `(correicaoId, unidadeId)` estão em um mesmo estado-Secretaria. Registros legados sem `unidadeId` usam temporariamente o nome da unidade.
 - *Grupo parcial* = pelo menos 1 em estado-Secretaria E pelo menos 1 em fluxo anterior.
 - *Providência atrasada* = `pendenciaSecretaria` com `status = "pendente"` e `dataCriacao` há mais de 10 dias.
 - **Estouro de prazo de comprovação é tratado automaticamente** pelo sistema (gera evento de estouro e roteia para novo ciclo de avaliação); a Secretaria **não acompanha** isso no dashboard.

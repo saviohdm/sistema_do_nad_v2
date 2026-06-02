@@ -11,6 +11,7 @@ import {
 } from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
 import { StatusFluxo } from "../domain/enums.js";
+import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import {
   renderBadge,
   renderPrioridadeBadge,
@@ -60,16 +61,37 @@ const renderCard = (proposicao) => `
   </article>
 `;
 
-const renderAcoesCorreicao = (correicaoId) => `
-  <div class="button-row">
-    <button class="button button--ghost" type="button" data-action="gerar-relatorio" data-correicao-id="${correicaoId || ""}">Gerar relatório final</button>
-    <button class="button" type="button" data-action="referendar-correicao" data-correicao-id="${correicaoId || ""}">Marcar como referendada</button>
-  </div>
-`;
+const getRascunhosDaCorreicao = (currentState, correicaoId) =>
+  listProposicoesRascunhoCN(currentState).filter((p) => p.correicaoId === correicaoId);
+
+const renderAcoesCorreicao = (correicaoId, ctx) => {
+  const rascunhos = getRascunhosDaCorreicao(ctx.state, correicaoId);
+  const bloqueada = rascunhos.length > 0;
+  const disabled = bloqueada ? " disabled" : "";
+  const title = bloqueada
+    ? ` title="Confirme ou apague ${rascunhos.length} rascunho(s) antes de concluir a correição."`
+    : "";
+  const aviso = bloqueada
+    ? `<span class="muted">${rascunhos.length} rascunho(s) bloqueiam relatório e referendo.</span>`
+    : "";
+  return `
+    <div class="stack">
+      <div class="button-row">
+        <button class="button button--ghost" type="button" data-action="gerar-relatorio" data-correicao-id="${correicaoId || ""}"${disabled}${title}>Gerar relatório final</button>
+        <button class="button" type="button" data-action="referendar-correicao" data-correicao-id="${correicaoId || ""}"${disabled}${title}>Marcar como referendada</button>
+      </div>
+      ${aviso}
+    </div>
+  `;
+};
 
 const handleReferendar = (correicaoId, ctx) => {
   if (!correicaoId) {
     window.alert("Correição sem identificador — não é possível referendar.");
+    return;
+  }
+  if (getRascunhosDaCorreicao(ctx.state, correicaoId).length > 0) {
+    window.alert("Confirme ou apague os rascunhos da correição antes de registrar o referendo.");
     return;
   }
   const confirmar = window.confirm(
@@ -118,6 +140,10 @@ const handleConfirmarRascunho = (proposicaoId, ctx) => {
 };
 
 const handleGerarRelatorio = (correicaoId, ctx) => {
+  if (getRascunhosDaCorreicao(ctx.state, correicaoId).length > 0) {
+    window.alert("Confirme ou apague os rascunhos da correição antes de gerar o relatório final.");
+    return;
+  }
   const proposicoes = listProposicoesAguardandoReferendo(ctx.state)
     .map((p) => hydrateProposicao(ctx.state, p))
     .filter((p) => p.correicaoId === correicaoId);
@@ -129,13 +155,14 @@ const handleGerarRelatorio = (correicaoId, ctx) => {
 };
 
 montarFilaNavegavel({
+  statusFila: StatusFilaOperacional.REFERENDO,
   persona: PERSONAS.CORREGEDOR,
   activePage: "corregedor-referendo",
   title: "Aguardando referendo do CNMP",
   storageKey: "nad-corregedor-referendo-filtros",
   subtitlePorModo: {
     overview:
-      "Proposições que ainda aguardam referendo do CNMP. Agrupe por correição, gere o relatório final e registre o referendo em bloco. Rascunhos de criação ficam à parte, sob o filtro \"Somente com rascunho\".",
+      "Proposições que ainda aguardam referendo do CNMP. Agrupe por correição, resolva eventuais rascunhos, gere o relatório final e registre o referendo em bloco.",
     correicao:
       "Escolha uma unidade dentro da correição para entrar na fila de proposições aguardando referendo.",
     fila: "Revise, edite ou apague cada proposição antes do referendo. A ação de referendar sempre opera em bloco pela correição — os botões de relatório e referendo aparecem na visão da correição inteira (\"Ver todas desta correição\"). Rascunhos só são confirmados/encaminhados individualmente.",
@@ -163,7 +190,6 @@ montarFilaNavegavel({
     ].map((p) => hydrateProposicao(state, p)),
   rascunho: {
     label: "Somente com rascunho",
-    exclusivo: true,
     detectar: (proposicao) => ehRascunho(proposicao),
   },
   renderStats: (proposicoes, ctx) => {
@@ -186,14 +212,15 @@ montarFilaNavegavel({
       ${verRascunhos}
     `;
   },
-  renderCorreicaoRowAcoes: (item) => renderAcoesCorreicao(item.correicaoId),
+  renderCorreicaoRowAcoes: (item, ctx) => renderAcoesCorreicao(item.correicaoId, ctx),
   renderFilaHeaderActions: (ctx) =>
     ctx.filtros.correicaoId &&
+    !ctx.filtros.unidadeRef &&
     !ctx.filtros.unidade &&
     !ctx.filtros.prioridade &&
     !ctx.filtros.sensivel &&
     !ctx.filtros.comRascunho
-      ? renderAcoesCorreicao(ctx.filtros.correicaoId)
+      ? renderAcoesCorreicao(ctx.filtros.correicaoId, ctx)
       : "",
   renderItens: (filtradas) => filtradas.map(renderCard).join(""),
   bindExtra: (ctx) => {

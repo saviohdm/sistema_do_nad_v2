@@ -1,7 +1,7 @@
 # US-SECRETARIA-002 · Aguardando Ciência
 
 **Como** Secretária Processual da CN,
-**eu quero** visualizar em panorama os grupos `(correição × unidade)` cujas proposições aguardam ciência e cientificá-los em bloco assim que cada unidade fica completa,
+**eu quero** visualizar em panorama os grupos `(correição × unidadeId)` cujas proposições aguardam ciência e cientificá-los em bloco assim que cada unidade fica completa,
 **para** dar ciência ao correicionado em uma só ação por unidade, sem ter que monitorar caso a caso quando todas as decisões da unidade ficam prontas.
 
 ## Ator
@@ -13,12 +13,12 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `registrar_cienti
 
 ## Fluxo principal
 1. Acessa **Aguardando ciência** → vê panorama com 4 stat cards (proposições aguardando, grupos completos, grupos parciais, prontos hoje) e tabelas por Ramo e por Correição com colunas `Proposições aguardando` e `Unidades prontas / total`.
-2. Drilldown: clica em ramo → modo Ramo lista correições do ramo; clica em correição → modo Grupo com cards por `(correição × unidade)`.
+2. Drilldown: clica em ramo → modo Ramo lista correições do ramo; clica em correição → modo Grupo com cards por `(correição × unidadeId)`.
 3. No modo Grupo, aplica filtros laterais (Ramo, Correição, Estado completo/parcial, Pronto em hoje/últimos 7 dias).
-4. Marca grupos completos (apenas grupos completos têm checkbox; parciais aparecem desabilitados com badge "Aguardando N decisões pendentes").
+4. Marca grupos completos por `(correição × unidadeId)` (apenas grupos completos têm checkbox; parciais aparecem desabilitados com badge "Aguardando N decisões pendentes").
 5. Sticky batch bar exibe `M grupo(s) selecionado(s) · N proposição(ões)` e botão `Cientificar todas`.
 6. Confirma no modal, que sumariza por grupo (`Unidade · Correição · K proposições · X gerarão pendência paralela`).
-7. Sistema invoca `cientificarGrupo` para cada `(correição, unidade)` selecionado, registra evento `CIENTIFICACAO` em cada proposição e transita `statusFluxo` para `BAIXA_DEFINITIVA`.
+7. Sistema invoca `cientificarGrupo` para cada `(correição, unidadeId)` selecionado, registra evento `CIENTIFICACAO` em cada proposição e transita `statusFluxo` para `BAIXA_DEFINITIVA`.
 8. Toast confirma cada grupo cientificado; grupos somem da fila; badge cross-page do menu decrementa.
 
 ## Fluxos alternativos
@@ -30,9 +30,10 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `registrar_cienti
 
 ## Regras de negócio
 - Ciência só pode ser registrada para proposições em `statusFluxo = AGUARDANDO_CIENCIA`.
-- Ciência em bloco ocorre por `(correição, unidade)`; a unidade é o bloco-mínimo. Multi-grupo é apenas um agregador de UX — internamente, cada grupo é processado individualmente.
+- Ciência em bloco ocorre por `(correição, unidadeId)`; a unidade é o bloco-mínimo. Multi-grupo é apenas um agregador de UX — internamente, cada grupo é processado individualmente. Registros legados sem `unidadeId` usam temporariamente o nome da unidade.
 - Apenas grupos **completos** (todas as proposições da unidade naquela correição em `AGUARDANDO_CIENCIA`) são selecionáveis.
 - Após ciência, `statusFluxo` da proposição vira `BAIXA_DEFINITIVA`. Providências pendentes permanecem ativas em `pendenciasSecretaria[]`, mas **não impedem** a transição.
+- Proposições em `BAIXA_DEFINITIVA` saem integralmente de `Unidades prontas / total`, mesmo quando preservam providência paralela pendente.
 - Badge cross-page no menu lateral da Secretaria mostra a contagem de **grupos completos prontos** (não de proposições).
 
 ## Pós-condições

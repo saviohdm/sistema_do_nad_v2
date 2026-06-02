@@ -1,8 +1,10 @@
 import { SituacaoApreciacao, StatusFluxo, TipoHistorico } from "./enums.js";
 import { listProposicoes } from "./proposicoes.js";
-
-const grupoKey = (correicaoId, unidade) =>
-  `${correicaoId || "sem-correicao"}::${unidade || "sem-unidade"}`;
+import {
+  StatusFilaOperacional,
+  listGruposAbertosPorUnidade,
+  listGruposOperacionaisDaFila,
+} from "./filas-operacionais.js";
 
 const isAguardandoSecretaria = (proposicao) =>
   proposicao.statusFluxo === StatusFluxo.AGUARDANDO_SECRETARIA;
@@ -10,19 +12,8 @@ const isAguardandoSecretaria = (proposicao) =>
 const isAguardandoCiencia = (proposicao) =>
   proposicao.statusFluxo === StatusFluxo.AGUARDANDO_CIENCIA;
 
-const isFinalizada = (proposicao) =>
-  proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA;
-
 const isEstadoSecretaria = (proposicao) =>
   isAguardandoSecretaria(proposicao) || isAguardandoCiencia(proposicao);
-
-// Bloqueia o grupo de ciência: ainda não chegou a aguardando_ciencia nem foi finalizada.
-const isPendenteParaCiencia = (proposicao) =>
-  !isAguardandoCiencia(proposicao) && !isFinalizada(proposicao);
-
-// Bloqueia o grupo de diligência: ainda não chegou a aguardando_secretaria nem foi finalizada.
-const isPendenteParaDiligencia = (proposicao) =>
-  !isAguardandoSecretaria(proposicao) && !isFinalizada(proposicao);
 
 const dataDecisaoMaisRecente = (proposicao) => {
   for (let i = proposicao.historico.length - 1; i >= 0; i -= 1) {
@@ -57,42 +48,10 @@ export const listFilaAguardandoDiligencia = (state) =>
 const isRetornada = (proposicao) =>
   proposicao.apreciacaoDoCN?.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES;
 
-// Agrupa proposições em AGUARDANDO_SECRETARIA por (correicaoId, unidade),
-// adicionando metadados sobre o grupo inteiro (completo se todas não-finalizadas
-// da mesma unidade+correição também estão aguardando a Secretaria).
+// Agrupa proposições em AGUARDANDO_SECRETARIA por (correicaoId, unidadeRef).
 export const listGruposAguardandoDiligencia = (state) => {
-  const todas = listProposicoes(state);
-  const alvos = todas.filter(isAguardandoSecretaria);
-
-  const grupos = new Map();
-  alvos.forEach((proposicao) => {
-    const key = grupoKey(proposicao.correicaoId, proposicao.unidade);
-    const entry =
-      grupos.get(key) || {
-        key,
-        correicaoId: proposicao.correicaoId,
-        unidade: proposicao.unidade,
-        ramoMP: proposicao.ramoMP,
-        ramoMPNome: proposicao.ramoMPNome,
-        proposicoes: [],
-      };
-    entry.proposicoes.push(proposicao);
-    grupos.set(key, entry);
-  });
-
-  return Array.from(grupos.values())
+  return listGruposOperacionaisDaFila(state, StatusFilaOperacional.DILIGENCIA)
     .map((grupo) => {
-      const outrasDaUnidade = todas.filter(
-        (p) =>
-          p.correicaoId === grupo.correicaoId &&
-          p.unidade === grupo.unidade &&
-          !grupo.proposicoes.includes(p),
-      );
-      const pendentesNoGrupo = outrasDaUnidade.filter(isPendenteParaDiligencia).length;
-      const finalizadasNoGrupo = outrasDaUnidade.filter(isFinalizada).length;
-      const totalNaUnidadeCorreicao =
-        grupo.proposicoes.length + pendentesNoGrupo + finalizadasNoGrupo;
-      const prontas = grupo.proposicoes.length;
       const novas = grupo.proposicoes.filter((p) => !isRetornada(p)).length;
       const retornadas = grupo.proposicoes.filter(isRetornada).length;
       const datas = grupo.proposicoes
@@ -102,11 +61,6 @@ export const listGruposAguardandoDiligencia = (state) => {
       const prontoEm = datas.length ? datas[datas.length - 1] : null;
       return {
         ...grupo,
-        prontas,
-        total: totalNaUnidadeCorreicao,
-        pendentesNoGrupo,
-        finalizadasNoGrupo,
-        completo: pendentesNoGrupo === 0,
         prontoEm,
         novas,
         retornadas,
@@ -123,30 +77,11 @@ export const listGruposAguardandoDiligencia = (state) => {
     });
 };
 
-// Lista grupos (correicaoId, unidade) com pelo menos uma proposição em
+// Lista grupos (correicaoId, unidadeRef) com pelo menos uma proposição em
 // estado-Secretaria (AGUARDANDO_SECRETARIA ou AGUARDANDO_CIENCIA) E pelo menos
 // uma proposição ainda em fluxo anterior. Ordenado por % de conclusão decrescente.
 export const listGruposParciaisSecretaria = (state) => {
-  const todas = listProposicoes(state);
-  const grupos = new Map();
-
-  todas.forEach((proposicao) => {
-    if (isFinalizada(proposicao)) return;
-    const key = grupoKey(proposicao.correicaoId, proposicao.unidade);
-    const entry =
-      grupos.get(key) || {
-        key,
-        correicaoId: proposicao.correicaoId,
-        unidade: proposicao.unidade,
-        ramoMP: proposicao.ramoMP,
-        ramoMPNome: proposicao.ramoMPNome,
-        proposicoes: [],
-      };
-    entry.proposicoes.push(proposicao);
-    grupos.set(key, entry);
-  });
-
-  return Array.from(grupos.values())
+  return listGruposAbertosPorUnidade(state)
     .map((grupo) => {
       const emSecretaria = grupo.proposicoes.filter(isAguardandoSecretaria).length;
       const emCiencia = grupo.proposicoes.filter(isAguardandoCiencia).length;
@@ -202,38 +137,8 @@ export const listProvidenciasAtrasadas = (state, hoje = new Date()) => {
 };
 
 export const listFilaAguardandoCiencia = (state) => {
-  const todas = listProposicoes(state);
-  const alvos = todas.filter(isAguardandoCiencia);
-
-  const grupos = new Map();
-  alvos.forEach((proposicao) => {
-    const key = grupoKey(proposicao.correicaoId, proposicao.unidade);
-    const entry =
-      grupos.get(key) || {
-        key,
-        correicaoId: proposicao.correicaoId,
-        unidade: proposicao.unidade,
-        ramoMP: proposicao.ramoMP,
-        ramoMPNome: proposicao.ramoMPNome,
-        proposicoes: [],
-      };
-    entry.proposicoes.push(proposicao);
-    grupos.set(key, entry);
-  });
-
-  return Array.from(grupos.values())
+  return listGruposOperacionaisDaFila(state, StatusFilaOperacional.CIENCIA)
     .map((grupo) => {
-      const outrasDaUnidade = todas.filter(
-        (p) =>
-          p.correicaoId === grupo.correicaoId &&
-          p.unidade === grupo.unidade &&
-          !grupo.proposicoes.includes(p),
-      );
-      const pendentesNoGrupo = outrasDaUnidade.filter(isPendenteParaCiencia).length;
-      const finalizadasNoGrupo = outrasDaUnidade.filter(isFinalizada).length;
-      const totalNaUnidadeCorreicao =
-        grupo.proposicoes.length + pendentesNoGrupo + finalizadasNoGrupo;
-      const prontas = grupo.proposicoes.length;
       const datasDecisao = grupo.proposicoes
         .map(dataDecisaoMaisRecente)
         .filter(Boolean)
@@ -242,11 +147,6 @@ export const listFilaAguardandoCiencia = (state) => {
       const comProvidencia = contarComProvidencia(grupo.proposicoes);
       return {
         ...grupo,
-        prontas,
-        total: totalNaUnidadeCorreicao,
-        pendentesNoGrupo,
-        finalizadasNoGrupo,
-        completo: pendentesNoGrupo === 0,
         prontoEm,
         comProvidencia,
       };

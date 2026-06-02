@@ -6,6 +6,7 @@
 //
 // Hooks de config:
 //   activePage, title, storageKey, persona            -> identidade/guard
+//   statusFila                                        -> status contabilizados no panorama
 //   subtitlePorModo: { overview, correicao, fila }     -> subtítulo por modo
 //   textos                                             -> rótulos/empty-states (ver defaults)
 //   getProposicoes(state)                              -> lista já hidratada (obrigatório)
@@ -25,7 +26,12 @@
 
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { getCurrentPersona, requireAuth } from "../app/auth.js";
-import { filtrarProposicoes, groupByCorreicao, groupByUnidade } from "../domain/proposicoes.js";
+import { filtrarProposicoes } from "../domain/proposicoes.js";
+import {
+  getUnidadeRef,
+  groupProposicoesPorUnidadeOperacional,
+  listPanoramaFilaPorCorreicao,
+} from "../domain/filas-operacionais.js";
 import { Labels } from "../domain/enums.js";
 import { renderEmptyState } from "../ui/components.js";
 
@@ -34,7 +40,7 @@ const uniq = (values) => Array.from(new Set(values.filter(Boolean)));
 const optionTag = (value, label, selected) =>
   `<option value="${escapeAttr(value)}"${selected === value ? " selected" : ""}>${label}</option>`;
 
-const BASE_KEYS = ["correicaoId", "unidade", "prioridade", "sensivel"];
+const BASE_KEYS = ["correicaoId", "unidadeRef", "unidade", "prioridade", "sensivel"];
 
 export function montarFilaNavegavel(config) {
   requireAuth();
@@ -46,6 +52,7 @@ export function montarFilaNavegavel(config) {
   const temRascunho = Boolean(config.rascunho);
   const filtrosExtras = config.filtrosExtras || []; // [{ key, tipo: "string" | "bool" }]
   const FILA_KEYS = [
+    "unidadeRef",
     "unidade",
     "prioridade",
     "sensivel",
@@ -108,7 +115,7 @@ export function montarFilaNavegavel(config) {
 
   // --- Panorama: KPIs + tabela "Por correição" ---
   const renderOverview = (proposicoes, ctx) => {
-    const correicoes = groupByCorreicao(proposicoes);
+    const correicoes = listPanoramaFilaPorCorreicao(ctx.state, config.statusFila);
     const temAcoes = typeof config.renderCorreicaoRowAcoes === "function";
     const rows = correicoes.length
       ? correicoes
@@ -117,12 +124,13 @@ export function montarFilaNavegavel(config) {
             <tr data-nav-correicao="${escapeAttr(item.correicaoId || "")}">
               <td><strong>${item.correicaoId || "—"}</strong></td>
               <td>${item.ramoMP || "—"}</td>
-              <td class="numeric">${item.total}</td>
+              <td class="numeric">${item.proposicoesAguardando}</td>
+              <td class="numeric">${item.unidadesProntas} / ${item.unidadesTotal}</td>
               ${temAcoes ? `<td>${config.renderCorreicaoRowAcoes(item, ctx)}</td>` : ""}
             </tr>`,
           )
           .join("")
-      : `<tr><td colspan="${temAcoes ? 4 : 3}">${renderEmptyState(
+      : `<tr><td colspan="${temAcoes ? 5 : 4}">${renderEmptyState(
           textos.emptyCorreicoes || "Nenhuma correição nesta fila.",
         )}</td></tr>`;
 
@@ -144,7 +152,7 @@ export function montarFilaNavegavel(config) {
           <div class="table-wrap">
             <table class="table table--hover">
               <thead>
-                <tr><th>Correição</th><th>Ramo</th><th class="numeric">${contagemLabel}</th>${temAcoes ? "<th>Ações</th>" : ""}</tr>
+                <tr><th>Correição</th><th>Ramo</th><th class="numeric">Proposições aguardando</th><th class="numeric">Unidades prontas / total</th>${temAcoes ? "<th>Ações</th>" : ""}</tr>
               </thead>
               <tbody>${rows}</tbody>
             </table>
@@ -156,14 +164,14 @@ export function montarFilaNavegavel(config) {
   // --- Unidades de uma correição ---
   const renderModoCorreicao = (proposicoes, filtros) => {
     const daCorreicao = proposicoes.filter((p) => p.correicaoId === filtros.correicaoId);
-    const unidades = groupByUnidade(daCorreicao);
+    const unidades = groupProposicoesPorUnidadeOperacional(daCorreicao);
     const ramoMP = daCorreicao[0]?.ramoMP || "";
     const ramoMPNome = daCorreicao[0]?.ramoMPNome || "";
     const rows = unidades.length
       ? unidades
           .map(
             (item) => `
-            <tr data-nav-unidade="${escapeAttr(item.unidade)}">
+            <tr data-nav-unidade-ref="${escapeAttr(item.unidadeRef)}">
               <td><strong>${item.unidade}</strong></td>
               <td class="numeric">${item.total}</td>
             </tr>`,
@@ -252,10 +260,14 @@ export function montarFilaNavegavel(config) {
   const filtrarParaFila = (proposicoes, filtros, ctx) => {
     let lista = filtrarProposicoes(proposicoes, {
       correicaoId: filtros.correicaoId,
-      unidade: filtros.unidade,
       prioridade: filtros.prioridade,
       sensivel: filtros.sensivel,
     });
+    if (filtros.unidadeRef) {
+      lista = lista.filter((p) => getUnidadeRef(p) === filtros.unidadeRef);
+    } else if (filtros.unidade) {
+      lista = lista.filter((p) => p.unidade === filtros.unidade);
+    }
     if (temRascunho) {
       if (config.rascunho.exclusivo) {
         // Segregado: OFF mostra só os não-detectados; ON mostra só os detectados.
@@ -295,7 +307,9 @@ export function montarFilaNavegavel(config) {
 
     const contexto = [
       filtros.correicaoId ? `Correição: <strong>${filtros.correicaoId}</strong>` : null,
-      filtros.unidade ? `Unidade: <strong>${filtros.unidade}</strong>` : null,
+      filtros.unidadeRef || filtros.unidade
+        ? `Unidade: <strong>${filtradas[0]?.unidade || filtros.unidade || filtros.unidadeRef}</strong>`
+        : null,
       filtros.prioridade
         ? `Prioridade: <strong>${Labels.prioridade[filtros.prioridade] || filtros.prioridade}</strong>`
         : null,
@@ -391,9 +405,9 @@ export function montarFilaNavegavel(config) {
       row.addEventListener("click", () => aplicarFiltros({ correicaoId: correicao }));
     });
 
-    document.querySelectorAll("[data-nav-unidade]").forEach((row) => {
+    document.querySelectorAll("[data-nav-unidade-ref]").forEach((row) => {
       row.addEventListener("click", () =>
-        aplicarFiltros({ correicaoId: filtros.correicaoId, unidade: row.dataset.navUnidade }),
+        aplicarFiltros({ correicaoId: filtros.correicaoId, unidadeRef: row.dataset.navUnidadeRef }),
       );
     });
 
@@ -418,8 +432,9 @@ export function montarFilaNavegavel(config) {
     document.querySelector("[data-action='limpar-filtros']")?.addEventListener("click", () => {
       aplicarFiltros({
         correicaoId: filtros.correicaoId,
+        unidadeRef: filtros.unidadeRef,
         unidade: filtros.unidade,
-        filaForcada: !filtros.unidade,
+        filaForcada: !filtros.unidadeRef && !filtros.unidade,
       });
     });
 
@@ -428,6 +443,7 @@ export function montarFilaNavegavel(config) {
       const data = new FormData(event.currentTarget);
       const novos = {
         correicaoId: filtros.correicaoId || "",
+        unidadeRef: filtros.unidadeRef || "",
         unidade: filtros.unidade || "",
         prioridade: data.get("prioridade") || "",
         sensivel: data.get("sensivel") || "",
