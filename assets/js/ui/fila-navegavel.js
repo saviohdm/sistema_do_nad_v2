@@ -44,7 +44,14 @@ export function montarFilaNavegavel(config) {
   }
 
   const temRascunho = Boolean(config.rascunho);
-  const FILA_KEYS = ["unidade", "prioridade", "sensivel", ...(temRascunho ? ["comRascunho"] : [])];
+  const filtrosExtras = config.filtrosExtras || []; // [{ key, tipo: "string" | "bool" }]
+  const FILA_KEYS = [
+    "unidade",
+    "prioridade",
+    "sensivel",
+    ...(temRascunho ? ["comRascunho"] : []),
+    ...filtrosExtras.map((f) => f.key),
+  ];
   const textos = config.textos || {};
   const contagemLabel = textos.contagemLabel || "Proposições";
 
@@ -57,6 +64,14 @@ export function montarFilaNavegavel(config) {
       if (value) filtros[key] = value;
     });
     if (temRascunho && params.get("comRascunho") === "1") filtros.comRascunho = true;
+    filtrosExtras.forEach((f) => {
+      const value = params.get(f.key);
+      if (f.tipo === "bool") {
+        if (value === "1") filtros[f.key] = true;
+      } else if (value) {
+        filtros[f.key] = value;
+      }
+    });
     if (params.get("fila") === "1" || params.get("filaForcada") === "1") filtros.filaForcada = true;
     return filtros;
   };
@@ -67,6 +82,10 @@ export function montarFilaNavegavel(config) {
       if (filtros[key]) params.set(key, filtros[key]);
     });
     if (temRascunho && filtros.comRascunho) params.set("comRascunho", "1");
+    filtrosExtras.forEach((f) => {
+      if (!filtros[f.key]) return;
+      params.set(f.key, f.tipo === "bool" ? "1" : filtros[f.key]);
+    });
     if (filtros.filaForcada) params.set("fila", "1");
     const query = params.toString();
     window.history.pushState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
@@ -185,7 +204,7 @@ export function montarFilaNavegavel(config) {
   };
 
   // --- Painel de filtros (só atributos da proposição: prioridade, sensível, rascunho) ---
-  const renderPainelFiltros = (proposicoes, filtros) => {
+  const renderPainelFiltros = (proposicoes, filtros, ctx) => {
     const prioridades = uniq(proposicoes.map((p) => p.prioridade));
     const prioOpts = prioridades
       .map((v) => optionTag(v, Labels.prioridade[v] || v, filtros.prioridade || ""))
@@ -221,6 +240,7 @@ export function montarFilaNavegavel(config) {
             </select>
           </div>
           ${rascunhoField}
+          ${config.renderFiltrosExtras ? config.renderFiltrosExtras(filtros, ctx) : ""}
         </div>
         <div class="button-row">
           <button class="button" type="submit">Aplicar filtros</button>
@@ -248,6 +268,9 @@ export function montarFilaNavegavel(config) {
         // Afunilador: ON restringe aos detectados.
         lista = lista.filter((p) => config.rascunho.detectar(p, ctx));
       }
+    }
+    if (config.aplicarFiltrosExtras) {
+      lista = config.aplicarFiltrosExtras(lista, filtros, ctx);
     }
     return lista;
   };
@@ -305,7 +328,9 @@ export function montarFilaNavegavel(config) {
             </div>
           </div>
 
+          ${config.renderFilaTopo ? config.renderFilaTopo(ctx) : ""}
           <div class="proposicoes-list">${itens}</div>
+          ${config.renderFilaRodape ? config.renderFilaRodape(ctx) : ""}
         </div>
 
         <aside class="stack">
@@ -321,7 +346,7 @@ export function montarFilaNavegavel(config) {
             }: <strong>${totalUniverso}</strong></p>
           </div>
 
-          ${renderPainelFiltros(proposicoes, filtros)}
+          ${renderPainelFiltros(proposicoes, filtros, ctx)}
         </aside>
       </section>`;
   };
@@ -409,6 +434,10 @@ export function montarFilaNavegavel(config) {
         filaForcada: true,
       };
       if (temRascunho) novos.comRascunho = data.get("comRascunho") === "1";
+      filtrosExtras.forEach((f) => {
+        if (f.tipo === "bool") novos[f.key] = data.get(f.key) === "1";
+        else novos[f.key] = data.get(f.key) || "";
+      });
       aplicarFiltros(novos);
     });
 

@@ -19,7 +19,7 @@ const SELECAO_KEY = "nad-secretaria-ciencia-selecao";
 const MODAL_ROOT_ID = "nad-modal-root";
 const TOAST_ROOT_ID = "nad-toast-root";
 
-const FILTRO_KEYS_URL = ["ramoMP", "correicaoId", "estado", "prontoEm"];
+const FILTRO_KEYS_URL = ["correicaoId", "estado", "prontoEm"];
 
 const selecaoKeys = new Set();
 
@@ -73,7 +73,6 @@ const determinarModo = (filtros) => {
   if (filtros.filaForcada || filtros.correicaoId || filtros.estado || filtros.prontoEm) {
     return "grupo";
   }
-  if (filtros.ramoMP) return "ramo";
   return "overview";
 };
 
@@ -151,18 +150,6 @@ const renderOverview = (grupos) => {
   const parciais = grupos.filter((g) => !g.completo).length;
   const prontosHoje = grupos.filter((g) => g.completo && isHoje(g.prontoEm)).length;
 
-  const ramos = aggregateBy(
-    grupos,
-    (g) => g.ramoMP || "—",
-    (g) => ({
-      ramoMP: g.ramoMP,
-      ramoMPNome: g.ramoMPNome || g.ramoMP,
-      proposicoesAguardando: 0,
-      unidadesTotal: 0,
-      unidadesProntas: 0,
-    }),
-  );
-
   const correicoes = aggregateBy(
     grupos,
     (g) => g.correicaoId || "—",
@@ -174,21 +161,6 @@ const renderOverview = (grupos) => {
       unidadesProntas: 0,
     }),
   );
-
-  const ramoRows = ramos.length
-    ? ramos
-        .map(
-          (item) => `
-            <tr data-nav-ramo="${escapeAttr(item.ramoMP || "")}">
-              <td><strong>${item.ramoMP || "—"}</strong></td>
-              <td>${item.ramoMPNome || "—"}</td>
-              <td class="numeric">${item.proposicoesAguardando}</td>
-              <td class="numeric">${item.unidadesProntas} / ${item.unidadesTotal}</td>
-            </tr>
-          `,
-        )
-        .join("")
-    : `<tr><td colspan="4">${renderEmptyState("Nenhum ramo com proposições aguardando ciência.")}</td></tr>`;
 
   const correicaoRows = correicoes.length
     ? correicoes
@@ -225,26 +197,8 @@ const renderOverview = (grupos) => {
       </div>
 
       <div class="panel">
-        <h3 class="panel__title">Por ramo do MP</h3>
-        <p class="muted">Clique em uma linha para ver as correições daquele ramo.</p>
-        <div class="table-wrap">
-          <table class="table table--hover">
-            <thead>
-              <tr>
-                <th>Ramo</th>
-                <th>Nome</th>
-                <th class="numeric">Proposições aguardando</th>
-                <th class="numeric">Unidades prontas / total</th>
-              </tr>
-            </thead>
-            <tbody>${ramoRows}</tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="panel">
         <h3 class="panel__title">Por correição</h3>
-        <p class="muted">Clique em uma linha para abrir os grupos daquela correição.</p>
+        <p class="muted">Clique em uma correição para abrir suas unidades (grupos) aguardando ciência.</p>
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
@@ -263,77 +217,7 @@ const renderOverview = (grupos) => {
   `;
 };
 
-// ---------------------------------------------------------------------------
-// Ramo mode — lista correições do ramo
-// ---------------------------------------------------------------------------
-
-const renderModoRamo = (grupos, filtros) => {
-  const doRamo = grupos.filter((g) => g.ramoMP === filtros.ramoMP);
-  const nomeRamo = doRamo[0]?.ramoMPNome || filtros.ramoMP;
-
-  const correicoes = aggregateBy(
-    doRamo,
-    (g) => g.correicaoId || "—",
-    (g) => ({
-      correicaoId: g.correicaoId,
-      ramoMP: g.ramoMP,
-      proposicoesAguardando: 0,
-      unidadesTotal: 0,
-      unidadesProntas: 0,
-    }),
-  );
-
-  const rows = correicoes.length
-    ? correicoes
-        .map(
-          (item) => `
-            <tr data-nav-correicao="${escapeAttr(item.correicaoId || "")}">
-              <td><strong>${item.correicaoId || "—"}</strong></td>
-              <td class="numeric">${item.proposicoesAguardando}</td>
-              <td class="numeric">${item.unidadesProntas} / ${item.unidadesTotal}</td>
-            </tr>
-          `,
-        )
-        .join("")
-    : `<tr><td colspan="3">${renderEmptyState("Nenhuma correição neste ramo aguarda ciência.")}</td></tr>`;
-
-  const totalGrupos = doRamo.length;
-  const completos = doRamo.filter((g) => g.completo).length;
-
-  return `
-    <section class="stack">
-      <div class="panel">
-        <div class="button-row" style="justify-content: space-between; align-items: baseline;">
-          <div>
-            <h3 class="panel__title">${filtros.ramoMP} — ${nomeRamo}</h3>
-            <p class="muted">${totalGrupos} grupo(s) aguardando ciência neste ramo · ${completos} completo(s).</p>
-          </div>
-          <div class="button-row">
-            <button class="button" type="button" data-action="ver-todos-do-ramo">Ver todos os grupos do ramo</button>
-            <button class="button button--ghost" type="button" data-action="voltar-overview">Voltar ao panorama</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3 class="panel__title">Correições</h3>
-        <p class="muted">Clique em uma linha para abrir os grupos daquela correição.</p>
-        <div class="table-wrap">
-          <table class="table table--hover">
-            <thead>
-              <tr>
-                <th>Correição</th>
-                <th class="numeric">Proposições aguardando</th>
-                <th class="numeric">Unidades prontas / total</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  `;
-};
+// (Removido: nível intermediário "Por ramo" — a navegação agora é Correição → grupos de unidade.)
 
 // ---------------------------------------------------------------------------
 // Grupo mode — filtros laterais e cards
@@ -343,29 +227,10 @@ const option = (value, label, selected) =>
   `<option value="${escapeAttr(value)}"${selected === value ? " selected" : ""}>${label}</option>`;
 
 const renderPainelFiltros = (grupos, filtros) => {
-  const ramos = Array.from(new Set(grupos.map((g) => g.ramoMP).filter(Boolean))).sort();
-  const correicoes = Array.from(
-    new Set(grupos.map((g) => g.correicaoId).filter(Boolean)),
-  ).sort();
-
   return `
     <form class="panel stack" id="painel-filtros">
       <h3 class="panel__title">Filtros</h3>
       <div class="field-grid">
-        <div class="field">
-          <label for="filtro-ramo">Ramo</label>
-          <select id="filtro-ramo" name="ramoMP">
-            <option value="">Todos</option>
-            ${ramos.map((r) => option(r, r, filtros.ramoMP || "")).join("")}
-          </select>
-        </div>
-        <div class="field">
-          <label for="filtro-correicao">Correição</label>
-          <select id="filtro-correicao" name="correicaoId">
-            <option value="">Todas</option>
-            ${correicoes.map((c) => option(c, c, filtros.correicaoId || "")).join("")}
-          </select>
-        </div>
         <div class="field">
           <label for="filtro-estado">Estado</label>
           <select id="filtro-estado" name="estado">
@@ -513,7 +378,6 @@ const renderModoGrupo = (grupos, filtros) => {
     .reduce((s, g) => s + g.prontas, 0);
 
   const contextoSelecao = [
-    filtros.ramoMP ? `Ramo: <strong>${filtros.ramoMP}</strong>` : null,
     filtros.correicaoId ? `Correição: <strong>${filtros.correicaoId}</strong>` : null,
     filtros.estado ? `Estado: <strong>${filtros.estado}</strong>` : null,
     filtros.prontoEm
@@ -526,14 +390,15 @@ const renderModoGrupo = (grupos, filtros) => {
   return `
     <section class="page-grid page-grid--two">
       <div class="stack">
-        <div class="queue-header">
-          <div>
-            <h3 class="queue-header__title">Fila de ciência</h3>
-            <p class="muted queue-header__context">${contextoSelecao || "Todos os grupos aguardando ciência."}</p>
-          </div>
-          <div class="button-row queue-header__actions">
-            <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
-            ${filtros.ramoMP ? `<button class="button button--ghost" type="button" data-action="voltar-ramo">Correições do ramo</button>` : ""}
+        <div class="panel">
+          <div class="button-row" style="justify-content: space-between; align-items: baseline;">
+            <div>
+              <h3 class="panel__title">Fila de ciência</h3>
+              <p class="muted">${contextoSelecao || "Todos os grupos aguardando ciência."}</p>
+            </div>
+            <div class="button-row">
+              <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
+            </div>
           </div>
         </div>
 
@@ -543,14 +408,14 @@ const renderModoGrupo = (grupos, filtros) => {
       </div>
 
       <aside class="stack">
-        <div class="panel queue-sidebar-card">
+        <div class="panel">
           <h3 class="panel__title">Contador</h3>
           <p class="muted">Visíveis com os filtros atuais:</p>
-          <div class="stat-card">
+          <div class="stat-card" style="margin-top: 0.5rem;">
             <span class="stat-card__value">${filtrados.length}</span>
             <span class="stat-card__label">grupo(s)</span>
           </div>
-          <p class="muted queue-sidebar-card__footer">Total na fila: <strong>${grupos.length}</strong> grupo(s)</p>
+          <p class="muted" style="margin-top: 1rem;">Total na fila: <strong>${grupos.length}</strong> grupo(s)</p>
         </div>
 
         ${renderPainelFiltros(grupos, filtros)}
@@ -745,9 +610,6 @@ const render = () => {
     content = renderOverview(grupos);
     subtitle =
       "Grupos (correição × unidade) com proposições aguardando ciência. A ciência só pode ser efetuada quando o grupo está completo.";
-  } else if (modo === "ramo") {
-    content = renderModoRamo(grupos, filtros);
-    subtitle = "Escolha uma correição dentro do ramo para abrir seus grupos.";
   } else {
     content = renderModoGrupo(grupos, filtros);
     subtitle =
@@ -766,17 +628,11 @@ const render = () => {
 };
 
 const bindHandlers = (filtros, grupos) => {
-  document.querySelectorAll("[data-nav-ramo]").forEach((row) => {
-    row.addEventListener("click", () => {
-      aplicarFiltros({ ramoMP: row.dataset.navRamo });
-    });
-  });
-
   document.querySelectorAll("[data-nav-correicao]").forEach((row) => {
     const correicao = row.dataset.navCorreicao;
     if (!correicao) return;
     row.addEventListener("click", () => {
-      aplicarFiltros({ ramoMP: filtros.ramoMP, correicaoId: correicao });
+      aplicarFiltros({ correicaoId: correicao });
     });
   });
 
@@ -784,22 +640,14 @@ const bindHandlers = (filtros, grupos) => {
     aplicarFiltros({ filaForcada: true });
   });
 
-  document.querySelector("[data-action='ver-todos-do-ramo']")?.addEventListener("click", () => {
-    aplicarFiltros({ ramoMP: filtros.ramoMP, filaForcada: true });
-  });
-
   document.querySelector("[data-action='voltar-overview']")?.addEventListener("click", () => {
     aplicarFiltros({});
   });
 
-  document.querySelector("[data-action='voltar-ramo']")?.addEventListener("click", () => {
-    aplicarFiltros({ ramoMP: filtros.ramoMP });
-  });
-
   document.querySelector("[data-action='limpar-filtros']")?.addEventListener("click", () => {
     aplicarFiltros({
-      ramoMP: filtros.ramoMP || "",
-      filaForcada: !filtros.ramoMP ? true : false,
+      correicaoId: filtros.correicaoId || "",
+      filaForcada: !filtros.correicaoId ? true : false,
     });
   });
 
@@ -807,8 +655,7 @@ const bindHandlers = (filtros, grupos) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     aplicarFiltros({
-      ramoMP: (data.get("ramoMP") || "").toString(),
-      correicaoId: (data.get("correicaoId") || "").toString(),
+      correicaoId: filtros.correicaoId || "",
       estado: (data.get("estado") || "").toString(),
       prontoEm: (data.get("prontoEm") || "").toString(),
       filaForcada: true,
