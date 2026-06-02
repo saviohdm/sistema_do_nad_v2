@@ -283,7 +283,6 @@ export const getAvailableActions = (proposicao) => {
     podeConfirmarRascunho: emRascunhoCN,
     podeEditarProposicao: emReferendo || emRascunhoCN,
     podeApagarProposicao: emReferendo || emRascunhoCN,
-    podeGerarRelatorioFinal: emReferendo,
     podeEditarMetadados: proposicao.statusFluxo !== StatusFluxo.BAIXA_DEFINITIVA,
   };
 };
@@ -306,7 +305,6 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeConfirmarRascunho: false,
       podeEditarProposicao: false,
       podeApagarProposicao: false,
-      podeGerarRelatorioFinal: false,
       podeEditarMetadados: baseActions.podeEditarMetadados,
     },
     "Secretaria Processual da CN": {
@@ -319,7 +317,6 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeConfirmarRascunho: false,
       podeEditarProposicao: false,
       podeApagarProposicao: false,
-      podeGerarRelatorioFinal: false,
       podeEditarMetadados: baseActions.podeEditarMetadados,
     },
     Correicionado: {
@@ -334,7 +331,6 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeConfirmarRascunho: false,
       podeEditarProposicao: false,
       podeApagarProposicao: false,
-      podeGerarRelatorioFinal: false,
       podeEditarMetadados: false,
     },
   };

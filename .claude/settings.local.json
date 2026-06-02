@@ -20,7 +20,9 @@
       "Bash(lsof -iTCP:8080 -sTCP:LISTEN)",
       "Skill(grill-me)",
       "Skill(grill-me:*)",
-      "Bash(grep -E \"\\\\.\\(js|ts|tsx|jsx|vue\\)$\")"
+      "Bash(grep -E \"\\\\.\\(js|ts|tsx|jsx|vue\\)$\")",
+      "Bash(rg -l -i \"relat[óo]rio final|referendad|referendar|gerar relat\" --glob '*.{js,html,md,json}')",
+      "Bash(rg -n -i \"relat[óo]rio final|referendad|referendar|gerar relat\" assets/ pages/ --glob '*.{js,html}')"
     ]
   }
 }

@@ -138,7 +138,7 @@ montarFilaNavegavel({
       "Proposições que ainda aguardam referendo do CNMP. Agrupe por correição, gere o relatório final e registre o referendo em bloco. Rascunhos de criação ficam à parte, sob o filtro \"Somente com rascunho\".",
     correicao:
       "Escolha uma unidade dentro da correição para entrar na fila de proposições aguardando referendo.",
-    fila: "Revise, edite ou apague cada proposição antes do referendo. A ação de referendar sempre opera em bloco pela correição. Rascunhos só são confirmados/encaminhados individualmente.",
+    fila: "Revise, edite ou apague cada proposição antes do referendo. A ação de referendar sempre opera em bloco pela correição — os botões de relatório e referendo aparecem na visão da correição inteira (\"Ver todas desta correição\"). Rascunhos só são confirmados/encaminhados individualmente.",
   },
   textos: {
     panoramaTitulo: "Panorama do referendo",
@@ -188,7 +188,11 @@ montarFilaNavegavel({
   },
   renderCorreicaoRowAcoes: (item) => renderAcoesCorreicao(item.correicaoId),
   renderFilaHeaderActions: (ctx) =>
-    ctx.filtros.correicaoId && !ctx.filtros.comRascunho
+    ctx.filtros.correicaoId &&
+    !ctx.filtros.unidade &&
+    !ctx.filtros.prioridade &&
+    !ctx.filtros.sensivel &&
+    !ctx.filtros.comRascunho
       ? renderAcoesCorreicao(ctx.filtros.correicaoId)
       : "",
   renderItens: (filtradas) => filtradas.map(renderCard).join(""),

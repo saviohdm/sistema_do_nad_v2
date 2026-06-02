@@ -58,7 +58,7 @@ import {
   readApreciacaoForm,
   renderApreciacaoForm,
 } from "../ui/forms.js";
-import { openEditarMetadadosModal, openRelatorioFinalModal } from "../ui/modal.js";
+import { openEditarMetadadosModal } from "../ui/modal.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
 const veioDaFilaMembro = queryParam("fromMembro") === "1";
@@ -314,24 +314,6 @@ const bindHandlers = (proposicao) => {
           });
           render();
         },
-      });
-    });
-
-  document
-    .querySelector("[data-action='gerar-relatorio-final']")
-    ?.addEventListener("click", () => {
-      const currentState = state();
-      const proposicoesDaCorreicao = currentState.proposicoes
-        .filter(
-          (p) =>
-            p.correicaoId === proposicao.correicaoId &&
-            p.statusFluxo === "aguardando_referendo_cnmp",
-        )
-        .map((p) => hydrateProposicao(currentState, p));
-      openRelatorioFinalModal({
-        correicaoId: proposicao.correicaoId,
-        ramoMP: proposicao.ramoMPNome || proposicao.ramoMP,
-        proposicoes: proposicoesDaCorreicao,
       });
     });
 
@@ -763,25 +745,18 @@ const render = () => {
                   </section>
                 `
                 : available.podeEditarProposicao ||
-                    available.podeApagarProposicao ||
-                    available.podeGerarRelatorioFinal
+                    available.podeApagarProposicao
                   ? `
                   <section class="panel stack">
                     <h3 class="panel__title">Ações da Corregedoria (referendo)</h3>
                     <p class="inline-note">
-                      Esta proposição aguarda referendo do CNMP. Você pode editar os dados,
-                      apagá-la ou gerar um preview do relatório final enquanto ela não é encaminhada
-                      à Secretaria Processual.
+                      Esta proposição aguarda referendo do CNMP. Você pode editar os dados
+                      ou apagá-la enquanto ela não é encaminhada à Secretaria Processual.
                     </p>
                     <div class="button-row">
                       ${
                         available.podeEditarProposicao
                           ? `<a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar proposição</a>`
-                          : ""
-                      }
-                      ${
-                        available.podeGerarRelatorioFinal
-                          ? `<button class="button button--ghost" type="button" data-action="gerar-relatorio-final">Gerar relatório final</button>`
                           : ""
                       }
                       ${
