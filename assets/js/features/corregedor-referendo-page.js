@@ -2,13 +2,15 @@ import { PERSONAS } from "../app/auth.js";
 import { mutateState } from "../app/store.js";
 import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
 import {
+  confirmarRascunhoCN,
   groupByCorreicao,
-  groupByRamoMP,
   listProposicoesAguardandoReferendo,
+  listProposicoesRascunhoCN,
   markPropositionDeleted,
   referendarCorreicao,
 } from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
+import { StatusFluxo } from "../domain/enums.js";
 import {
   renderBadge,
   renderPrioridadeBadge,
@@ -16,6 +18,20 @@ import {
   renderStatCard,
 } from "../ui/components.js";
 import { openRelatorioFinalModal } from "../ui/modal.js";
+
+const ehRascunho = (proposicao) => proposicao.statusFluxo === StatusFluxo.RASCUNHO_CN;
+
+const contarRascunhos = (proposicoes) => proposicoes.filter(ehRascunho).length;
+
+const renderAcoesCard = (proposicao) => {
+  const editar = `<a class="button button--ghost" href="/pages/proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar</a>`;
+  const apagar = `<button class="button button--ghost" type="button" data-action="apagar-proposicao" data-proposicao-id="${proposicao.id}">Apagar</button>`;
+  if (ehRascunho(proposicao)) {
+    const confirmar = `<button class="button" type="button" data-action="confirmar-rascunho" data-proposicao-id="${proposicao.id}">Confirmar e encaminhar</button>`;
+    return `${editar}${confirmar}${apagar}`;
+  }
+  return `${editar}${apagar}`;
+};
 
 const renderCard = (proposicao) => `
   <article class="proposicao-card proposicao-card--com-acoes" data-proposicao-id="${proposicao.id}">
@@ -26,6 +42,7 @@ const renderCard = (proposicao) => `
           <div class="proposicao-card__tipo">${proposicao.tipo} · ${proposicao.ramoMP}</div>
         </div>
         <div class="pill-list">
+          ${ehRascunho(proposicao) ? renderBadge("Rascunho", "warning") : ""}
           ${renderSensivelBadge(proposicao.sensivel)}
           ${renderPrioridadeBadge(proposicao.prioridade)}
           ${renderBadge(proposicao.correicao?.numero || proposicao.correicaoId || "sem correição", "neutral")}
@@ -38,8 +55,7 @@ const renderCard = (proposicao) => `
       </div>
     </a>
     <div class="action-bar">
-      <a class="button button--ghost" href="/pages/proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar</a>
-      <button class="button button--ghost" type="button" data-action="apagar-proposicao" data-proposicao-id="${proposicao.id}">Apagar</button>
+      ${renderAcoesCard(proposicao)}
     </div>
   </article>
 `;
@@ -87,6 +103,20 @@ const handleApagar = (proposicaoId, ctx) => {
   ctx.render();
 };
 
+const handleConfirmarRascunho = (proposicaoId, ctx) => {
+  if (!proposicaoId) return;
+  const confirmar = window.confirm(
+    "Confirmar este rascunho? Ele deixa de ser rascunho e passa a aguardar o referendo do CNMP (ou segue à Secretaria, se a correição já estiver referendada).",
+  );
+  if (!confirmar) return;
+  mutateState((draft) => {
+    const prop = draft.proposicoes.find((p) => p.id === proposicaoId);
+    if (prop) confirmarRascunhoCN(draft, prop);
+    return draft;
+  });
+  ctx.render();
+};
+
 const handleGerarRelatorio = (correicaoId, ctx) => {
   const proposicoes = listProposicoesAguardandoReferendo(ctx.state)
     .map((p) => hydrateProposicao(ctx.state, p))
@@ -105,10 +135,10 @@ montarFilaNavegavel({
   storageKey: "nad-corregedor-referendo-filtros",
   subtitlePorModo: {
     overview:
-      "Proposições que ainda aguardam referendo do CNMP. Agrupe por correição, gere o relatório final e registre o referendo em bloco.",
+      "Proposições que ainda aguardam referendo do CNMP. Agrupe por correição, gere o relatório final e registre o referendo em bloco. Rascunhos de criação ficam à parte, sob o filtro \"Somente com rascunho\".",
     correicao:
       "Escolha uma unidade dentro da correição para entrar na fila de proposições aguardando referendo.",
-    fila: "Revise, edite ou apague cada proposição antes do referendo. A ação de referendar sempre opera em bloco pela correição.",
+    fila: "Revise, edite ou apague cada proposição antes do referendo. A ação de referendar sempre opera em bloco pela correição. Rascunhos só são confirmados/encaminhados individualmente.",
   },
   textos: {
     panoramaTitulo: "Panorama do referendo",
@@ -123,25 +153,44 @@ montarFilaNavegavel({
     emptyCorreicoes: "Nenhuma correição aguardando referendo.",
     emptyUnidades: "Nenhuma unidade nesta correição com proposições aguardando referendo.",
     emptyFila: "Nenhuma proposição corresponde aos filtros selecionados.",
-    contadorIntro: "Proposições aguardando referendo nesta seleção:",
-    totalSistemaLabel: "Aguardando referendo no sistema",
+    contadorIntro: "Proposições nesta seleção:",
+    totalSistemaLabel: "Total nesta visão",
   },
   getProposicoes: (state) =>
-    listProposicoesAguardandoReferendo(state).map((p) => hydrateProposicao(state, p)),
-  renderStats: (proposicoes) => {
-    const ramos = groupByRamoMP(proposicoes);
+    [
+      ...listProposicoesAguardandoReferendo(state),
+      ...listProposicoesRascunhoCN(state),
+    ].map((p) => hydrateProposicao(state, p)),
+  rascunho: {
+    label: "Somente com rascunho",
+    exclusivo: true,
+    detectar: (proposicao) => ehRascunho(proposicao),
+  },
+  renderStats: (proposicoes, ctx) => {
     const correicoes = groupByCorreicao(proposicoes);
+    const rascunhos = contarRascunhos(ctx.proposicoes);
     return `
       ${renderStatCard("Proposições aguardando referendo", proposicoes.length)}
-      ${renderStatCard("Ramos envolvidos", ramos.length)}
       ${renderStatCard("Correições envolvidas", correicoes.length)}
+      ${renderStatCard("Rascunhos de criação pendentes", rascunhos)}
     `;
   },
-  renderOverviewActions: () =>
-    `<a class="button button--ghost" href="/pages/proposicoes-criar.html">Criar nova proposição</a>`,
+  renderOverviewActions: (ctx) => {
+    const rascunhos = contarRascunhos(ctx.proposicoes);
+    const verRascunhos =
+      rascunhos > 0
+        ? `<button class="button button--ghost" type="button" data-action="ver-rascunhos">Ver rascunhos (${rascunhos})</button>`
+        : "";
+    return `
+      <a class="button button--ghost" href="/pages/proposicoes-criar.html">Criar nova proposição</a>
+      ${verRascunhos}
+    `;
+  },
   renderCorreicaoRowAcoes: (item) => renderAcoesCorreicao(item.correicaoId),
   renderFilaHeaderActions: (ctx) =>
-    ctx.filtros.correicaoId ? renderAcoesCorreicao(ctx.filtros.correicaoId) : "",
+    ctx.filtros.correicaoId && !ctx.filtros.comRascunho
+      ? renderAcoesCorreicao(ctx.filtros.correicaoId)
+      : "",
   renderItens: (filtradas) => filtradas.map(renderCard).join(""),
   bindExtra: (ctx) => {
     document.querySelectorAll("[data-action='referendar-correicao']").forEach((btn) => {
@@ -162,5 +211,14 @@ montarFilaNavegavel({
         handleApagar(btn.dataset.proposicaoId, ctx);
       });
     });
+    document.querySelectorAll("[data-action='confirmar-rascunho']").forEach((btn) => {
+      btn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        handleConfirmarRascunho(btn.dataset.proposicaoId, ctx);
+      });
+    });
+    document
+      .querySelector("[data-action='ver-rascunhos']")
+      ?.addEventListener("click", () => ctx.aplicarFiltros({ comRascunho: true }));
   },
 });

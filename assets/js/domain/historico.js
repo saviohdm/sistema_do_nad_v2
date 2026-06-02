@@ -34,6 +34,7 @@ export const summarizeHistoryEvent = (event) => {
         [TipoHistorico.CRIACAO]: "Criação",
         [TipoHistorico.EDICAO]: "Edição",
         [TipoHistorico.EDICAO_METADADOS]: "Edição de metadados",
+        [TipoHistorico.RASCUNHO_CN_CONFIRMADO]: "Rascunho de criação confirmado",
         [TipoHistorico.APAGAMENTO_PROPOSICAO]: "Apagamento da proposição",
         [TipoHistorico.CRIACAO_DILIGENCIA]: "Criação de diligência",
         [TipoHistorico.COMPROVACAO]: "Comprovação",

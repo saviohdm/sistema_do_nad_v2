@@ -4,6 +4,7 @@ import { mutateState } from "../app/store.js";
 import { queryParam, formatDate } from "../app/utils.js";
 import { Prioridade, StatusFluxo } from "../domain/enums.js";
 import {
+  confirmarRascunhoCN,
   criarProposicao,
   editarProposicao,
   encaminharParaSecretaria,
@@ -29,17 +30,24 @@ if (editId && !proposicaoParaEditar) {
   window.location.href = "/pages/proposicoes-lista.html";
 }
 
+const STATUS_EDITAVEIS = [
+  StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
+  StatusFluxo.RASCUNHO_CN,
+];
+
 if (
   proposicaoParaEditar &&
-  proposicaoParaEditar.statusFluxo !== StatusFluxo.AGUARDANDO_REFERENDO_CNMP
+  !STATUS_EDITAVEIS.includes(proposicaoParaEditar.statusFluxo)
 ) {
   alert(
-    "Esta proposição não está mais em aguardo de referendo do CNMP e não pode ser editada.",
+    "Esta proposição não está mais em rascunho nem em aguardo de referendo do CNMP e não pode ser editada.",
   );
   window.location.href = `/pages/proposicao-detalhe.html?id=${proposicaoParaEditar.id}`;
 }
 
 const isEdicao = Boolean(proposicaoParaEditar);
+const editandoRascunho =
+  isEdicao && proposicaoParaEditar.statusFluxo === StatusFluxo.RASCUNHO_CN;
 
 const valor = (campo) => {
   if (!proposicaoParaEditar) return "";
@@ -93,9 +101,11 @@ const render = () => {
   const title = isEdicao
     ? `Editar proposição ${proposicaoParaEditar.numero}`
     : "Criar nova proposição";
-  const subtitle = isEdicao
-    ? "Atualize os dados da proposição enquanto ela aguarda referendo do CNMP. Campos sensíveis (histórico, apreciação, diligências) são preservados."
-    : "Preencha os dados da proposição e os metadados da correição de origem. Você pode salvar como rascunho ou criar e encaminhar diretamente para a Secretaria.";
+  const subtitle = editandoRascunho
+    ? "Atualize o rascunho desta proposição. Você pode salvá-lo como rascunho (sem confirmar) ou confirmar e encaminhá-lo ao referendo do CNMP. Histórico e demais campos são preservados."
+    : isEdicao
+      ? "Atualize os dados da proposição enquanto ela aguarda referendo do CNMP. Campos sensíveis (histórico, apreciação, diligências) são preservados."
+      : "Preencha os dados da proposição e os metadados da correição de origem. Você pode salvar como rascunho ou criar e encaminhar diretamente para a Secretaria.";
 
   mountPage({
     activePage: "proposicoes-criar",
@@ -184,16 +194,25 @@ const render = () => {
             Cancelar
           </button>
           ${
-            isEdicao
-              ? `<button type="submit" name="action" value="editar" class="button">Salvar alterações</button>`
-              : `
-                <button type="submit" name="action" value="rascunho" class="button button--secondary">
+            editandoRascunho
+              ? `
+                <button type="submit" name="action" value="editar" class="button button--secondary">
                   Salvar rascunho
                 </button>
-                <button type="submit" name="action" value="encaminhar" class="button">
-                  Criar e encaminhar
+                <button type="submit" name="action" value="confirmar" class="button">
+                  Salvar e encaminhar
                 </button>
               `
+              : isEdicao
+                ? `<button type="submit" name="action" value="editar" class="button">Salvar alterações</button>`
+                : `
+                  <button type="submit" name="action" value="rascunho" class="button button--secondary">
+                    Salvar rascunho
+                  </button>
+                  <button type="submit" name="action" value="encaminhar" class="button">
+                    Criar e encaminhar
+                  </button>
+                `
           }
         </div>
       </form>
@@ -244,12 +263,22 @@ const render = () => {
     }
 
     if (isEdicao) {
+      const confirmar = action === "confirmar";
       mutateState((draft) => {
         const item = draft.proposicoes.find((entry) => entry.id === proposicaoParaEditar.id);
-        if (item) editarProposicao(item, dados);
+        if (item) {
+          editarProposicao(item, dados);
+          if (confirmar) confirmarRascunhoCN(draft, item);
+        }
         return draft;
       });
-      alert("Alterações salvas.");
+      alert(
+        confirmar
+          ? "Rascunho confirmado e encaminhado."
+          : editandoRascunho
+            ? "Rascunho atualizado."
+            : "Alterações salvas.",
+      );
       if (fromCorregedor === "referendo") {
         window.location.href = "/pages/corregedor-referendo.html";
       } else {
@@ -260,7 +289,7 @@ const render = () => {
 
     let novaProposicaoId;
     mutateState((draft) => {
-      const prop = criarProposicao(draft, dados);
+      const prop = criarProposicao(draft, dados, { comoRascunho: action === "rascunho" });
       novaProposicaoId = prop.id;
       if (action === "encaminhar") {
         encaminharParaSecretaria(prop);
@@ -268,7 +297,11 @@ const render = () => {
       return draft;
     });
 
-    alert("Proposição criada com sucesso!");
+    alert(
+      action === "rascunho"
+        ? "Rascunho de proposição salvo."
+        : "Proposição criada com sucesso!",
+    );
     window.location.href = `/pages/proposicao-detalhe.html?id=${novaProposicaoId}`;
   });
 };

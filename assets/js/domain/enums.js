@@ -45,6 +45,7 @@ export const TipoHistorico = {
   CRIACAO: "criacao",
   EDICAO: "edicao",
   EDICAO_METADADOS: "edicao_metadados",
+  RASCUNHO_CN_CONFIRMADO: "rascunho_cn_confirmado",
   APAGAMENTO_PROPOSICAO: "apagamento_proposicao",
   REFERENDO_CNMP: "referendo_cnmp",
   RELATORIO_FINAL_GERADO: "relatorio_final_gerado",

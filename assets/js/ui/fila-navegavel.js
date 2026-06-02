@@ -15,7 +15,10 @@
 //   renderCorreicaoRowAcoes(item, ctx)   (opcional)    -> célula extra de ações nas correições
 //   renderOverviewActions(ctx)           (opcional)    -> botões extras no panorama
 //   renderFilaHeaderActions(ctx)         (opcional)    -> botões extras no cabeçalho da fila
-//   rascunho: { label, detectar(p, ctx) } (opcional)   -> habilita o filtro "Somente com rascunho"
+//   rascunho: { label, detectar(p, ctx), exclusivo } (opcional) -> filtro "Somente com rascunho".
+//       Por padrão é "afunilador": filtro OFF mostra tudo, ON restringe aos detectados.
+//       Com `exclusivo: true` vira "segregado": os detectados ficam fora do panorama e da
+//       fila padrão (filtro OFF), e só aparecem — sozinhos — com o filtro ON.
 //   bindExtra(ctx)                       (opcional)    -> handlers próprios da persona
 //
 // ctx = { filtros, proposicoes, filtradas, extras, state, aplicarFiltros, render }
@@ -233,8 +236,18 @@ export function montarFilaNavegavel(config) {
       prioridade: filtros.prioridade,
       sensivel: filtros.sensivel,
     });
-    if (temRascunho && filtros.comRascunho) {
-      lista = lista.filter((p) => config.rascunho.detectar(p, ctx));
+    if (temRascunho) {
+      if (config.rascunho.exclusivo) {
+        // Segregado: OFF mostra só os não-detectados; ON mostra só os detectados.
+        lista = lista.filter((p) =>
+          filtros.comRascunho
+            ? config.rascunho.detectar(p, ctx)
+            : !config.rascunho.detectar(p, ctx),
+        );
+      } else if (filtros.comRascunho) {
+        // Afunilador: ON restringe aos detectados.
+        lista = lista.filter((p) => config.rascunho.detectar(p, ctx));
+      }
     }
     return lista;
   };
@@ -243,6 +256,15 @@ export function montarFilaNavegavel(config) {
   const renderModoFila = (proposicoes, filtros, ctx) => {
     const filtradas = filtrarParaFila(proposicoes, filtros, ctx);
     ctx.filtradas = filtradas;
+
+    let totalUniverso = proposicoes.length;
+    if (temRascunho && config.rascunho.exclusivo) {
+      totalUniverso = proposicoes.filter((p) =>
+        filtros.comRascunho
+          ? config.rascunho.detectar(p, ctx)
+          : !config.rascunho.detectar(p, ctx),
+      ).length;
+    }
 
     const itens = filtradas.length
       ? config.renderItens(filtradas, ctx)
@@ -296,7 +318,7 @@ export function montarFilaNavegavel(config) {
             </div>
             <p class="muted" style="margin-top: 1rem;">${
               textos.totalSistemaLabel || "Total nesta fila"
-            }: <strong>${proposicoes.length}</strong></p>
+            }: <strong>${totalUniverso}</strong></p>
           </div>
 
           ${renderPainelFiltros(proposicoes, filtros)}
@@ -313,10 +335,17 @@ export function montarFilaNavegavel(config) {
     const extras = config.prepare ? config.prepare(currentState) : {};
     const ctx = { filtros, proposicoes, filtradas: [], extras, state: currentState, aplicarFiltros, render };
 
+    // No modo segregado, os detectados (ex.: rascunhos) ficam fora do panorama e do drill-down
+    // por correição; eles só são alcançados pela fila com o filtro "Somente com rascunho".
+    const panorama =
+      temRascunho && config.rascunho.exclusivo
+        ? proposicoes.filter((p) => !config.rascunho.detectar(p, ctx))
+        : proposicoes;
+
     const modo = determinarModo(filtros);
     let content;
-    if (modo === "overview") content = renderOverview(proposicoes, ctx);
-    else if (modo === "correicao") content = renderModoCorreicao(proposicoes, filtros);
+    if (modo === "overview") content = renderOverview(panorama, ctx);
+    else if (modo === "correicao") content = renderModoCorreicao(panorama, filtros);
     else content = renderModoFila(proposicoes, filtros, ctx);
 
     mountPage({

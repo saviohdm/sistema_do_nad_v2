@@ -32,6 +32,11 @@ export const listProposicoesAguardandoReferendo = (state) =>
     (proposicao) => proposicao.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
   );
 
+export const listProposicoesRascunhoCN = (state) =>
+  listProposicoes(state).filter(
+    (proposicao) => proposicao.statusFluxo === StatusFluxo.RASCUNHO_CN,
+  );
+
 export const listProposicoesAguardandoDecisao = (state) =>
   listProposicoes(state).filter(
     (proposicao) =>
@@ -251,6 +256,7 @@ export const getApreciacaoBadgeTone = (apreciacao) => {
 export const getAvailableActions = (proposicao) => {
   const avaliacaoVigente = getAvaliacaoVigente(proposicao);
   const emReferendo = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
+  const emRascunhoCN = proposicao.statusFluxo === StatusFluxo.RASCUNHO_CN;
   const emDecisao =
     proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR ||
     proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN;
@@ -264,10 +270,7 @@ export const getAvailableActions = (proposicao) => {
     );
 
   return {
-    podeCriarDiligencia: [
-      StatusFluxo.AGUARDANDO_SECRETARIA,
-      StatusFluxo.RASCUNHO_CN,
-    ].includes(proposicao.statusFluxo),
+    podeCriarDiligencia: proposicao.statusFluxo === StatusFluxo.AGUARDANDO_SECRETARIA,
     podeRegistrarComprovacao: temDiligenciaAberta,
     podeSalvarRascunhoComprovacao: temDiligenciaAberta,
     podeVisualizarCiencia: temCienciaDisponivel,
@@ -277,8 +280,9 @@ export const getAvailableActions = (proposicao) => {
     podeDecidir: emDecisao && Boolean(avaliacaoVigente),
     podeRemoverAvaliacao: emDecisao && Boolean(avaliacaoVigente),
     podeAvaliarDiretamente: emDecisao && !avaliacaoVigente,
-    podeEditarProposicao: emReferendo,
-    podeApagarProposicao: emReferendo,
+    podeConfirmarRascunho: emRascunhoCN,
+    podeEditarProposicao: emReferendo || emRascunhoCN,
+    podeApagarProposicao: emReferendo || emRascunhoCN,
     podeGerarRelatorioFinal: emReferendo,
     podeEditarMetadados: proposicao.statusFluxo !== StatusFluxo.BAIXA_DEFINITIVA,
   };
@@ -299,6 +303,7 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeDecidir: false,
       podeRemoverAvaliacao: false,
       podeAvaliarDiretamente: false,
+      podeConfirmarRascunho: false,
       podeEditarProposicao: false,
       podeApagarProposicao: false,
       podeGerarRelatorioFinal: false,
@@ -311,6 +316,7 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeDecidir: false,
       podeRemoverAvaliacao: false,
       podeAvaliarDiretamente: false,
+      podeConfirmarRascunho: false,
       podeEditarProposicao: false,
       podeApagarProposicao: false,
       podeGerarRelatorioFinal: false,
@@ -325,6 +331,7 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
       podeDecidir: false,
       podeRemoverAvaliacao: false,
       podeAvaliarDiretamente: false,
+      podeConfirmarRascunho: false,
       podeEditarProposicao: false,
       podeApagarProposicao: false,
       podeGerarRelatorioFinal: false,
@@ -503,6 +510,7 @@ export const criarProposicao = (
     correicaoId,
     observacoesGerais,
   },
+  { comoRascunho = false } = {},
 ) => {
   if (!correicaoId) {
     throw new Error(
@@ -511,9 +519,11 @@ export const criarProposicao = (
   }
   const numero = `PROP-${String(state.proposicoes.length + 1).padStart(4, "0")}`;
   const correicaoJaReferendada = correicaoEstaReferendada(state, correicaoId);
-  const statusInicial = correicaoJaReferendada
-    ? StatusFluxo.AGUARDANDO_SECRETARIA
-    : StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
+  const statusInicial = comoRascunho
+    ? StatusFluxo.RASCUNHO_CN
+    : correicaoJaReferendada
+      ? StatusFluxo.AGUARDANDO_SECRETARIA
+      : StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
 
   const novaProposicao = {
     id: `prop-${crypto.randomUUID().slice(0, 8)}`,
@@ -534,17 +544,44 @@ export const criarProposicao = (
     historico: [],
   };
 
+  const descricaoCriacao = comoRascunho
+    ? "Proposição criada como rascunho pela Corregedoria Nacional (aguardando confirmação)."
+    : correicaoJaReferendada
+      ? "Proposição criada em correição já referendada; encaminhada diretamente à Secretaria Processual."
+      : "Proposição criada pela Corregedoria Nacional.";
+
   appendHistory(
     novaProposicao,
     buildHistoryEvent(TipoHistorico.CRIACAO, "Corregedor Nacional", {
-      descricao: correicaoJaReferendada
-        ? "Proposição criada em correição já referendada; encaminhada diretamente à Secretaria Processual."
-        : "Proposição criada pela Corregedoria Nacional.",
+      descricao: descricaoCriacao,
     }),
   );
 
   state.proposicoes.push(novaProposicao);
   return novaProposicao;
+};
+
+export const confirmarRascunhoCN = (state, proposicao) => {
+  if (proposicao.statusFluxo !== StatusFluxo.RASCUNHO_CN) {
+    throw new Error(
+      "Só é possível confirmar proposições em rascunho da Corregedoria Nacional.",
+    );
+  }
+  const correicaoJaReferendada = correicaoEstaReferendada(state, proposicao.correicaoId);
+  proposicao.statusFluxo = correicaoJaReferendada
+    ? StatusFluxo.AGUARDANDO_SECRETARIA
+    : StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
+
+  appendHistory(
+    proposicao,
+    buildHistoryEvent(TipoHistorico.RASCUNHO_CN_CONFIRMADO, "Corregedor Nacional", {
+      descricao: correicaoJaReferendada
+        ? "Rascunho confirmado pela Corregedoria Nacional; encaminhado diretamente à Secretaria Processual (correição já referendada)."
+        : "Rascunho confirmado pela Corregedoria Nacional; proposição passa a aguardar referendo do CNMP.",
+    }),
+  );
+
+  return proposicao;
 };
 
 export const editarMetadados = (proposicao, { prioridade, sensivel }, persona) => {

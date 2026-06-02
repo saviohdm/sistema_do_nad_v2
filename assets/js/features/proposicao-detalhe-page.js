@@ -27,6 +27,7 @@ import {
 } from "../domain/correicionados.js";
 import { Labels, StatusFluxo } from "../domain/enums.js";
 import {
+  confirmarRascunhoCN,
   descartarRascunhoDecisaoCN,
   editarMetadados,
   getAvaliacaoVigente,
@@ -268,6 +269,28 @@ const bindHandlers = (proposicao) => {
       mutateState((draft) => {
         const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
         if (item) markPropositionDeleted(item);
+        return draft;
+      });
+      if (veioDaFilaReferendo) {
+        voltarParaFilaCorregedor("referendo");
+        return;
+      }
+      render();
+    });
+
+  document
+    .querySelector("[data-action='confirmar-rascunho']")
+    ?.addEventListener("click", () => {
+      if (
+        !window.confirm(
+          `Confirmar o rascunho ${proposicao.numero}? Ele deixa de ser rascunho e passa a aguardar o referendo do CNMP (ou segue à Secretaria, se a correição já estiver referendada).`,
+        )
+      ) {
+        return;
+      }
+      mutateState((draft) => {
+        const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+        if (item) confirmarRascunhoCN(draft, item);
         return draft;
       });
       if (veioDaFilaReferendo) {
@@ -723,10 +746,26 @@ const render = () => {
 
           <div class="stack">
             ${
-              available.podeEditarProposicao ||
-              available.podeApagarProposicao ||
-              available.podeGerarRelatorioFinal
+              available.podeConfirmarRascunho
                 ? `
+                  <section class="panel stack">
+                    <h3 class="panel__title">Ações da Corregedoria (rascunho)</h3>
+                    <p class="inline-note">
+                      Esta proposição é um rascunho de criação ainda não confirmado. Edite-a à vontade
+                      e, quando estiver pronta, confirme para encaminhá-la ao referendo do CNMP
+                      (ou diretamente à Secretaria, se a correição já estiver referendada).
+                    </p>
+                    <div class="button-row">
+                      <a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar rascunho</a>
+                      <button class="button" type="button" data-action="confirmar-rascunho">Confirmar e encaminhar</button>
+                      <button class="button button--danger" type="button" data-action="apagar-proposicao">Apagar rascunho</button>
+                    </div>
+                  </section>
+                `
+                : available.podeEditarProposicao ||
+                    available.podeApagarProposicao ||
+                    available.podeGerarRelatorioFinal
+                  ? `
                   <section class="panel stack">
                     <h3 class="panel__title">Ações da Corregedoria (referendo)</h3>
                     <p class="inline-note">
@@ -753,7 +792,7 @@ const render = () => {
                     </div>
                   </section>
                 `
-                : ""
+                  : ""
             }
 
             ${
