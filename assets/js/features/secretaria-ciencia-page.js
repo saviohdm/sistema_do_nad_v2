@@ -98,15 +98,15 @@ const formatPronto = (iso) => {
   const now = new Date();
   const data = new Date(iso);
   const diffMs = now - data;
-  if (diffMs < 0) return "Pronto agora";
+  if (diffMs < 0) return "Pronta agora";
   const diffH = Math.floor(diffMs / 3600000);
   if (isoDia(iso) === isoDia(now.toISOString())) {
-    if (diffH < 1) return "Pronto há menos de 1h";
-    return `Pronto há ${diffH}h`;
+    if (diffH < 1) return "Pronta há menos de 1h";
+    return `Pronta há ${diffH}h`;
   }
   const diffDias = Math.floor(diffMs / 86400000);
-  if (diffDias === 1) return "Pronto há 1 dia";
-  return `Pronto há ${diffDias} dias`;
+  if (diffDias === 1) return "Pronta há 1 dia";
+  return `Pronta há ${diffDias} dias`;
 };
 
 const isHoje = (iso) => {
@@ -243,7 +243,7 @@ const renderCardGrupo = (grupo) => {
   const podeSelecionar = grupo.completo;
   const statusBadge = grupo.completo
     ? renderBadge(
-        `Pronto${grupo.prontoEm ? " · " + formatPronto(grupo.prontoEm) : ""}`,
+        `Pronta${grupo.prontoEm ? " · " + formatPronto(grupo.prontoEm) : ""}`,
         "success",
       )
     : renderBadge(
@@ -265,7 +265,7 @@ const renderCardGrupo = (grupo) => {
     .join("");
 
   return `
-    <article class="proposicao-card proposicao-card--selecionavel ${selecionado ? "proposicao-card--selected" : ""} ${podeSelecionar ? "" : "proposicao-card--disabled"}">
+    <article class="proposicao-card proposicao-card--selecionavel ${selecionado ? "proposicao-card--selected" : ""} ${podeSelecionar ? "proposicao-card--pronta" : "proposicao-card--disabled"}">
       ${checkbox}
       <div>
         <div class="proposicao-card__header">

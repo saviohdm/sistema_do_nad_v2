@@ -466,6 +466,7 @@
 
 .table--hover tbody tr[data-nav-ramo],
 .table--hover tbody tr[data-nav-unidade],
+.table--hover tbody tr[data-nav-unidade-ref],
 .table--hover tbody tr[data-nav-correicao] {
   cursor: pointer;
 }
@@ -474,6 +475,20 @@
 .table th.numeric {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Unidade "pronta": todas as proposições abertas da unidade estão nesta etapa.
+   Acento sóbrio (verde institucional) espelhando o padrão de item destacado. */
+.table tbody tr.unidade-row--pronta td {
+  background: rgba(45, 106, 79, 0.05);
+}
+
+.table tbody tr.unidade-row--pronta td:first-child {
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
+.table--hover tbody tr.unidade-row--pronta:hover td {
+  background: rgba(45, 106, 79, 0.09);
 }
 
 .button-row,
@@ -883,6 +898,11 @@
   border-color: var(--primary);
   background: rgba(166, 26, 26, 0.04);
   box-shadow: inset 3px 0 0 var(--primary);
+}
+
+/* Grupo (unidade) pronto para ciência: acento verde, que cede ao vermelho da seleção. */
+.proposicao-card--pronta:not(.proposicao-card--selected) {
+  box-shadow: inset 3px 0 0 var(--success);
 }
 
 .proposicao-card--disabled {

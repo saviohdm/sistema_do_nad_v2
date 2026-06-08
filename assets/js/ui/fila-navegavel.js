@@ -30,10 +30,11 @@ import { filtrarProposicoes } from "../domain/proposicoes.js";
 import {
   getUnidadeRef,
   groupProposicoesPorUnidadeOperacional,
+  listGruposOperacionaisDaFila,
   listPanoramaFilaPorCorreicao,
 } from "../domain/filas-operacionais.js";
 import { Labels } from "../domain/enums.js";
-import { renderEmptyState } from "../ui/components.js";
+import { renderBadge, renderEmptyState } from "../ui/components.js";
 
 const escapeAttr = (value) => String(value ?? "").replace(/"/g, "&quot;");
 const uniq = (values) => Array.from(new Set(values.filter(Boolean)));
@@ -162,20 +163,40 @@ export function montarFilaNavegavel(config) {
   };
 
   // --- Unidades de uma correição ---
-  const renderModoCorreicao = (proposicoes, filtros) => {
+  const renderModoCorreicao = (proposicoes, filtros, ctx) => {
     const daCorreicao = proposicoes.filter((p) => p.correicaoId === filtros.correicaoId);
     const unidades = groupProposicoesPorUnidadeOperacional(daCorreicao);
+    // Unidades "prontas" = mesmo critério do panorama (todas as proposições abertas
+    // da unidade estão nesta fila). Ref via getUnidadeRef bate com o agrupamento acima.
+    const prontasRefs = new Set(
+      listGruposOperacionaisDaFila(ctx.state, config.statusFila)
+        .filter((g) => g.correicaoId === filtros.correicaoId && g.completo)
+        .map((g) => g.unidadeRef),
+    );
+    // Prontas primeiro, depois alfabética (cópia local; não altera a fonte de dados).
+    const ordenadas = unidades.slice().sort((a, b) => {
+      const pa = prontasRefs.has(a.unidadeRef);
+      const pb = prontasRefs.has(b.unidadeRef);
+      if (pa !== pb) return pa ? -1 : 1;
+      return (a.unidade || "").localeCompare(b.unidade || "");
+    });
+    const totalProntas = ordenadas.filter((u) => prontasRefs.has(u.unidadeRef)).length;
     const ramoMP = daCorreicao[0]?.ramoMP || "";
     const ramoMPNome = daCorreicao[0]?.ramoMPNome || "";
-    const rows = unidades.length
-      ? unidades
-          .map(
-            (item) => `
-            <tr data-nav-unidade-ref="${escapeAttr(item.unidadeRef)}">
-              <td><strong>${item.unidade}</strong></td>
+    const rows = ordenadas.length
+      ? ordenadas
+          .map((item) => {
+            const pronta = prontasRefs.has(item.unidadeRef);
+            return `
+            <tr data-nav-unidade-ref="${escapeAttr(item.unidadeRef)}"${
+              pronta ? ' class="unidade-row--pronta"' : ""
+            }>
+              <td><strong>${item.unidade}</strong>${
+                pronta ? ` ${renderBadge("Pronta", "success")}` : ""
+              }</td>
               <td class="numeric">${item.total}</td>
-            </tr>`,
-          )
+            </tr>`;
+          })
           .join("")
       : `<tr><td colspan="2">${renderEmptyState(
           textos.emptyUnidades || "Nenhuma unidade nesta correição.",
@@ -201,6 +222,11 @@ export function montarFilaNavegavel(config) {
         <div class="panel">
           <h3 class="panel__title">Unidades</h3>
           <p class="muted">${textos.unidadesHint || "Clique em uma unidade para entrar na fila."}</p>
+          ${
+            ordenadas.length
+              ? `<p class="muted"><strong>${totalProntas}</strong> de ${ordenadas.length} unidade(s) pronta(s) para esta etapa.</p>`
+              : ""
+          }
           <div class="table-wrap">
             <table class="table table--hover">
               <thead><tr><th>Unidade</th><th class="numeric">${contagemLabel}</th></tr></thead>
@@ -384,7 +410,7 @@ export function montarFilaNavegavel(config) {
     const modo = determinarModo(filtros);
     let content;
     if (modo === "overview") content = renderOverview(panorama, ctx);
-    else if (modo === "correicao") content = renderModoCorreicao(panorama, filtros);
+    else if (modo === "correicao") content = renderModoCorreicao(panorama, filtros, ctx);
     else content = renderModoFila(proposicoes, filtros, ctx);
 
     mountPage({
