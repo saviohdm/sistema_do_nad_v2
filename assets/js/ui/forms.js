@@ -23,6 +23,7 @@ export const renderApreciacaoForm = ({
   includeDelete = false,
   initialApreciacao = null,
   includeRascunho = false,
+  variant = "panel",
 }) => {
   const j = initialApreciacao || {};
   const situacaoValue = j.situacao || SituacaoApreciacao.CONCLUIDA;
@@ -51,9 +52,11 @@ export const renderApreciacaoForm = ({
     existeProvidenciaValue,
   );
 
+  const formClass = variant === "bare" ? "stack" : "panel stack";
+
   return `
-    <form class="panel stack" id="${formId}" data-has-rascunho="${initialApreciacao ? "true" : "false"}">
-      <h3 class="panel__title">${title}</h3>
+    <form class="${formClass}" id="${formId}" data-has-rascunho="${initialApreciacao ? "true" : "false"}">
+      ${title ? `<h3 class="panel__title">${title}</h3>` : ""}
       <div class="field-grid">
         <div class="field">
           <label for="${formId}-situacao">Situação</label>

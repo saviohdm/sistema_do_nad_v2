@@ -25,7 +25,7 @@ import {
   cienciaJaVisualizadaPor,
   getDataVisualizacaoCiencia,
 } from "../domain/correicionados.js";
-import { Labels, StatusFluxo } from "../domain/enums.js";
+import { Labels, SituacaoApreciacao, StatusFluxo, TipoHistorico } from "../domain/enums.js";
 import {
   confirmarRascunhoCN,
   descartarRascunhoDecisaoCN,
@@ -44,9 +44,11 @@ import {
 } from "../domain/rascunhos-avaliacao.js";
 import {
   renderApreciacaoBadge,
-  renderBadge,
+  renderApreciacaoResumo,
+  renderDetailActionZone,
   renderDiligenciasCards,
   renderEmptyState,
+  renderJudgingAnchor,
   renderMetaList,
   renderPendenciasCards,
   renderProposicaoHero,
@@ -349,54 +351,50 @@ const collectAnexosFromInput = (input) =>
     anexadoEm: new Date().toISOString(),
   }));
 
-const renderCorreicionadoApreciacaoCard = (proposicao, user) => {
+const renderAcaoCorreicionadoCiencia = (proposicao, user) => {
   const ap = proposicao.apreciacaoDoCN;
   if (!ap) return "";
-  const tipoLabel = ap.tipoConclusao
-    ? Labels.tipoConclusao[ap.tipoConclusao]
-    : Labels.situacaoApreciacao[ap.situacao];
   const visualizada = cienciaJaVisualizadaPor(proposicao, user.id);
   const dataViz = getDataVisualizacaoCiencia(proposicao, user.id);
 
-  return `
-    <section class="panel stack" style="border-left: 4px solid var(--color-primary, #2563eb);">
-      <header class="button-row" style="justify-content: space-between;">
-        <h3 class="panel__title" style="margin: 0;">Apreciação final do Corregedor Nacional</h3>
-        ${renderApreciacaoBadge(ap)}
-      </header>
-      <p style="margin: 0;"><strong>Resultado:</strong> ${tipoLabel}</p>
-      ${
-        ap.observacoes
-          ? `<div class="panel" style="padding: 0.75rem; background: var(--color-surface-muted);">
-              <strong>Fundamentos:</strong>
-              <p style="margin: 0.25rem 0 0;">${ap.observacoes}</p>
-            </div>`
-          : ""
-      }
-      ${
-        ap.existeProvidenciaSecretaria
-          ? `<p class="muted" style="margin: 0;">Há providência paralela a cargo da Secretaria Processual da CN. Acompanhe abaixo.</p>`
-          : ""
-      }
+  return renderDetailActionZone({
+    overline: "Ciência · baixa definitiva",
+    title: "Apreciação final do Corregedor Nacional",
+    children: `
+      ${renderJudgingAnchor({
+        overline: "Resultado do Corregedor Nacional",
+        children: `
+          ${renderApreciacaoResumo(ap)}
+          ${
+            ap.existeProvidenciaSecretaria
+              ? `<p class="muted" style="margin: 0;">Há providência paralela a cargo da Secretaria Processual da CN. Acompanhe abaixo.</p>`
+              : ""
+          }
+        `,
+      })}
       <p class="muted" style="margin: 0; font-size: 0.85rem;">
         ${visualizada ? `Ciência visualizada por você em ${formatDateTime(dataViz)}.` : "Esta é a primeira vez que você acessa essa ciência."}
       </p>
-    </section>
-  `;
+    `,
+  });
 };
 
-const renderCorreicionadoComprovacaoForm = (proposicao) => {
+const renderAcaoCorreicionadoComprovacao = (proposicao) => {
   const diligenciaAberta = proposicao.diligencias.find((d) => d.status === "aberta");
   if (!diligenciaAberta) return "";
   const rascunho = proposicao.rascunhoComprovacao;
 
-  return `
-    <section class="panel stack" style="border-left: 4px solid var(--color-warning, #d97706);">
-      <h3 class="panel__title">Comprovação da diligência</h3>
-      <div class="panel" style="padding: 0.75rem; background: var(--color-surface-muted);">
-        <p style="margin: 0;"><strong>Diligência:</strong> ${diligenciaAberta.descricao}</p>
-        <p class="muted" style="margin: 0.25rem 0 0; font-size: 0.85rem;">Prazo: ${formatDate(diligenciaAberta.prazo)}</p>
-      </div>
+  return renderDetailActionZone({
+    overline: "Sua vez · comprovação da diligência",
+    title: "Comprovar o cumprimento",
+    children: `
+      ${renderJudgingAnchor({
+        overline: "Diligência a responder",
+        children: `
+          <p><strong>${diligenciaAberta.descricao}</strong></p>
+          <p class="muted" style="margin: 0; font-size: 0.85rem;">Prazo: ${formatDate(diligenciaAberta.prazo)}</p>
+        `,
+      })}
       ${
         rascunho
           ? `<div class="alert alert--info" role="alert">
@@ -422,7 +420,7 @@ const renderCorreicionadoComprovacaoForm = (proposicao) => {
                  <ul class="pill-list" style="flex-wrap: wrap;">${renderAnexoChips(rascunho.anexos)}</ul>`
               : ""
           }
-          <p class="form-help" style="font-size: 0.8rem; color: var(--color-text-muted); margin: 0.25rem 0 0;">
+          <p class="form-help" style="font-size: 0.8rem; color: var(--muted); margin: 0.25rem 0 0;">
             Os arquivos selecionados aqui adicionam-se aos do rascunho. O sistema registra apenas o nome, tamanho e tipo (protótipo).
           </p>
         </div>
@@ -437,91 +435,303 @@ const renderCorreicionadoComprovacaoForm = (proposicao) => {
         </div>
         <p class="muted" data-role="rascunho-feedback" hidden style="font-size: 0.85rem;"></p>
       </form>
-    </section>
-  `;
+    `,
+  });
 };
 
-const renderCorreicionadoContent = (proposicao, user) => {
-  const historicoVisivel = filtrarHistoricoParaCorreicionado(proposicao.historico);
-  const podeComprovar = proposicao.diligencias.some((d) => d.status === "aberta");
-  const emBaixa = proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA;
-  const meta = [
+const getUltimaComprovacao = (proposicao) =>
+  (proposicao.historico || [])
+    .filter((event) => event.tipo === TipoHistorico.COMPROVACAO)
+    .sort((a, b) => new Date(b.data) - new Date(a.data))[0] || null;
+
+const buildMeta = (proposicao, persona) => {
+  const core = [
     { label: "Número", value: proposicao.numero },
     { label: "Tipo", value: proposicao.tipo },
-    { label: "Unidade", value: proposicao.unidade },
-    { label: "Membro nomeado", value: proposicao.membro },
-    { label: "Ramo do MP", value: proposicao.ramoMPNome || proposicao.ramoMP },
-    { label: "Temática", value: proposicao.tematica },
     {
       label: "Status atual",
       value: Labels.statusFluxo[proposicao.statusFluxo] || proposicao.statusFluxo,
     },
+    { label: "Unidade", value: proposicao.unidade },
+    { label: "Ramo do MP", value: proposicao.ramoMPNome || proposicao.ramoMP },
+    { label: "Temática", value: proposicao.tematica },
+    { label: "Membro", value: proposicao.membro },
   ];
-
-  return `
-    <section class="stack">
-      ${renderProposicaoHero(proposicao)}
-      <section class="panel">
-        <h3 class="panel__title">Metadados do caso</h3>
-        ${renderMetaList(meta)}
-      </section>
-
-      ${emBaixa ? renderCorreicionadoApreciacaoCard(proposicao, user) : ""}
-
-      ${podeComprovar ? renderCorreicionadoComprovacaoForm(proposicao) : ""}
-
-      ${
-        proposicao.diligencias.length > 0
-          ? `
-            <section class="panel detail-section">
-              <h3 class="panel__title">Diligências</h3>
-              ${renderDiligenciasCards(proposicao.diligencias)}
-            </section>
-          `
-          : ""
-      }
-
-      ${
-        proposicao.pendenciasSecretaria.length > 0
-          ? `
-            <section class="panel detail-section">
-              <h3 class="panel__title">Providências paralelas (Secretaria)</h3>
-              <p class="muted">Estas providências são cumpridas pela Secretaria da CN fora do sistema. Você apenas as visualiza.</p>
-              <ul class="stack" style="list-style: none; padding: 0;">
-                ${proposicao.pendenciasSecretaria
-                  .map(
-                    (p) => `
-                      <li class="panel" style="padding: 0.75rem;">
-                        <div class="button-row">
-                          ${renderBadge(Labels.tipoProvidencia[p.tipoProvidencia] || p.descricao, p.status === "cumprida" ? "success" : "warning")}
-                          ${renderBadge(p.status === "cumprida" ? `Cumprida em ${formatDate(p.dataCumprimento)}` : "Em curso", p.status === "cumprida" ? "success" : "warning")}
-                        </div>
-                        <p style="margin: 0.25rem 0 0;">${p.descricao}</p>
-                        ${p.observacoes ? `<p class="muted" style="margin: 0.25rem 0 0; font-size: 0.85rem;">${p.observacoes}</p>` : ""}
-                      </li>
-                    `,
-                  )
-                  .join("")}
-              </ul>
-            </section>
-          `
-          : ""
-      }
-
-      <section class="panel detail-section">
-        <h3 class="panel__title">Histórico visível</h3>
-        <p class="muted" style="font-size: 0.85rem;">
-          São exibidos os atos formais e comunicações dirigidas a você. Avaliações internas da CN e rascunhos não constam desta visão.
-        </p>
-        ${
-          historicoVisivel.length > 0
-            ? renderTimeline(historicoVisivel)
-            : renderEmptyState("Sem eventos relevantes nesta proposição.")
-        }
-      </section>
-    </section>
-  `;
+  if (persona === PERSONAS.CORREICIONADO) return core;
+  return [
+    ...core,
+    { label: "Número ELO", value: proposicao.numeroElo },
+    {
+      label: "Prioridade",
+      value: Labels.prioridade[proposicao.prioridade] || proposicao.prioridade || "—",
+    },
+    { label: "Sensível", value: proposicao.sensivel ? "Sim" : "Não" },
+    { label: "UF", value: proposicao.uf?.join(", ") },
+    { label: "Início da correição", value: formatDate(proposicao.dataInicioCorreicao) },
+    { label: "Fim da correição", value: formatDate(proposicao.dataFimCorreicao) },
+    { label: "Observações gerais", value: proposicao.observacoesGerais || "—" },
+  ];
 };
+
+const renderComprovacaoAnchor = (proposicao, overline = "Comprovação a avaliar") => {
+  const comp = getUltimaComprovacao(proposicao);
+  if (!comp) return "";
+  const linhaMeta = [comp.usuario, comp.data ? formatDateTime(comp.data) : null]
+    .filter(Boolean)
+    .join(" · ");
+  return renderJudgingAnchor({
+    overline,
+    children: `
+      ${comp.descricao ? `<p><strong>${comp.descricao}</strong></p>` : ""}
+      ${comp.observacoes ? `<p class="muted">${comp.observacoes}</p>` : ""}
+      ${linhaMeta ? `<p class="muted" style="font-size: 0.85rem;">${linhaMeta}</p>` : ""}
+      ${comp.anexos?.length ? `<ul class="pill-list" style="flex-wrap: wrap;">${renderAnexoChips(comp.anexos)}</ul>` : ""}
+    `,
+  });
+};
+
+const renderAcaoCorreicionado = (proposicao, user, available) => {
+  if (proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA) {
+    return renderAcaoCorreicionadoCiencia(proposicao, user);
+  }
+  if (available.podeRegistrarComprovacao) {
+    return renderAcaoCorreicionadoComprovacao(proposicao);
+  }
+  return "";
+};
+
+const renderAcaoMembro = (proposicao, available) => {
+  if (!available.podeAvaliarComoMembro) return "";
+  return renderDetailActionZone({
+    overline: "Sua vez · membro auxiliar",
+    title: "Avaliação técnica",
+    children: `
+      ${renderComprovacaoAnchor(proposicao)}
+      <p class="inline-note">Sua avaliação informa o Corregedor Nacional, mas não produz efeitos por si só — a decisão final é sempre dele.</p>
+      ${renderApreciacaoForm({
+        formId: "form-avaliacao-membro",
+        title: "Avaliação do membro auxiliar",
+        submitLabel: "Salvar avaliação",
+        initialApreciacao: obterRascunhoAvaliacao(proposicao.id)?.apreciacao || null,
+        includeRascunho: true,
+        variant: "bare",
+      })}
+    `,
+  });
+};
+
+const renderAcaoSecretaria = (proposicao, available) => {
+  if (!available.podeCriarDiligencia) return "";
+  const ap = proposicao.apreciacaoDoCN;
+  const anchor =
+    ap && ap.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES
+      ? renderJudgingAnchor({
+          overline: "Retorno do Corregedor · necessita mais informações",
+          children: renderApreciacaoResumo(ap),
+        })
+      : "";
+  return renderDetailActionZone({
+    overline: "Sua vez · Secretaria Processual",
+    title: "Abrir diligência",
+    children: `
+      ${anchor}
+      <p class="inline-note">A diligência segue ao correicionado para comprovação. O prazo orienta o acompanhamento; não trava o fluxo principal.</p>
+      <form class="stack" id="form-diligencia-local">
+        <div class="field">
+          <label for="descricao-diligencia">Descrição</label>
+          <textarea id="descricao-diligencia" name="descricao" required></textarea>
+        </div>
+        <div class="field">
+          <label for="prazo-diligencia">Prazo</label>
+          <input id="prazo-diligencia" name="prazo" type="date" required />
+        </div>
+        <button class="button" type="submit">Abrir diligência</button>
+      </form>
+    `,
+  });
+};
+
+const renderAcaoCorregedor = (proposicao, available) => {
+  if (available.podeConfirmarRascunho) {
+    return renderDetailActionZone({
+      overline: "Sua vez · Corregedoria (rascunho)",
+      title: "Rascunho de criação",
+      children: `
+        <p class="inline-note">
+          Esta proposição é um rascunho de criação ainda não confirmado. Edite-a à vontade
+          e, quando estiver pronta, confirme para encaminhá-la ao referendo do CNMP
+          (ou diretamente à Secretaria, se a correição já estiver referendada).
+        </p>
+        <div class="button-row">
+          <a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar rascunho</a>
+          <button class="button" type="button" data-action="confirmar-rascunho">Confirmar e encaminhar</button>
+          <button class="button button--danger" type="button" data-action="apagar-proposicao">Apagar rascunho</button>
+        </div>
+      `,
+    });
+  }
+
+  if (available.podeEditarProposicao || available.podeApagarProposicao) {
+    return renderDetailActionZone({
+      overline: "Sua vez · Corregedoria (referendo)",
+      title: "Aguardando referendo do CNMP",
+      children: `
+        <p class="inline-note">
+          Você pode editar os dados ou apagá-la enquanto ela não é encaminhada à Secretaria Processual.
+        </p>
+        <div class="button-row">
+          ${
+            available.podeEditarProposicao
+              ? `<a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar proposição</a>`
+              : ""
+          }
+          ${
+            available.podeApagarProposicao
+              ? `<button class="button button--danger" type="button" data-action="apagar-proposicao">Apagar proposição</button>`
+              : ""
+          }
+        </div>
+      `,
+    });
+  }
+
+  if (available.podeDecidir) {
+    const avaliacao = getAvaliacaoVigente(proposicao);
+    const descartar =
+      proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN
+        ? `<button class="button button--ghost" type="button" data-action="descartar-rascunho-decisao">Descartar rascunho de decisão</button>`
+        : "";
+    return renderDetailActionZone({
+      overline: "Sua vez · decisão do Corregedor Nacional",
+      title: "Decidir sobre a avaliação",
+      children: `
+        ${renderJudgingAnchor({
+          overline: "Avaliação vigente · membro auxiliar",
+          children: renderApreciacaoResumo(avaliacao?.apreciacao, {
+            autor: avaliacao?.usuario,
+            data: avaliacao?.data,
+          }),
+        })}
+        <p class="inline-note">Deferir adota integralmente as invariantes acima. Indeferir exige redefini-las neste mesmo ato.</p>
+        <div class="button-row">
+          ${descartar}
+          <button class="button" type="button" data-action="deferir-avaliacao">Deferir avaliação vigente</button>
+        </div>
+        ${renderApreciacaoForm({
+          formId: "form-decisao-corregedor",
+          title: "Indeferir e redefinir invariantes",
+          submitLabel: "Registrar decisão de indeferimento",
+          includeDelete: true,
+          includeRascunho: true,
+          initialApreciacao: proposicao.rascunhoDecisaoCN || null,
+          variant: "bare",
+        })}
+      `,
+    });
+  }
+
+  if (available.podeAvaliarDiretamente) {
+    const descartar =
+      proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN
+        ? `<div class="button-row"><button class="button button--ghost" type="button" data-action="descartar-rascunho-decisao">Descartar rascunho de decisão</button></div>`
+        : "";
+    return renderDetailActionZone({
+      overline: "Sua vez · Corregedor Nacional",
+      title: "Avaliar com força de decisão",
+      children: `
+        ${renderComprovacaoAnchor(proposicao)}
+        <p class="inline-note">Sem avaliação do membro auxiliar nesta etapa: sua avaliação tem força de decisão e produz efeitos imediatos.</p>
+        ${descartar}
+        ${renderApreciacaoForm({
+          formId: "form-avaliacao-direta",
+          title: "Avaliação com força de decisão",
+          submitLabel: "Avaliar diretamente",
+          includeRascunho: true,
+          initialApreciacao: proposicao.rascunhoDecisaoCN || null,
+          variant: "bare",
+        })}
+      `,
+    });
+  }
+
+  return "";
+};
+
+const buildAcaoPrincipal = (proposicao, persona, available, user) => {
+  if (persona === PERSONAS.CORREICIONADO) return renderAcaoCorreicionado(proposicao, user, available);
+  if (persona === PERSONAS.MEMBRO) return renderAcaoMembro(proposicao, available);
+  if (persona === PERSONAS.SECRETARIA) return renderAcaoSecretaria(proposicao, available);
+  if (persona === PERSONAS.CORREGEDOR) return renderAcaoCorregedor(proposicao, available);
+  return "";
+};
+
+const renderDossie = ({ proposicao, historico, historicoNota, providenciasEditable }) => `
+  ${
+    proposicao.diligencias.length > 0
+      ? `
+        <section class="panel detail-section">
+          <h3 class="panel__title">Diligências e comprovações</h3>
+          ${renderDiligenciasCards(proposicao.diligencias)}
+        </section>
+      `
+      : ""
+  }
+  ${
+    proposicao.pendenciasSecretaria.length > 0
+      ? `
+        <section class="panel detail-section">
+          <h3 class="panel__title">Providências da Secretaria</h3>
+          <p class="muted" style="font-size: 0.85rem;">
+            ${
+              providenciasEditable
+                ? "Registre o cumprimento de cada providência. Elas correm em paralelo e não travam o fluxo principal."
+                : "Estas providências são cumpridas pela Secretaria da CN fora do sistema; aqui são apenas acompanhadas."
+            }
+          </p>
+          ${renderPendenciasCards(proposicao.pendenciasSecretaria, {
+            editable: providenciasEditable,
+          }).replaceAll('data-pendencia-form="', `data-pendencia-form="${proposicao.id}:`)}
+        </section>
+      `
+      : ""
+  }
+  <section class="panel detail-section">
+    <h3 class="panel__title">Histórico</h3>
+    ${historicoNota ? `<p class="muted" style="font-size: 0.85rem;">${historicoNota}</p>` : ""}
+    ${
+      historico.length > 0
+        ? renderTimeline(historico)
+        : renderEmptyState("Sem eventos relevantes nesta proposição.")
+    }
+  </section>
+`;
+
+const renderDetalheContent = ({
+  proposicao,
+  meta,
+  podeEditarMetadados,
+  acaoPrincipalHtml,
+  historico,
+  historicoNota,
+  providenciasEditable,
+}) => `
+  <section class="stack">
+    ${renderProposicaoHero(proposicao)}
+    <section class="panel">
+      <div class="panel__header-row">
+        <h3 class="panel__title">Metadados do caso</h3>
+        ${
+          podeEditarMetadados
+            ? `<button class="button button--ghost button--small" type="button" data-action="editar-metadados">Editar</button>`
+            : ""
+        }
+      </div>
+      ${renderMetaList(meta)}
+    </section>
+    ${acaoPrincipalHtml || ""}
+    ${renderDossie({ proposicao, historico, historicoNota, providenciasEditable })}
+  </section>
+`;
 
 const bindCorreicionadoHandlers = (proposicao, user) => {
   const form = document.querySelector("#form-comprovacao-correicionado");
@@ -602,6 +812,7 @@ const render = () => {
   }
 
   const persona = getCurrentPersona();
+  const available = getAvailableActionsByPersona(proposicao, persona);
 
   if (persona === PERSONAS.CORREICIONADO) {
     const user = getCurrentUser();
@@ -629,247 +840,45 @@ const render = () => {
 
     const stAtual = state();
     const propAtualizada = hydrateProposicao(stAtual, getProposicaoById(stAtual, proposicaoId));
+    const availableAtualizada = getAvailableActionsByPersona(propAtualizada, persona);
     mountPage({
       activePage:
-        proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA
+        propAtualizada.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA
           ? "correicionado-ciencias"
           : "correicionado-comprovacoes",
       title: "Detalhe da proposição",
       subtitle: "Visão do correicionado: acompanhe diligências, comprove ou tome ciência da apreciação final.",
       actions: `<a class="button button--ghost" href="correicionado-comprovacoes.html">Comprovações</a><a class="button button--ghost" href="correicionado-ciencias.html">Ciências</a>`,
-      content: renderCorreicionadoContent(propAtualizada, user),
+      content: renderDetalheContent({
+        proposicao: propAtualizada,
+        meta: buildMeta(propAtualizada, persona),
+        podeEditarMetadados: false,
+        acaoPrincipalHtml: buildAcaoPrincipal(propAtualizada, persona, availableAtualizada, user),
+        historico: filtrarHistoricoParaCorreicionado(propAtualizada.historico),
+        historicoNota:
+          "São exibidos os atos formais e comunicações dirigidas a você. Avaliações internas da CN e rascunhos não constam desta visão.",
+        providenciasEditable: false,
+      }),
     });
     bindCorreicionadoHandlers(propAtualizada, user);
     return;
   }
 
-  const avaliacaoVigente = getAvaliacaoVigente(proposicao);
-  const available = getAvailableActionsByPersona(proposicao, persona);
-
-  const meta = [
-    { label: "Número", value: proposicao.numero },
-    { label: "Número ELO", value: proposicao.numeroElo },
-    { label: "Tipo", value: proposicao.tipo },
-    {
-      label: "Prioridade",
-      value: Labels.prioridade[proposicao.prioridade] || proposicao.prioridade || "—",
-    },
-    { label: "Sensível", value: proposicao.sensivel ? "Sim" : "Não" },
-    { label: "Membro", value: proposicao.membro },
-    { label: "Unidade", value: proposicao.unidade },
-    { label: "Ramo do MP", value: proposicao.ramoMP },
-    { label: "Nome do ramo", value: proposicao.ramoMPNome },
-    { label: "Temática", value: proposicao.tematica },
-    { label: "UF", value: proposicao.uf?.join(", ") },
-    { label: "Início da correição", value: formatDate(proposicao.dataInicioCorreicao) },
-    { label: "Fim da correição", value: formatDate(proposicao.dataFimCorreicao) },
-    {
-      label: "Avaliação vigente",
-      value: avaliacaoVigente ? formatDate(avaliacaoVigente.data) : "Não há",
-    },
-    { label: "Observações gerais", value: proposicao.observacoesGerais || "—" },
-  ];
-
   mountPage({
     activePage: "proposicao-detalhe",
     title: "Detalhe da proposição",
     subtitle:
-      "Painel completo do caso, com histórico, diligências, pendências da Secretaria e ações condicionadas às regras de domínio.",
+      "Painel completo do caso: a ação da sua persona em destaque e o dossiê (diligências, providências e histórico) logo abaixo.",
     actions: `${baseActions}${botaoVoltar()}`,
-    content: `
-      <section class="stack">
-        ${renderProposicaoHero(proposicao)}
-        <section class="panel">
-          <div class="panel__header-row">
-            <h3 class="panel__title">Metadados do caso</h3>
-            ${
-              available.podeEditarMetadados
-                ? `<button class="button button--ghost button--small" type="button" data-action="editar-metadados">Editar</button>`
-                : ""
-            }
-          </div>
-          ${renderMetaList(meta)}
-        </section>
-
-        <section class="page-grid page-grid--two">
-          <div class="stack">
-            ${
-              proposicao.diligencias.length > 0
-                ? `
-                  <section class="panel detail-section">
-                    <h3 class="panel__title">Diligências</h3>
-                    ${renderDiligenciasCards(proposicao.diligencias)}
-                  </section>
-                `
-                : ""
-            }
-
-            ${
-              proposicao.pendenciasSecretaria.length > 0
-                ? `
-                  <section class="panel detail-section">
-                    <h3 class="panel__title">Providências pendentes</h3>
-                    ${renderPendenciasCards(
-                      proposicao.pendenciasSecretaria.map((item) => ({
-                        ...item,
-                        __formRef: `${proposicao.id}:${item.id}`,
-                      })),
-                    ).replaceAll('data-pendencia-form="', `data-pendencia-form="${proposicao.id}:`)}
-                  </section>
-                `
-                : ""
-            }
-
-            <section class="panel detail-section">
-              <h3 class="panel__title">Histórico completo</h3>
-              ${renderTimeline(proposicao.historico)}
-            </section>
-          </div>
-
-          <div class="stack">
-            ${
-              available.podeConfirmarRascunho
-                ? `
-                  <section class="panel stack">
-                    <h3 class="panel__title">Ações da Corregedoria (rascunho)</h3>
-                    <p class="inline-note">
-                      Esta proposição é um rascunho de criação ainda não confirmado. Edite-a à vontade
-                      e, quando estiver pronta, confirme para encaminhá-la ao referendo do CNMP
-                      (ou diretamente à Secretaria, se a correição já estiver referendada).
-                    </p>
-                    <div class="button-row">
-                      <a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar rascunho</a>
-                      <button class="button" type="button" data-action="confirmar-rascunho">Confirmar e encaminhar</button>
-                      <button class="button button--danger" type="button" data-action="apagar-proposicao">Apagar rascunho</button>
-                    </div>
-                  </section>
-                `
-                : available.podeEditarProposicao ||
-                    available.podeApagarProposicao
-                  ? `
-                  <section class="panel stack">
-                    <h3 class="panel__title">Ações da Corregedoria (referendo)</h3>
-                    <p class="inline-note">
-                      Esta proposição aguarda referendo do CNMP. Você pode editar os dados
-                      ou apagá-la enquanto ela não é encaminhada à Secretaria Processual.
-                    </p>
-                    <div class="button-row">
-                      ${
-                        available.podeEditarProposicao
-                          ? `<a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar proposição</a>`
-                          : ""
-                      }
-                      ${
-                        available.podeApagarProposicao
-                          ? `<button class="button button--danger" type="button" data-action="apagar-proposicao">Apagar proposição</button>`
-                          : ""
-                      }
-                    </div>
-                  </section>
-                `
-                  : ""
-            }
-
-            ${
-              available.podeCriarDiligencia
-                ? `
-                  <form class="panel stack" id="form-diligencia-local">
-                    <h3 class="panel__title">Criar diligência</h3>
-                    <div class="field">
-                      <label for="descricao-diligencia">Descrição</label>
-                      <textarea id="descricao-diligencia" name="descricao" required></textarea>
-                    </div>
-                    <div class="field">
-                      <label for="prazo-diligencia">Prazo</label>
-                      <input id="prazo-diligencia" name="prazo" type="date" required />
-                    </div>
-                    <button class="button" type="submit">Abrir diligência</button>
-                  </form>
-                `
-                : ""
-            }
-
-            ${
-              available.podeRegistrarComprovacao
-                ? `
-                  <form class="panel stack" id="form-comprovacao">
-                    <h3 class="panel__title">Registrar comprovação</h3>
-                    <div class="field">
-                      <label for="descricao-comprovacao">Descrição</label>
-                      <textarea id="descricao-comprovacao" name="descricao" required></textarea>
-                    </div>
-                    <div class="field">
-                      <label for="observacoes-comprovacao">Observações</label>
-                      <textarea id="observacoes-comprovacao" name="observacoes"></textarea>
-                    </div>
-                    <button class="button" type="submit">Enviar comprovação</button>
-                  </form>
-                `
-                : ""
-            }
-
-            ${
-              available.podeAvaliarComoMembro
-                ? renderApreciacaoForm({
-                    formId: "form-avaliacao-membro",
-                    title: "Avaliação do membro auxiliar",
-                    submitLabel: "Salvar avaliação",
-                    initialApreciacao: obterRascunhoAvaliacao(proposicao.id)?.apreciacao || null,
-                    includeRascunho: true,
-                  })
-                : ""
-            }
-
-            ${
-              available.podeDecidir
-                ? `
-                  <section class="panel stack">
-                    <h3 class="panel__title">Decisão do Corregedor Nacional</h3>
-                    <p class="inline-note">
-                      A avaliação vigente já está submetida. O Corregedor pode deferir rapidamente
-                      ou indeferir, redefinindo integralmente as invariantes.
-                    </p>
-                    ${
-                      proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN
-                        ? `<button class="button button--ghost" type="button" data-action="descartar-rascunho-decisao">Descartar rascunho de decisão</button>`
-                        : ""
-                    }
-                    <button class="button" type="button" data-action="deferir-avaliacao">Deferir avaliação vigente</button>
-                  </section>
-                  ${renderApreciacaoForm({
-                    formId: "form-decisao-corregedor",
-                    title: "Indeferir e redefinir invariantes",
-                    submitLabel: "Registrar decisão de indeferimento",
-                    includeDelete: true,
-                    includeRascunho: true,
-                    initialApreciacao: proposicao.rascunhoDecisaoCN || null,
-                  })}
-                `
-                : ""
-            }
-
-            ${
-              available.podeAvaliarDiretamente
-                ? `
-                  ${
-                    proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN
-                      ? `<div class="panel"><button class="button button--ghost" type="button" data-action="descartar-rascunho-decisao">Descartar rascunho de decisão</button></div>`
-                      : ""
-                  }
-                  ${renderApreciacaoForm({
-                    formId: "form-avaliacao-direta",
-                    title: "Avaliação com força de decisão",
-                    submitLabel: "Avaliar diretamente",
-                    includeRascunho: true,
-                    initialApreciacao: proposicao.rascunhoDecisaoCN || null,
-                  })}
-                `
-                : ""
-            }
-          </div>
-        </section>
-      </section>
-    `,
+    content: renderDetalheContent({
+      proposicao,
+      meta: buildMeta(proposicao, persona),
+      podeEditarMetadados: available.podeEditarMetadados,
+      acaoPrincipalHtml: buildAcaoPrincipal(proposicao, persona, available),
+      historico: proposicao.historico,
+      historicoNota: "",
+      providenciasEditable: persona === PERSONAS.SECRETARIA,
+    }),
   });
 
   bindHandlers(proposicao);

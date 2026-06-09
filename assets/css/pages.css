@@ -60,6 +60,63 @@
   border-radius: var(--radius-sm);
 }
 
+/* =========================================================================
+   Detalhe da proposição — Zona de ação ("Sua vez") e peça em julgamento.
+   Mesma língua do .inline-note (acento --primary), porém como painel de
+   trabalho de largura plena: encerra o trilho espremido de 320px e dá à
+   ação a moldura/contexto do padrão do correicionado, agora p/ todas as personas.
+   ========================================================================= */
+
+.detail-action {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-lg);
+  background: var(--surface-warm);
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-4);
+  box-shadow: var(--shadow);
+}
+
+.detail-action__overline {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--primary);
+}
+
+.detail-action__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+}
+
+/* A "peça em julgamento": o item que a persona vai julgar/responder,
+   apresentado de forma legível (não como trecho apagado). */
+.judging-anchor {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.judging-anchor > p {
+  margin: 0;
+}
+
+.judging-anchor__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 @media (max-width: 860px) {
   .split-callout {
     grid-template-columns: 1fr;

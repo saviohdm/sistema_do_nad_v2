@@ -28,6 +28,47 @@ export const renderApreciacaoBadge = (apreciacao) => {
   return renderBadge(label, getApreciacaoBadgeTone(apreciacao));
 };
 
+/**
+ * Zona de ação ("Sua vez") do detalhe — painel de trabalho com acento, de
+ * largura plena. Hospeda a peça em julgamento e o(s) formulário(s) da persona.
+ */
+export const renderDetailActionZone = ({ overline, title, children }) => `
+  <section class="detail-action">
+    ${overline ? `<p class="detail-action__overline">${overline}</p>` : ""}
+    ${title ? `<h3 class="detail-action__title">${title}</h3>` : ""}
+    ${children}
+  </section>
+`;
+
+/**
+ * A "peça em julgamento": o item específico que a persona vai julgar/responder
+ * (avaliação vigente, comprovação, diligência, apreciação final). Cartão inset
+ * legível, posicionado dentro da zona de ação.
+ */
+export const renderJudgingAnchor = ({ overline, children }) => `
+  <article class="judging-anchor">
+    ${overline ? `<p class="acervo-overline">${overline}</p>` : ""}
+    ${children}
+  </article>
+`;
+
+/** Render legível de uma apreciação (juízo) para usar dentro de uma âncora ou cartão. */
+export const renderApreciacaoResumo = (apreciacao, { autor, data } = {}) => {
+  if (!apreciacao) return `<p class="muted">Sem apreciação registrada.</p>`;
+  const tipoLabel = apreciacao.tipoConclusao
+    ? Labels.tipoConclusao[apreciacao.tipoConclusao]
+    : Labels.situacaoApreciacao[apreciacao.situacao];
+  const linhaMeta = [autor, data ? formatDateTime(data) : null].filter(Boolean).join(" · ");
+  return `
+    <div class="judging-anchor__header">
+      <strong>${tipoLabel}</strong>
+      ${renderApreciacaoBadge(apreciacao)}
+    </div>
+    ${linhaMeta ? `<p class="muted" style="font-size: 0.85rem;">${linhaMeta}</p>` : ""}
+    ${apreciacao.observacoes ? `<p>${apreciacao.observacoes}</p>` : ""}
+  `;
+};
+
 export const renderPrioridadeBadge = (prioridade) => {
   if (!prioridade) return "";
   const label = Labels.prioridade[prioridade] || prioridade;
@@ -278,7 +319,7 @@ export const renderMetaList = (items) => `
   </div>
 `;
 
-export const renderPendenciasCards = (pendencias) => {
+export const renderPendenciasCards = (pendencias, { editable = true } = {}) => {
   if (!pendencias.length) {
     return `<div class="empty-state">Nenhuma pendência da Secretaria vinculada a esta proposição.</div>`;
   }
@@ -298,7 +339,7 @@ export const renderPendenciasCards = (pendencias) => {
               <p>Data de cumprimento: ${formatDate(item.dataCumprimento)}</p>
               <p>Observações: ${item.observacoes || "—"}</p>
               ${
-                item.status !== "cumprida"
+                editable && item.status !== "cumprida"
                   ? `
                     <form class="stack" data-pendencia-form="${item.id}">
                       <div class="field">
