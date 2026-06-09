@@ -10,31 +10,17 @@ import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import { listarIdsComRascunho } from "../domain/rascunhos-avaliacao.js";
 import {
   renderBadge,
-  renderPrioridadeBadge,
-  renderSensivelBadge,
+  renderFilaProposicaoEditorial,
   renderStatCard,
 } from "../ui/components.js";
 
-const renderCard = (proposicao, temRascunho) => `
-  <a href="/pages/proposicao-detalhe.html?id=${proposicao.id}&fromMembro=1" class="proposicao-card">
-    <div class="proposicao-card__header">
-      <div>
-        <div class="proposicao-card__numero">${proposicao.numero}</div>
-        <div class="proposicao-card__tipo">${proposicao.tipo} · ${proposicao.ramoMP}</div>
-      </div>
-      <div class="pill-list">
-        ${renderSensivelBadge(proposicao.sensivel)}
-        ${renderPrioridadeBadge(proposicao.prioridade)}
-        ${temRascunho ? renderBadge("Rascunho salvo", "warning") : ""}
-      </div>
-    </div>
-    <div class="proposicao-card__content">
-      <div><strong>Unidade:</strong> ${proposicao.unidade}</div>
-      <div><strong>Temática:</strong> ${proposicao.tematica || "—"}</div>
-      <div class="proposicao-card__descricao">${(proposicao.descricao || "").substring(0, 150)}${(proposicao.descricao || "").length > 150 ? "..." : ""}</div>
-    </div>
-  </a>
-`;
+const renderCard = (proposicao, temRascunho, index) =>
+  renderFilaProposicaoEditorial(proposicao, {
+    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&fromMembro=1`,
+    badges: temRascunho ? renderBadge("Rascunho salvo", "warning") : "",
+    cta: temRascunho ? "Retomar avaliação" : "Avaliar proposição",
+    index,
+  });
 
 montarFilaNavegavel({
   statusFila: StatusFilaOperacional.AVALIACAO,
@@ -80,6 +66,6 @@ montarFilaNavegavel({
   },
   renderItens: (filtradas, ctx) =>
     filtradas
-      .map((p) => renderCard(p, ctx.extras.idsComRascunho.includes(p.id)))
+      .map((p, index) => renderCard(p, ctx.extras.idsComRascunho.includes(p.id), index))
       .join(""),
 });

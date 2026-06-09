@@ -16,6 +16,7 @@
 //   renderCorreicaoRowAcoes(item, ctx)   (opcional)    -> célula extra de ações nas correições
 //   renderOverviewActions(ctx)           (opcional)    -> botões extras no panorama
 //   renderFilaHeaderActions(ctx)         (opcional)    -> botões extras no cabeçalho da fila
+//   filtrosExtras: [{ key, tipo, label, formatar }]    -> filtros e chips ativos próprios
 //   rascunho: { label, detectar(p, ctx), exclusivo } (opcional) -> filtro "Somente com rascunho".
 //       Por padrão é "afunilador": filtro OFF mostra tudo, ON restringe aos detectados.
 //       Com `exclusivo: true` vira "segregado": os detectados ficam fora do panorama e da
@@ -34,7 +35,13 @@ import {
   listPanoramaFilaPorCorreicao,
 } from "../domain/filas-operacionais.js";
 import { Labels } from "../domain/enums.js";
-import { renderBadge, renderEmptyState } from "../ui/components.js";
+import {
+  renderBadge,
+  renderEmptyState,
+  renderFilaEmptyState,
+  renderFilaFiltrosAtivos,
+  renderFilaOperacionalHeader,
+} from "../ui/components.js";
 
 const escapeAttr = (value) => String(value ?? "").replace(/"/g, "&quot;");
 const uniq = (values) => Array.from(new Set(values.filter(Boolean)));
@@ -62,6 +69,8 @@ export function montarFilaNavegavel(config) {
   ];
   const textos = config.textos || {};
   const contagemLabel = textos.contagemLabel || "Proposições";
+  const itemSingular = textos.itemSingular || "proposição";
+  const itemPlural = textos.itemPlural || "proposições";
 
   // --- URL <-> filtros (tolerante: aceita fila=1 e filaForcada=1; ignora chaves legadas) ---
   const getFiltrosFromUrl = () => {
@@ -255,9 +264,13 @@ export function montarFilaNavegavel(config) {
       : "";
 
     return `
-      <form class="panel stack" id="painel-filtros">
-        <h3 class="panel__title">Filtros</h3>
-        <div class="field-grid">
+      <form class="fila-operacional-filtros" id="painel-filtros">
+        <header class="fila-operacional-filtros__head">
+          <p class="fila-operacional-overline">Refinamento</p>
+          <h3 class="fila-operacional-filtros__title">Filtros da fila</h3>
+          <p class="fila-operacional-filtros__intro">Refine a seleção sem perder o contexto operacional atual.</p>
+        </header>
+        <div class="fila-operacional-filtros__fields">
           <div class="field">
             <label for="filtro-prioridade">Prioridade</label>
             <select id="filtro-prioridade" name="prioridade">
@@ -276,11 +289,49 @@ export function montarFilaNavegavel(config) {
           ${rascunhoField}
           ${config.renderFiltrosExtras ? config.renderFiltrosExtras(filtros, ctx) : ""}
         </div>
-        <div class="button-row">
+        <div class="button-row fila-operacional-filtros__actions">
           <button class="button" type="submit">Aplicar filtros</button>
           <button class="button button--ghost" type="button" data-action="limpar-filtros">Limpar filtros</button>
         </div>
       </form>`;
+  };
+
+  const buildFiltrosAtivos = (filtros, ctx) => {
+    const chips = [];
+    if (filtros.prioridade) {
+      chips.push({
+        key: "prioridade",
+        label: `Prioridade: ${Labels.prioridade[filtros.prioridade] || filtros.prioridade}`,
+      });
+    }
+    if (filtros.sensivel) {
+      chips.push({
+        key: "sensivel",
+        label: `Sensível: ${filtros.sensivel === "sim" ? "Sim" : "Não"}`,
+      });
+    }
+    if (temRascunho && filtros.comRascunho) {
+      chips.push({
+        key: "comRascunho",
+        label: config.rascunho.label || "Somente com rascunho",
+      });
+    }
+    filtrosExtras.forEach((filtro) => {
+      const value = filtros[filtro.key];
+      if (!value) return;
+      const formatted = filtro.formatar ? filtro.formatar(value, ctx) : value;
+      const label = filtro.label || filtro.key;
+      chips.push({
+        key: filtro.key,
+        label:
+          filtro.tipo === "bool"
+            ? label
+            : filtro.key === "textoBusca"
+              ? `Busca: "${formatted}"`
+              : `${label}: ${formatted}`,
+      });
+    });
+    return chips;
   };
 
   const filtrarParaFila = (proposicoes, filtros, ctx) => {
@@ -329,65 +380,52 @@ export function montarFilaNavegavel(config) {
 
     const itens = filtradas.length
       ? config.renderItens(filtradas, ctx)
-      : renderEmptyState(textos.emptyFila || "Nenhuma proposição corresponde aos filtros selecionados.");
+      : renderFilaEmptyState(
+          textos.emptyFila || "Nenhuma proposição corresponde aos filtros selecionados.",
+        );
 
     const contexto = [
       filtros.correicaoId ? `Correição: <strong>${filtros.correicaoId}</strong>` : null,
       filtros.unidadeRef || filtros.unidade
         ? `Unidade: <strong>${filtradas[0]?.unidade || filtros.unidade || filtros.unidadeRef}</strong>`
         : null,
-      filtros.prioridade
-        ? `Prioridade: <strong>${Labels.prioridade[filtros.prioridade] || filtros.prioridade}</strong>`
-        : null,
-      filtros.sensivel ? `Sensível: <strong>${filtros.sensivel === "sim" ? "Sim" : "Não"}</strong>` : null,
-      temRascunho && filtros.comRascunho
-        ? `<strong>${config.rascunho.label || "Somente com rascunho"}</strong>`
-        : null,
     ]
       .filter(Boolean)
       .join(" · ");
+    const headerActions = `
+      <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
+      ${
+        filtros.correicaoId
+          ? `<button class="button button--ghost" type="button" data-action="voltar-correicao">Unidades da correição</button>`
+          : ""
+      }
+      ${config.renderFilaHeaderActions ? config.renderFilaHeaderActions(ctx) : ""}`;
+    const filtrosAtivos = buildFiltrosAtivos(filtros, ctx);
 
     return `
-      <section class="page-grid page-grid--two">
-        <div class="stack">
-          <div class="panel">
-            <div class="button-row" style="justify-content: space-between; align-items: baseline;">
-              <div>
-                <h3 class="panel__title">${textos.filaTitulo || "Fila"}</h3>
-                <p class="muted">${contexto || textos.filaIntroVazia || "Todas as proposições desta fila."}</p>
-              </div>
-              <div class="button-row">
-                <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
-                ${
-                  filtros.correicaoId
-                    ? `<button class="button button--ghost" type="button" data-action="voltar-correicao">Unidades da correição</button>`
-                    : ""
-                }
-                ${config.renderFilaHeaderActions ? config.renderFilaHeaderActions(ctx) : ""}
-              </div>
-            </div>
+      <section class="stack">
+        ${renderFilaOperacionalHeader({
+          title: textos.filaTitulo || "Fila",
+          intro: textos.filaIntroVazia || "Todas as proposições desta fila.",
+          contexto,
+          visiveis: filtradas.length,
+          total: totalUniverso,
+          itemSingular,
+          itemPlural,
+          actions: headerActions,
+        })}
+        ${renderFilaFiltrosAtivos(filtrosAtivos)}
+        <div class="page-grid page-grid--two fila-operacional-corpo">
+          <div class="stack">
+            ${config.renderFilaTopo ? config.renderFilaTopo(ctx) : ""}
+            <div class="fila-operacional-list">${itens}</div>
+            ${config.renderFilaRodape ? config.renderFilaRodape(ctx) : ""}
           </div>
 
-          ${config.renderFilaTopo ? config.renderFilaTopo(ctx) : ""}
-          <div class="proposicoes-list">${itens}</div>
-          ${config.renderFilaRodape ? config.renderFilaRodape(ctx) : ""}
+          <aside class="fila-operacional-sidebar">
+            ${renderPainelFiltros(proposicoes, filtros, ctx)}
+          </aside>
         </div>
-
-        <aside class="stack">
-          <div class="panel">
-            <h3 class="panel__title">Contador</h3>
-            <p class="muted">${textos.contadorIntro || "Proposições nesta seleção:"}</p>
-            <div class="stat-card" style="margin-top: 0.5rem;">
-              <span class="stat-card__value">${filtradas.length}</span>
-              <span class="stat-card__label">proposição(ões)</span>
-            </div>
-            <p class="muted" style="margin-top: 1rem;">${
-              textos.totalSistemaLabel || "Total nesta fila"
-            }: <strong>${totalUniverso}</strong></p>
-          </div>
-
-          ${renderPainelFiltros(proposicoes, filtros, ctx)}
-        </aside>
       </section>`;
   };
 
@@ -461,6 +499,14 @@ export function montarFilaNavegavel(config) {
         unidadeRef: filtros.unidadeRef,
         unidade: filtros.unidade,
         filaForcada: !filtros.unidadeRef && !filtros.unidade,
+      });
+    });
+
+    document.querySelectorAll("[data-remove-filtro]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const novos = { ...filtros, filaForcada: true };
+        delete novos[button.dataset.removeFiltro];
+        aplicarFiltros(novos);
       });
     });
 

@@ -15,8 +15,7 @@ import { adicionarEmailDiligencia } from "../domain/caixa-de-saida.js";
 import { resolveDestinatarioCorreicionado } from "../domain/correicionados.js";
 import {
   renderBadge,
-  renderPrioridadeBadge,
-  renderSensivelBadge,
+  renderFilaProposicaoEditorial,
   renderStatCard,
 } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
@@ -53,38 +52,19 @@ const hidratarSelecao = () => {
 hidratarSelecao();
 
 // --- Cards e UI de lote ---
-const renderCardSelecionavel = (proposicao) => {
+const renderCardSelecionavel = (proposicao, index) => {
   const selecionado = selecaoIds.has(proposicao.id);
   const subStatusBadge = isRetornada(proposicao)
     ? renderBadge("Retornou · necessita mais informações", "warning")
     : renderBadge("Nova proposição", "primary");
-  return `
-    <article class="proposicao-card proposicao-card--selecionavel ${selecionado ? "proposicao-card--selected" : ""}">
-      <input type="checkbox" data-prop-checkbox="${escapeAttr(proposicao.id)}" ${selecionado ? "checked" : ""} aria-label="Selecionar proposição ${proposicao.numero}" />
-      <div>
-        <div class="proposicao-card__header">
-          <div>
-            <div class="proposicao-card__numero">${proposicao.numero}</div>
-            <div class="proposicao-card__tipo">${proposicao.tipo} · ${proposicao.ramoMP || "—"}</div>
-          </div>
-          <div class="pill-list">
-            ${renderSensivelBadge(proposicao.sensivel)}
-            ${renderPrioridadeBadge(proposicao.prioridade)}
-            ${subStatusBadge}
-          </div>
-        </div>
-        <div class="proposicao-card__content">
-          <div><strong>Unidade:</strong> ${proposicao.unidade}</div>
-          <div><strong>Correição:</strong> ${proposicao.correicaoId || "—"}</div>
-          <div><strong>Membro:</strong> ${proposicao.membro || "—"}</div>
-          <div class="proposicao-card__descricao">${(proposicao.descricao || "").substring(0, 200)}${(proposicao.descricao || "").length > 200 ? "..." : ""}</div>
-        </div>
-        <div class="button-row proposicao-card__actions">
-          <a class="button button--ghost button--small" href="/pages/proposicao-detalhe.html?id=${proposicao.id}">Abrir detalhe</a>
-        </div>
-      </div>
-    </article>
-  `;
+  return renderFilaProposicaoEditorial(proposicao, {
+    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}`,
+    checkboxHtml: `<input type="checkbox" data-prop-checkbox="${escapeAttr(proposicao.id)}" ${selecionado ? "checked" : ""} aria-label="Selecionar proposição ${proposicao.numero}" />`,
+    badges: subStatusBadge,
+    selecionado,
+    index,
+    descriptionLimit: 200,
+  });
 };
 
 const renderSelectAllRow = (filtradas) => {
@@ -304,10 +284,15 @@ montarFilaNavegavel({
     };
   },
   filtrosExtras: [
-    { key: "subStatus", tipo: "string" },
-    { key: "membro", tipo: "string" },
-    { key: "textoBusca", tipo: "string" },
-    { key: "gruposCompletos", tipo: "bool" },
+    {
+      key: "subStatus",
+      tipo: "string",
+      label: "Sub-status",
+      formatar: (value) => (value === "retornada" ? "Retornada" : "Nova"),
+    },
+    { key: "membro", tipo: "string", label: "Membro" },
+    { key: "textoBusca", tipo: "string", label: "Busca" },
+    { key: "gruposCompletos", tipo: "bool", label: "Somente grupos completos" },
   ],
   aplicarFiltrosExtras: (lista, filtros, ctx) => {
     let r = filtrarProposicoes(lista, {
@@ -338,7 +323,7 @@ montarFilaNavegavel({
           ${membros.map((v) => optionTag(v, v, filtros.membro || "")).join("")}
         </select>
       </div>
-      <div class="field" style="grid-column: span 2;">
+      <div class="field fila-operacional-filtros__busca">
         <label for="filtro-texto">Busca textual</label>
         <input id="filtro-texto" name="textoBusca" type="text"
           placeholder="Número, número ELO, descrição ou observações"
@@ -356,7 +341,8 @@ montarFilaNavegavel({
       ${renderStatCard("Retornadas (necessita mais informações)", retornadas)}
     `;
   },
-  renderItens: (filtradas) => filtradas.map(renderCardSelecionavel).join(""),
+  renderItens: (filtradas) =>
+    filtradas.map((proposicao, index) => renderCardSelecionavel(proposicao, index)).join(""),
   renderFilaTopo: (ctx) => renderSelectAllRow(ctx.filtradas),
   renderFilaRodape: (ctx) => {
     const idsVisiveis = new Set(ctx.filtradas.map((p) => p.id));

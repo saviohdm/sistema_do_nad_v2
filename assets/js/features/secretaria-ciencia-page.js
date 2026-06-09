@@ -5,7 +5,14 @@ import { listFilaAguardandoCiencia } from "../domain/secretaria-filas.js";
 import { cientificarGrupo } from "../domain/ciencia.js";
 import { StatusFluxo } from "../domain/enums.js";
 import { resolveDestinatarioCorreicionado } from "../domain/correicionados.js";
-import { renderBadge, renderEmptyState, renderStatCard } from "../ui/components.js";
+import {
+  renderBadge,
+  renderEmptyState,
+  renderFilaEmptyState,
+  renderFilaFiltrosAtivos,
+  renderFilaOperacionalHeader,
+  renderStatCard,
+} from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
 import {
   StatusFilaOperacional,
@@ -209,9 +216,13 @@ const option = (value, label, selected) =>
 
 const renderPainelFiltros = (grupos, filtros) => {
   return `
-    <form class="panel stack" id="painel-filtros">
-      <h3 class="panel__title">Filtros</h3>
-      <div class="field-grid">
+    <form class="fila-operacional-filtros" id="painel-filtros">
+      <header class="fila-operacional-filtros__head">
+        <p class="fila-operacional-overline">Refinamento</p>
+        <h3 class="fila-operacional-filtros__title">Filtros da fila</h3>
+        <p class="fila-operacional-filtros__intro">Priorize grupos completos ou recém-prontos para ciência.</p>
+      </header>
+      <div class="fila-operacional-filtros__fields">
         <div class="field">
           <label for="filtro-estado">Estado</label>
           <select id="filtro-estado" name="estado">
@@ -229,7 +240,7 @@ const renderPainelFiltros = (grupos, filtros) => {
           </select>
         </div>
       </div>
-      <div class="button-row">
+      <div class="button-row fila-operacional-filtros__actions">
         <button class="button" type="submit">Aplicar filtros</button>
         <button class="button button--ghost" type="button" data-action="limpar-filtros">Limpar</button>
       </div>
@@ -265,7 +276,7 @@ const renderCardGrupo = (grupo) => {
     .join("");
 
   return `
-    <article class="proposicao-card proposicao-card--selecionavel ${selecionado ? "proposicao-card--selected" : ""} ${podeSelecionar ? "proposicao-card--pronta" : "proposicao-card--disabled"}">
+    <article class="proposicao-card proposicao-card--selecionavel fila-operacional-grupo ${selecionado ? "proposicao-card--selected is-selected" : ""} ${podeSelecionar ? "proposicao-card--pronta fila-operacional-grupo--pronto" : "proposicao-card--disabled fila-operacional-grupo--parcial"}">
       ${checkbox}
       <div>
         <div class="proposicao-card__header">
@@ -352,7 +363,7 @@ const renderModoGrupo = (grupos, filtros) => {
 
   const cards = filtrados.length
     ? filtrados.map(renderCardGrupo).join("")
-    : renderEmptyState("Nenhum grupo corresponde aos filtros selecionados.");
+    : renderFilaEmptyState("Nenhum grupo corresponde aos filtros selecionados.");
 
   const proposicoesSelecionadas = grupos
     .filter((g) => selecaoKeys.has(grupoKey(g)))
@@ -360,47 +371,49 @@ const renderModoGrupo = (grupos, filtros) => {
 
   const contextoSelecao = [
     filtros.correicaoId ? `Correição: <strong>${filtros.correicaoId}</strong>` : null,
-    filtros.estado ? `Estado: <strong>${filtros.estado}</strong>` : null,
-    filtros.prontoEm
-      ? `Pronto em: <strong>${filtros.prontoEm === "hoje" ? "Hoje" : "Últimos 7 dias"}</strong>`
-      : null,
   ]
     .filter(Boolean)
     .join(" · ");
+  const chips = [
+    filtros.estado
+      ? {
+          key: "estado",
+          label: `Estado: ${filtros.estado === "completo" ? "Completo" : "Parcial"}`,
+        }
+      : null,
+    filtros.prontoEm
+      ? {
+          key: "prontoEm",
+          label: `Pronto em: ${filtros.prontoEm === "hoje" ? "Hoje" : "Últimos 7 dias"}`,
+        }
+      : null,
+  ].filter(Boolean);
 
   return `
-    <section class="page-grid page-grid--two">
-      <div class="stack">
-        <div class="panel">
-          <div class="button-row" style="justify-content: space-between; align-items: baseline;">
-            <div>
-              <h3 class="panel__title">Fila de ciência</h3>
-              <p class="muted">${contextoSelecao || "Todos os grupos aguardando ciência."}</p>
-            </div>
-            <div class="button-row">
-              <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
-            </div>
-          </div>
+    <section class="stack">
+      ${renderFilaOperacionalHeader({
+        title: "Fila de ciência",
+        intro: "Todos os grupos aguardando ciência.",
+        contexto: contextoSelecao,
+        visiveis: filtrados.length,
+        total: grupos.length,
+        itemSingular: "grupo",
+        itemPlural: "grupos",
+        actions:
+          '<button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>',
+      })}
+      ${renderFilaFiltrosAtivos(chips)}
+      <div class="page-grid page-grid--two fila-operacional-corpo">
+        <div class="stack">
+          ${renderSelectAllRow(selecionaveis)}
+          <div class="fila-operacional-list" id="lista-cards">${cards}</div>
+          ${renderStickyBar(selecaoKeys.size, ocultas, proposicoesSelecionadas)}
         </div>
 
-        ${renderSelectAllRow(selecionaveis)}
-        <div class="stack" id="lista-cards">${cards}</div>
-        ${renderStickyBar(selecaoKeys.size, ocultas, proposicoesSelecionadas)}
+        <aside class="fila-operacional-sidebar">
+          ${renderPainelFiltros(grupos, filtros)}
+        </aside>
       </div>
-
-      <aside class="stack">
-        <div class="panel">
-          <h3 class="panel__title">Contador</h3>
-          <p class="muted">Visíveis com os filtros atuais:</p>
-          <div class="stat-card" style="margin-top: 0.5rem;">
-            <span class="stat-card__value">${filtrados.length}</span>
-            <span class="stat-card__label">grupo(s)</span>
-          </div>
-          <p class="muted" style="margin-top: 1rem;">Total na fila: <strong>${grupos.length}</strong> grupo(s)</p>
-        </div>
-
-        ${renderPainelFiltros(grupos, filtros)}
-      </aside>
     </section>
   `;
 };
@@ -630,6 +643,14 @@ const bindHandlers = (filtros, grupos) => {
     aplicarFiltros({
       correicaoId: filtros.correicaoId || "",
       filaForcada: !filtros.correicaoId ? true : false,
+    });
+  });
+
+  document.querySelectorAll("[data-remove-filtro]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const novos = { ...filtros, filaForcada: true };
+      delete novos[button.dataset.removeFiltro];
+      aplicarFiltros(novos);
     });
   });
 

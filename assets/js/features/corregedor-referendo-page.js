@@ -14,8 +14,7 @@ import { StatusFluxo } from "../domain/enums.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import {
   renderBadge,
-  renderPrioridadeBadge,
-  renderSensivelBadge,
+  renderFilaProposicaoEditorial,
   renderStatCard,
 } from "../ui/components.js";
 import { openRelatorioFinalModal } from "../ui/modal.js";
@@ -34,32 +33,14 @@ const renderAcoesCard = (proposicao) => {
   return `${editar}${apagar}`;
 };
 
-const renderCard = (proposicao) => `
-  <article class="proposicao-card proposicao-card--com-acoes" data-proposicao-id="${proposicao.id}">
-    <a href="/pages/proposicao-detalhe.html?id=${proposicao.id}&fromCorregedor=referendo" style="text-decoration: none; color: inherit;">
-      <div class="proposicao-card__header">
-        <div>
-          <div class="proposicao-card__numero">${proposicao.numero}</div>
-          <div class="proposicao-card__tipo">${proposicao.tipo} · ${proposicao.ramoMP}</div>
-        </div>
-        <div class="pill-list">
-          ${ehRascunho(proposicao) ? renderBadge("Rascunho", "warning") : ""}
-          ${renderSensivelBadge(proposicao.sensivel)}
-          ${renderPrioridadeBadge(proposicao.prioridade)}
-          ${renderBadge(proposicao.correicao?.numero || proposicao.correicaoId || "sem correição", "neutral")}
-        </div>
-      </div>
-      <div class="proposicao-card__content">
-        <div><strong>Unidade:</strong> ${proposicao.unidade}</div>
-        <div><strong>Temática:</strong> ${proposicao.tematica || "—"}</div>
-        <div class="proposicao-card__descricao">${(proposicao.descricao || "").substring(0, 150)}${(proposicao.descricao || "").length > 150 ? "..." : ""}</div>
-      </div>
-    </a>
-    <div class="action-bar">
-      ${renderAcoesCard(proposicao)}
-    </div>
-  </article>
-`;
+const renderCard = (proposicao, index) =>
+  renderFilaProposicaoEditorial(proposicao, {
+    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&fromCorregedor=referendo`,
+    badges: ehRascunho(proposicao) ? renderBadge("Rascunho", "warning") : "",
+    actions: renderAcoesCard(proposicao),
+    attributes: `data-proposicao-id="${proposicao.id}"`,
+    index,
+  });
 
 const getRascunhosDaCorreicao = (currentState, correicaoId) =>
   listProposicoesRascunhoCN(currentState).filter((p) => p.correicaoId === correicaoId);
@@ -222,7 +203,8 @@ montarFilaNavegavel({
     !ctx.filtros.comRascunho
       ? renderAcoesCorreicao(ctx.filtros.correicaoId, ctx)
       : "",
-  renderItens: (filtradas) => filtradas.map(renderCard).join(""),
+  renderItens: (filtradas) =>
+    filtradas.map((proposicao, index) => renderCard(proposicao, index)).join(""),
   bindExtra: (ctx) => {
     document.querySelectorAll("[data-action='referendar-correicao']").forEach((btn) => {
       btn.addEventListener("click", (event) => {

@@ -5,15 +5,14 @@ import { hydrateProposicao } from "../domain/correicoes.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import {
   renderBadge,
-  renderPrioridadeBadge,
-  renderSensivelBadge,
+  renderFilaProposicaoEditorial,
   renderStatCard,
 } from "../ui/components.js";
 
 const temAvaliacaoVigente = (proposicao) => Boolean(proposicao.avaliacaoVigenteId);
 const temRascunhoDecisao = (proposicao) => Boolean(proposicao.rascunhoDecisaoCN);
 
-const renderCard = (proposicao) => {
+const renderCard = (proposicao, index) => {
   const comAvaliacao = temAvaliacaoVigente(proposicao);
   const rascunho = temRascunhoDecisao(proposicao);
   const statusBadge = rascunho
@@ -22,27 +21,12 @@ const renderCard = (proposicao) => {
         comAvaliacao ? "Decidir avaliação vigente" : "Avaliar diretamente",
         comAvaliacao ? "primary" : "warning",
       );
-  return `
-    <a href="/pages/proposicao-detalhe.html?id=${proposicao.id}&fromCorregedor=decisao" class="proposicao-card">
-      <div class="proposicao-card__header">
-        <div>
-          <div class="proposicao-card__numero">${proposicao.numero}</div>
-          <div class="proposicao-card__tipo">${proposicao.tipo} · ${proposicao.ramoMP}</div>
-        </div>
-        <div class="pill-list">
-          ${renderSensivelBadge(proposicao.sensivel)}
-          ${renderPrioridadeBadge(proposicao.prioridade)}
-          ${statusBadge}
-        </div>
-      </div>
-      <div class="proposicao-card__content">
-        <div><strong>Unidade:</strong> ${proposicao.unidade}</div>
-        <div><strong>Temática:</strong> ${proposicao.tematica || "—"}</div>
-        <div><strong>Correição:</strong> ${proposicao.correicaoId || "—"}</div>
-        <div class="proposicao-card__descricao">${(proposicao.descricao || "").substring(0, 150)}${(proposicao.descricao || "").length > 150 ? "..." : ""}</div>
-      </div>
-    </a>
-  `;
+  return renderFilaProposicaoEditorial(proposicao, {
+    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&fromCorregedor=decisao`,
+    badges: statusBadge,
+    cta: rascunho ? "Retomar decisão" : "Abrir para decidir",
+    index,
+  });
 };
 
 montarFilaNavegavel({
@@ -87,5 +71,6 @@ montarFilaNavegavel({
       ${renderStatCard("Sem avaliação (decisão direta)", semAvaliacao)}
     `;
   },
-  renderItens: (filtradas) => filtradas.map(renderCard).join(""),
+  renderItens: (filtradas) =>
+    filtradas.map((proposicao, index) => renderCard(proposicao, index)).join(""),
 });

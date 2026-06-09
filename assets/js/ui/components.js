@@ -11,6 +11,14 @@ import {
 } from "../domain/proposicoes.js";
 import { summarizeHistoryEvent } from "../domain/historico.js";
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 export const renderBadge = (label, tone = "neutral") =>
   `<span class="badge badge--${tone}">${label}</span>`;
 
@@ -505,6 +513,155 @@ const splitNumeroCapitular = (numero) => {
   }
   return { capitular: str.charAt(0) || "·", resto: str.slice(1) };
 };
+
+const FILA_PRIORIDADE_CLASS = {
+  urgente: "fila-operacional-item--prio-urgente",
+  importante: "fila-operacional-item--prio-importante",
+  normal: "fila-operacional-item--prio-normal",
+};
+
+export const renderFilaProposicaoEditorial = (
+  proposicao,
+  {
+    href,
+    checkboxHtml = "",
+    badges = "",
+    actions = "",
+    footerExtras = "",
+    cta = "Abrir proposição",
+    selecionado = false,
+    desabilitado = false,
+    className = "",
+    attributes = "",
+    index = 0,
+    descriptionLimit = 180,
+  } = {},
+) => {
+  const { capitular, resto } = splitNumeroCapitular(proposicao.numero);
+  const prioridadeClass =
+    FILA_PRIORIDADE_CLASS[proposicao.prioridade] || FILA_PRIORIDADE_CLASS.normal;
+  const descricao = proposicao.descricao || "";
+  const descricaoResumo =
+    descricao.length > descriptionLimit
+      ? `${descricao.substring(0, descriptionLimit)}...`
+      : descricao;
+  const idade = formatTempoRelativo(getUltimaMovimentacao(proposicao));
+  const delay = Math.min(index, 18) * 28;
+  const classes = [
+    "fila-operacional-item",
+    prioridadeClass,
+    checkboxHtml ? "fila-operacional-item--selecionavel" : "",
+    selecionado ? "is-selected" : "",
+    desabilitado ? "is-disabled" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const sensivel = proposicao.sensivel
+    ? `<span class="fila-operacional-item__sensivel">● Sensível</span>`
+    : "";
+  const prioridade =
+    proposicao.prioridade && proposicao.prioridade !== "normal"
+      ? `<span class="fila-operacional-item__prioridade">${Labels.prioridade[proposicao.prioridade]}</span>`
+      : "";
+  const content = `
+    <header class="fila-operacional-item__header">
+      <div>
+        <div class="fila-operacional-item__numero">
+          <span class="fila-operacional-item__capitular" aria-hidden="true">${capitular}</span>
+          <span>${resto}</span>
+        </div>
+        <p class="fila-operacional-item__tipo">${proposicao.tipo || "Proposição"}${proposicao.ramoMP ? ` · ${proposicao.ramoMP}` : ""}</p>
+      </div>
+      ${badges ? `<div class="fila-operacional-item__badges">${badges}</div>` : ""}
+    </header>
+    <p class="fila-operacional-item__unidade">${proposicao.unidade || "—"}</p>
+    ${descricaoResumo ? `<p class="fila-operacional-item__descricao">${descricaoResumo}</p>` : ""}
+    <dl class="fila-operacional-item__meta">
+      <div><dt>Temática</dt><dd>${proposicao.tematica || "—"}</dd></div>
+      <div><dt>Membro</dt><dd>${proposicao.membro || "—"}</dd></div>
+      <div><dt>Correição</dt><dd>${proposicao.correicao?.numero || proposicao.correicaoId || "—"}</dd></div>
+      <div><dt>Última movimentação</dt><dd>${idade}</dd></div>
+    </dl>
+    <footer class="fila-operacional-item__footer">
+      <div class="fila-operacional-item__signals">${sensivel}${prioridade}${footerExtras}</div>
+      ${cta ? `<span class="fila-operacional-item__cta" aria-hidden="true">${cta} →</span>` : ""}
+    </footer>`;
+
+  return `
+    <article class="${classes}" ${attributes} style="--reveal-delay:${delay}ms;">
+      ${checkboxHtml ? `<div class="fila-operacional-item__selector">${checkboxHtml}</div>` : ""}
+      <div class="fila-operacional-item__body">
+        ${
+          href
+            ? `<a class="fila-operacional-item__link" href="${href}" aria-label="Abrir proposição ${proposicao.numero}">${content}</a>`
+            : `<div class="fila-operacional-item__link">${content}</div>`
+        }
+        ${actions ? `<div class="fila-operacional-item__actions">${actions}</div>` : ""}
+      </div>
+    </article>`;
+};
+
+export const renderFilaOperacionalHeader = ({
+  title,
+  intro,
+  contexto = "",
+  visiveis,
+  total,
+  itemSingular = "proposição",
+  itemPlural = "proposições",
+  actions = "",
+}) => {
+  const visiveisLabel = visiveis === 1 ? itemSingular : itemPlural;
+  const totalLabel = total === 1 ? itemSingular : itemPlural;
+  const visibilidadeLabel = visiveis === 1 ? "visível" : "visíveis";
+  return `
+    <header class="fila-operacional-header">
+      <div class="fila-operacional-header__content">
+        <p class="fila-operacional-overline">Fila operacional</p>
+        <h2 class="fila-operacional-header__title">${title}</h2>
+        <p class="fila-operacional-header__intro">${contexto || intro || ""}</p>
+      </div>
+      <div class="fila-operacional-header__summary" aria-label="Resumo da fila">
+        <div class="fila-operacional-header__metric">
+          <strong>${visiveis}</strong>
+          <span>${visiveisLabel} ${visibilidadeLabel}</span>
+        </div>
+        <div class="fila-operacional-header__metric">
+          <strong>${total}</strong>
+          <span>${totalLabel} na fila</span>
+        </div>
+      </div>
+      ${actions ? `<div class="fila-operacional-header__actions button-row">${actions}</div>` : ""}
+    </header>`;
+};
+
+export const renderFilaFiltrosAtivos = (chips) => {
+  if (!chips.length) return "";
+  return `
+    <div class="fila-operacional-active-filters" aria-label="Filtros ativos">
+      <span class="fila-operacional-active-filters__label">Filtros ativos</span>
+      ${chips
+        .map(
+          ({ key, label }) => `
+            <button class="fila-operacional-active-filter" type="button" data-remove-filtro="${escapeHtml(key)}" aria-label="Remover filtro ${escapeHtml(label)}">
+              <span>${escapeHtml(label)}</span>
+              <span aria-hidden="true">×</span>
+            </button>`,
+        )
+        .join("")}
+    </div>`;
+};
+
+export const renderFilaEmptyState = (message) => `
+  <div class="fila-operacional-empty">
+    <span class="fila-operacional-empty__mark" aria-hidden="true">∅</span>
+    <div>
+      <h3>Nenhum item nesta seleção</h3>
+      <p>${message}</p>
+    </div>
+  </div>
+`;
 
 export const renderFilterToggleChip = ({ label, value, count, active }) => `
   <button
