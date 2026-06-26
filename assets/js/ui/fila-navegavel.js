@@ -1,6 +1,6 @@
 // Controlador/render compartilhado das filas com drill-down.
 //
-// Hierarquia: Panorama (Por correição) -> Unidades da correição -> Fila de proposições.
+// Hierarquia: Panorama (Por correição) -> Destinatários da correição -> Fila de proposições.
 // Estado vive na URL (pushState + popstate) e é espelhado em sessionStorage. Cada página
 // injeta apenas a fonte de dados e suas ações próprias via `config` (ver Hooks abaixo).
 //
@@ -29,12 +29,13 @@ import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { getCurrentPersona, requireAuth } from "../app/auth.js";
 import { filtrarProposicoes } from "../domain/proposicoes.js";
 import {
-  getUnidadeRef,
+  getDestinatarioRef,
+  getDestinatarioDisplay,
   groupProposicoesPorUnidadeOperacional,
   listGruposOperacionaisDaFila,
   listPanoramaFilaPorCorreicao,
 } from "../domain/filas-operacionais.js";
-import { Labels } from "../domain/enums.js";
+import { Labels, TipoDestinatario } from "../domain/enums.js";
 import {
   renderBadge,
   renderEmptyState,
@@ -48,7 +49,15 @@ const uniq = (values) => Array.from(new Set(values.filter(Boolean)));
 const optionTag = (value, label, selected) =>
   `<option value="${escapeAttr(value)}"${selected === value ? " selected" : ""}>${label}</option>`;
 
-const BASE_KEYS = ["correicaoId", "unidadeRef", "unidade", "prioridade", "sensivel"];
+const BASE_KEYS = ["correicaoId", "destinatarioRef", "unidadeRef", "unidade", "prioridade", "sensivel"];
+
+// Seções do painel "Destinatários", em ordem de prioridade (adm. superior no
+// topo). Cada uma só é renderizada se tiver ao menos um destinatário.
+const SECOES_DESTINATARIO = [
+  { tipo: TipoDestinatario.ADMINISTRACAO_SUPERIOR, titulo: "Administração Superior", coluna: "Administração Superior" },
+  { tipo: TipoDestinatario.UNIDADE, titulo: "Unidades", coluna: "Unidade" },
+  { tipo: TipoDestinatario.MEMBRO, titulo: "Membros", coluna: "Membro" },
+];
 
 export function montarFilaNavegavel(config) {
   requireAuth();
@@ -60,6 +69,7 @@ export function montarFilaNavegavel(config) {
   const temRascunho = Boolean(config.rascunho);
   const filtrosExtras = config.filtrosExtras || []; // [{ key, tipo: "string" | "bool" }]
   const FILA_KEYS = [
+    "destinatarioRef",
     "unidadeRef",
     "unidade",
     "prioridade",
@@ -135,7 +145,7 @@ export function montarFilaNavegavel(config) {
               <td><strong>${item.correicaoId || "—"}</strong></td>
               <td>${item.ramoMP || "—"}</td>
               <td class="numeric">${item.proposicoesAguardando}</td>
-              <td class="numeric">${item.unidadesProntas} / ${item.unidadesTotal}</td>
+              <td class="numeric">${item.destinatariosProntos} / ${item.destinatariosTotal}</td>
               ${temAcoes ? `<td>${config.renderCorreicaoRowAcoes(item, ctx)}</td>` : ""}
             </tr>`,
           )
@@ -158,11 +168,11 @@ export function montarFilaNavegavel(config) {
 
         <div class="panel">
           <h3 class="panel__title">Por correição</h3>
-          <p class="muted">${textos.porCorreicaoHint || "Clique em uma correição para ver suas unidades."}</p>
+          <p class="muted">${textos.porCorreicaoHint || "Clique em uma correição para ver seus destinatários."}</p>
           <div class="table-wrap">
             <table class="table table--hover">
               <thead>
-                <tr><th>Correição</th><th>Ramo</th><th class="numeric">Proposições aguardando</th><th class="numeric">Unidades prontas / total</th>${temAcoes ? "<th>Ações</th>" : ""}</tr>
+                <tr><th>Correição</th><th>Ramo</th><th class="numeric">Proposições aguardando</th><th class="numeric">Destinatários prontos / total</th>${temAcoes ? "<th>Ações</th>" : ""}</tr>
               </thead>
               <tbody>${rows}</tbody>
             </table>
@@ -174,42 +184,57 @@ export function montarFilaNavegavel(config) {
   // --- Unidades de uma correição ---
   const renderModoCorreicao = (proposicoes, filtros, ctx) => {
     const daCorreicao = proposicoes.filter((p) => p.correicaoId === filtros.correicaoId);
-    const unidades = groupProposicoesPorUnidadeOperacional(daCorreicao);
-    // Unidades "prontas" = mesmo critério do panorama (todas as proposições abertas
-    // da unidade estão nesta fila). Ref via getUnidadeRef bate com o agrupamento acima.
+    const destinatarios = groupProposicoesPorUnidadeOperacional(daCorreicao);
+    // "Pronto" = mesmo critério do panorama (todas as proposições abertas daquele
+    // destinatário estão nesta fila). Ref bate com o agrupamento acima.
     const prontasRefs = new Set(
       listGruposOperacionaisDaFila(ctx.state, config.statusFila)
         .filter((g) => g.correicaoId === filtros.correicaoId && g.completo)
-        .map((g) => g.unidadeRef),
+        .map((g) => g.destinatarioRef),
     );
-    // Prontas primeiro, depois alfabética (cópia local; não altera a fonte de dados).
-    const ordenadas = unidades.slice().sort((a, b) => {
-      const pa = prontasRefs.has(a.unidadeRef);
-      const pb = prontasRefs.has(b.unidadeRef);
-      if (pa !== pb) return pa ? -1 : 1;
-      return (a.unidade || "").localeCompare(b.unidade || "");
-    });
-    const totalProntas = ordenadas.filter((u) => prontasRefs.has(u.unidadeRef)).length;
+    // Prontos primeiro, depois alfabético pelo rótulo (cópia local).
+    const ordenar = (lista) =>
+      lista.slice().sort((a, b) => {
+        const pa = prontasRefs.has(a.destinatarioRef);
+        const pb = prontasRefs.has(b.destinatarioRef);
+        if (pa !== pb) return pa ? -1 : 1;
+        return (a.rotulo || "").localeCompare(b.rotulo || "");
+      });
+    const totalProntos = destinatarios.filter((d) => prontasRefs.has(d.destinatarioRef)).length;
     const ramoMP = daCorreicao[0]?.ramoMP || "";
     const ramoMPNome = daCorreicao[0]?.ramoMPNome || "";
-    const rows = ordenadas.length
-      ? ordenadas
-          .map((item) => {
-            const pronta = prontasRefs.has(item.unidadeRef);
-            return `
-            <tr data-nav-unidade-ref="${escapeAttr(item.unidadeRef)}"${
+
+    const renderLinha = (item) => {
+      const pronta = prontasRefs.has(item.destinatarioRef);
+      const secundario = item.rotuloSecundario
+        ? `<div class="muted proposicao-card__support">${item.rotuloSecundario}</div>`
+        : "";
+      return `
+            <tr data-nav-destinatario-ref="${escapeAttr(item.destinatarioRef)}"${
               pronta ? ' class="unidade-row--pronta"' : ""
             }>
-              <td><strong>${item.unidade}</strong>${
+              <td><strong>${item.rotulo}</strong>${
                 pronta ? ` ${renderBadge("Pronta", "success")}` : ""
-              }</td>
+              }${secundario}</td>
               <td class="numeric">${item.total}</td>
             </tr>`;
-          })
-          .join("")
-      : `<tr><td colspan="2">${renderEmptyState(
-          textos.emptyUnidades || "Nenhuma unidade nesta correição.",
-        )}</td></tr>`;
+    };
+
+    // Subseções em ordem de prioridade; vazias são ocultadas (decisão de grill).
+    const subsecoes = SECOES_DESTINATARIO.map((secao) => {
+      const itens = ordenar(destinatarios.filter((d) => d.tipoDestinatario === secao.tipo));
+      if (itens.length === 0) return "";
+      return `
+        <div class="fila-destinatarios-secao">
+          <p class="fila-operacional-overline">${secao.titulo} · ${itens.length}</p>
+          <div class="table-wrap">
+            <table class="table table--hover">
+              <thead><tr><th>${secao.coluna}</th><th class="numeric">${contagemLabel}</th></tr></thead>
+              <tbody>${itens.map(renderLinha).join("")}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }).join("");
 
     return `
       <section class="stack">
@@ -229,19 +254,18 @@ export function montarFilaNavegavel(config) {
         </div>
 
         <div class="panel">
-          <h3 class="panel__title">Unidades</h3>
-          <p class="muted">${textos.unidadesHint || "Clique em uma unidade para entrar na fila."}</p>
+          <h3 class="panel__title">Destinatários</h3>
+          <p class="muted">${textos.unidadesHint || "Clique em um destinatário para entrar na fila."}</p>
           ${
-            ordenadas.length
-              ? `<p class="muted"><strong>${totalProntas}</strong> de ${ordenadas.length} unidade(s) pronta(s) para esta etapa.</p>`
+            destinatarios.length
+              ? `<p class="muted"><strong>${totalProntos}</strong> de ${destinatarios.length} destinatário(s) pronto(s) para esta etapa.</p>`
               : ""
           }
-          <div class="table-wrap">
-            <table class="table table--hover">
-              <thead><tr><th>Unidade</th><th class="numeric">${contagemLabel}</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
+          ${
+            destinatarios.length
+              ? subsecoes
+              : renderEmptyState(textos.emptyUnidades || "Nenhum destinatário nesta correição.")
+          }
         </div>
       </section>`;
   };
@@ -340,8 +364,11 @@ export function montarFilaNavegavel(config) {
       prioridade: filtros.prioridade,
       sensivel: filtros.sensivel,
     });
-    if (filtros.unidadeRef) {
-      lista = lista.filter((p) => getUnidadeRef(p) === filtros.unidadeRef);
+    // `unidadeRef` é aceito como alias de `destinatarioRef` (deep-links do dashboard
+    // apontam id:<unidadeId>, que casa com getDestinatarioRef de unidade/adm. superior).
+    const ref = filtros.destinatarioRef || filtros.unidadeRef;
+    if (ref) {
+      lista = lista.filter((p) => getDestinatarioRef(p) === ref);
     } else if (filtros.unidade) {
       lista = lista.filter((p) => p.unidade === filtros.unidade);
     }
@@ -384,10 +411,16 @@ export function montarFilaNavegavel(config) {
           textos.emptyFila || "Nenhuma proposição corresponde aos filtros selecionados.",
         );
 
+    // Rótulo do destinatário selecionado, ciente do tipo (membro / unidade / adm. superior).
+    const dispSel = filtradas[0] ? getDestinatarioDisplay(filtradas[0]) : null;
+    const tipoLabel = dispSel ? Labels.tipoDestinatario[dispSel.tipoDestinatario] : "Destinatário";
+    const temDestinatario = filtros.destinatarioRef || filtros.unidadeRef || filtros.unidade;
     const contexto = [
       filtros.correicaoId ? `Correição: <strong>${filtros.correicaoId}</strong>` : null,
-      filtros.unidadeRef || filtros.unidade
-        ? `Unidade: <strong>${filtradas[0]?.unidade || filtros.unidade || filtros.unidadeRef}</strong>`
+      temDestinatario
+        ? `${tipoLabel}: <strong>${
+            dispSel?.rotulo || filtros.unidade || filtros.destinatarioRef || filtros.unidadeRef
+          }</strong>`
         : null,
     ]
       .filter(Boolean)
@@ -396,7 +429,7 @@ export function montarFilaNavegavel(config) {
       <button class="button button--ghost" type="button" data-action="voltar-overview">Panorama</button>
       ${
         filtros.correicaoId
-          ? `<button class="button button--ghost" type="button" data-action="voltar-correicao">Unidades da correição</button>`
+          ? `<button class="button button--ghost" type="button" data-action="voltar-correicao">Destinatários da correição</button>`
           : ""
       }
       ${config.renderFilaHeaderActions ? config.renderFilaHeaderActions(ctx) : ""}`;
@@ -469,9 +502,12 @@ export function montarFilaNavegavel(config) {
       row.addEventListener("click", () => aplicarFiltros({ correicaoId: correicao }));
     });
 
-    document.querySelectorAll("[data-nav-unidade-ref]").forEach((row) => {
+    document.querySelectorAll("[data-nav-destinatario-ref]").forEach((row) => {
       row.addEventListener("click", () =>
-        aplicarFiltros({ correicaoId: filtros.correicaoId, unidadeRef: row.dataset.navUnidadeRef }),
+        aplicarFiltros({
+          correicaoId: filtros.correicaoId,
+          destinatarioRef: row.dataset.navDestinatarioRef,
+        }),
       );
     });
 
@@ -496,9 +532,10 @@ export function montarFilaNavegavel(config) {
     document.querySelector("[data-action='limpar-filtros']")?.addEventListener("click", () => {
       aplicarFiltros({
         correicaoId: filtros.correicaoId,
+        destinatarioRef: filtros.destinatarioRef,
         unidadeRef: filtros.unidadeRef,
         unidade: filtros.unidade,
-        filaForcada: !filtros.unidadeRef && !filtros.unidade,
+        filaForcada: !filtros.destinatarioRef && !filtros.unidadeRef && !filtros.unidade,
       });
     });
 
@@ -515,6 +552,7 @@ export function montarFilaNavegavel(config) {
       const data = new FormData(event.currentTarget);
       const novos = {
         correicaoId: filtros.correicaoId || "",
+        destinatarioRef: filtros.destinatarioRef || "",
         unidadeRef: filtros.unidadeRef || "",
         unidade: filtros.unidade || "",
         prioridade: data.get("prioridade") || "",

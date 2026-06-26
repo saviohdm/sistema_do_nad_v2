@@ -970,6 +970,15 @@
   text-transform: uppercase;
 }
 
+/* Painel "Destinatários": subseções por tipo (adm. superior › unidades › membros). */
+.fila-destinatarios-secao + .fila-destinatarios-secao {
+  margin-top: var(--space-5);
+}
+.fila-destinatarios-secao > .fila-operacional-overline {
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
 .fila-operacional-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

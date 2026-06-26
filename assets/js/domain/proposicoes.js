@@ -9,6 +9,7 @@ import {
 } from "./enums.js";
 import { buildHistoryEvent, appendHistory } from "./historico.js";
 import { getCorreicaoById, marcarReferendada, hydrateProposicao } from "./correicoes.js";
+import { projetarDestinatario, getTipoDestinatario } from "./destinatario.js";
 
 const PRIORIDADES_VALIDAS = new Set(Object.values(Prioridade));
 const PERSONAS_EDITAR_METADADOS = new Set([
@@ -154,6 +155,7 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     tipoConclusao,
     tipo,
     membro,
+    tipoDestinatario,
     dataInicioDe,
     dataFimAte,
     comDiligenciasAbertas,
@@ -180,6 +182,7 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     if (idsComRascunho && !idsComRascunho.includes(p.id)) return false;
     if (tipo && p.tipo !== tipo) return false;
     if (membro && p.membro !== membro) return false;
+    if (tipoDestinatario && getTipoDestinatario(p) !== tipoDestinatario) return false;
     if (statusList.length > 0 && !statusList.includes(p.statusFluxo)) return false;
     if (situacaoApreciacao) {
       if (situacaoApreciacao === "sem_apreciacao") {
@@ -498,10 +501,7 @@ export const criarProposicao = (
   state,
   {
     tipo,
-    unidadeId,
-    unidade,
-    membroId,
-    membro,
+    destinatario,
     descricao,
     prioridade,
     sensivel,
@@ -515,6 +515,11 @@ export const criarProposicao = (
       "Proposição precisa estar vinculada a uma correição (correicaoId ausente).",
     );
   }
+  if (!destinatario || !destinatario.tipo) {
+    throw new Error(
+      "Proposição precisa de um destinatário (orientação a membro, unidade ou administração superior).",
+    );
+  }
   const numero = `PROP-${String(state.proposicoes.length + 1).padStart(4, "0")}`;
   const correicaoJaReferendada = correicaoEstaReferendada(state, correicaoId);
   const statusInicial = comoRascunho
@@ -523,15 +528,18 @@ export const criarProposicao = (
       ? StatusFluxo.AGUARDANDO_SECRETARIA
       : StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
 
+  // Espelho flat (compat) derivado do agregado, na borda de escrita.
+  const flat = projetarDestinatario(state, { destinatario });
   const novaProposicao = {
     id: `prop-${crypto.randomUUID().slice(0, 8)}`,
     numero,
     correicaoId,
     tipo,
-    unidadeId: unidadeId || null,
-    unidade,
-    membroId: membroId || null,
-    membro: membro || "",
+    destinatario,
+    unidadeId: flat.unidadeId || null,
+    unidade: flat.unidade || "",
+    membroId: flat.membroId || null,
+    membro: flat.membro || "",
     descricao,
     prioridade: PRIORIDADES_VALIDAS.has(prioridade) ? prioridade : Prioridade.NORMAL,
     sensivel: Boolean(sensivel),
@@ -634,13 +642,9 @@ export const editarMetadados = (proposicao, { prioridade, sensivel }, persona) =
   return proposicao;
 };
 
-export const editarProposicao = (proposicao, camposEditaveis) => {
+export const editarProposicao = (proposicao, camposEditaveis, state) => {
   const camposPermitidos = [
     "tipo",
-    "unidadeId",
-    "unidade",
-    "membroId",
-    "membro",
     "descricao",
     "prioridade",
     "sensivel",
@@ -652,6 +656,17 @@ export const editarProposicao = (proposicao, camposEditaveis) => {
       proposicao[campo] = camposEditaveis[campo];
     }
   });
+  // Orientação (agregado destinatario) só é editável na janela rascunho/aguardando
+  // referendo — a página de edição já restringe esse acesso (a orientação trava ao
+  // ativar). Reespelha os campos flat de compat a partir do agregado.
+  if (camposEditaveis.destinatario) {
+    proposicao.destinatario = camposEditaveis.destinatario;
+    const flat = projetarDestinatario(state, proposicao);
+    proposicao.unidadeId = flat.unidadeId || null;
+    proposicao.unidade = flat.unidade || "";
+    proposicao.membroId = flat.membroId || null;
+    proposicao.membro = flat.membro || "";
+  }
   appendHistory(
     proposicao,
     buildHistoryEvent(TipoHistorico.EDICAO, "Corregedor Nacional", {

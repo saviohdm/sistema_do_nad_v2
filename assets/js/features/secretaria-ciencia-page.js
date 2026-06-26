@@ -3,8 +3,8 @@ import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
 import { listFilaAguardandoCiencia } from "../domain/secretaria-filas.js";
 import { cientificarGrupo } from "../domain/ciencia.js";
-import { StatusFluxo } from "../domain/enums.js";
-import { resolveDestinatarioCorreicionado } from "../domain/correicionados.js";
+import { StatusFluxo, TipoDestinatario } from "../domain/enums.js";
+import { resolverUsuariosDestinatarios } from "../domain/destinatario.js";
 import {
   renderBadge,
   renderEmptyState,
@@ -17,9 +17,16 @@ import { closeModal } from "../ui/modal.js";
 import {
   StatusFilaOperacional,
   getGrupoOperacionalKey,
-  getUnidadeRef,
+  getDestinatarioRef,
   listPanoramaFilaPorCorreicao,
 } from "../domain/filas-operacionais.js";
+
+// Seções do agrupamento por destinatário, em ordem de prioridade (vazias ocultas).
+const SECOES_CIENCIA = [
+  { tipo: TipoDestinatario.ADMINISTRACAO_SUPERIOR, titulo: "Administração Superior" },
+  { tipo: TipoDestinatario.UNIDADE, titulo: "Unidades" },
+  { tipo: TipoDestinatario.MEMBRO, titulo: "Membros" },
+];
 
 requireAuth();
 
@@ -54,7 +61,7 @@ const hidratarSelecao = () => {
 hidratarSelecao();
 
 const escapeAttr = (value) => String(value).replace(/"/g, "&quot;");
-const grupoKey = (g) => g.key || getGrupoOperacionalKey(g.correicaoId, g.unidadeRef);
+const grupoKey = (g) => g.key || getGrupoOperacionalKey(g.correicaoId, g.destinatarioRef);
 
 const getFiltrosFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
@@ -158,7 +165,7 @@ const renderOverview = (grupos, currentState) => {
               <td>${item.correicaoId || "—"}</td>
               <td>${item.ramoMP || "—"}</td>
               <td class="numeric">${item.proposicoesAguardando}</td>
-              <td class="numeric">${item.unidadesProntas} / ${item.unidadesTotal}</td>
+              <td class="numeric">${item.destinatariosProntos} / ${item.destinatariosTotal}</td>
             </tr>
           `,
         )
@@ -170,7 +177,7 @@ const renderOverview = (grupos, currentState) => {
       <div class="panel">
         <h3 class="panel__title">Panorama da fila</h3>
         <p class="muted">
-          Grupos (correição × unidade) cujas proposições aguardam ciência ao correicionado.
+          Grupos (correição × destinatário) cujas proposições aguardam ciência ao correicionado.
           A ciência só pode ser efetuada em bloco quando todas as proposições do grupo estão prontas.
         </p>
         <div class="cards-grid">
@@ -186,7 +193,7 @@ const renderOverview = (grupos, currentState) => {
 
       <div class="panel">
         <h3 class="panel__title">Por correição</h3>
-        <p class="muted">Clique em uma correição para abrir suas unidades (grupos) aguardando ciência.</p>
+        <p class="muted">Clique em uma correição para abrir seus destinatários (grupos) aguardando ciência.</p>
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
@@ -194,7 +201,7 @@ const renderOverview = (grupos, currentState) => {
                 <th>Correição</th>
                 <th>Ramo</th>
                 <th class="numeric">Proposições aguardando</th>
-                <th class="numeric">Unidades prontas / total</th>
+                <th class="numeric">Destinatários prontos / total</th>
               </tr>
             </thead>
             <tbody>${correicaoRows}</tbody>
@@ -263,7 +270,7 @@ const renderCardGrupo = (grupo) => {
       );
 
   const checkbox = podeSelecionar
-    ? `<input type="checkbox" data-grupo-checkbox="${escapeAttr(key)}" ${selecionado ? "checked" : ""} aria-label="Selecionar grupo ${grupo.unidade}" />`
+    ? `<input type="checkbox" data-grupo-checkbox="${escapeAttr(key)}" ${selecionado ? "checked" : ""} aria-label="Selecionar grupo ${grupo.rotulo}" />`
     : `<input type="checkbox" disabled aria-label="Grupo parcial não selecionável" />`;
 
   const providenciaLine =
@@ -281,8 +288,8 @@ const renderCardGrupo = (grupo) => {
       <div>
         <div class="proposicao-card__header">
           <div>
-            <div class="proposicao-card__numero">${grupo.unidade || "—"}</div>
-            <div class="proposicao-card__tipo">${grupo.ramoMPNome || grupo.ramoMP || "—"} · Correição ${grupo.correicaoId || "—"}</div>
+            <div class="proposicao-card__numero">${grupo.rotulo || "—"}</div>
+            <div class="proposicao-card__tipo">${grupo.rotuloSecundario ? `${grupo.rotuloSecundario} · ` : ""}${grupo.ramoMPNome || grupo.ramoMP || "—"} · Correição ${grupo.correicaoId || "—"}</div>
           </div>
           <div class="pill-list">${statusBadge}</div>
         </div>
@@ -361,8 +368,18 @@ const renderModoGrupo = (grupos, filtros) => {
   const ocultas = Array.from(selecaoKeys).filter((k) => !filtradosKeys.has(k)).length;
   const selecionaveis = filtrados.filter((g) => g.completo);
 
+  // Cards agrupados nas 3 seções de destinatário (ordem fixa, vazias ocultas).
+  // `filtrados` já vem ordenado (completos primeiro); o filtro por tipo preserva a ordem.
   const cards = filtrados.length
-    ? filtrados.map(renderCardGrupo).join("")
+    ? SECOES_CIENCIA.map((secao) => {
+        const itens = filtrados.filter((g) => g.tipoDestinatario === secao.tipo);
+        if (itens.length === 0) return "";
+        return `
+          <div class="fila-destinatarios-secao">
+            <p class="fila-operacional-overline">${secao.titulo} · ${itens.length}</p>
+            ${itens.map(renderCardGrupo).join("")}
+          </div>`;
+      }).join("")
     : renderFilaEmptyState("Nenhum grupo corresponde aos filtros selecionados.");
 
   const proposicoesSelecionadas = grupos
@@ -459,16 +476,21 @@ const computarDestinatariosDoLote = (currentState, gruposSelecionados) => {
   const proposicoesAlvo = currentState.proposicoes.filter((p) => {
     if (p.statusFluxo !== StatusFluxo.AGUARDANDO_CIENCIA) return false;
     return gruposSelecionados.some(
-      (g) => g.correicaoId === p.correicaoId && g.unidadeRef === getUnidadeRef(p),
+      (g) => g.correicaoId === p.correicaoId && g.destinatarioRef === getDestinatarioRef(p),
     );
   });
   const map = new Map();
   proposicoesAlvo.forEach((p) => {
-    const dest = resolveDestinatarioCorreicionado(currentState, p);
-    const chave = dest?.id || `sem-destinatario:${p.unidadeId || p.unidade}`;
-    const bucket = map.get(chave) || { destinatario: dest, proposicoes: [] };
-    bucket.proposicoes.push(p);
-    map.set(chave, bucket);
+    // Reflete o envio real (enviarEmailsAgregados): adm superior -> todos os
+    // mapeados (multi); unidade vaga -> placeholder por proposição.
+    const { sugeridos } = resolverUsuariosDestinatarios(currentState, p);
+    const destinatarios = sugeridos.length > 0 ? sugeridos : [null];
+    destinatarios.forEach((dest) => {
+      const chave = dest?.id || `sem-destinatario:${p.id}`;
+      const bucket = map.get(chave) || { destinatario: dest, proposicoes: [] };
+      bucket.proposicoes.push(p);
+      map.set(chave, bucket);
+    });
   });
   return Array.from(map.values());
 };
@@ -482,7 +504,7 @@ const abrirModalCiencia = (gruposSelecionados) => {
     .map(
       (g) => `
         <li>
-          <strong>${g.unidade || "—"}</strong> · Correição ${g.correicaoId || "—"} · ${g.prontas} proposição(ões)
+          <strong>${g.rotulo || "—"}</strong> · Correição ${g.correicaoId || "—"} · ${g.prontas} proposição(ões)
           ${g.comProvidencia > 0 ? ` · <em>${g.comProvidencia} gerará(ão) pendência paralela</em>` : ""}
         </li>
       `,
@@ -553,14 +575,14 @@ const abrirModalCiencia = (gruposSelecionados) => {
 const confirmarCienciaEmLote = (gruposSelecionados) => {
   const snapshot = gruposSelecionados.map((g) => ({
     correicaoId: g.correicaoId,
-    unidadeRef: g.unidadeRef,
-    unidade: g.unidade,
+    destinatarioRef: g.destinatarioRef,
+    rotulo: g.rotulo,
     prontas: g.prontas,
   }));
 
   mutateState((draft) => {
-    snapshot.forEach(({ correicaoId, unidadeRef }) => {
-      cientificarGrupo(draft, correicaoId, unidadeRef);
+    snapshot.forEach(({ correicaoId, destinatarioRef }) => {
+      cientificarGrupo(draft, correicaoId, destinatarioRef);
     });
     return draft;
   });
@@ -569,8 +591,8 @@ const confirmarCienciaEmLote = (gruposSelecionados) => {
   persistirSelecao();
   closeModal();
 
-  snapshot.forEach(({ unidade, prontas }) => {
-    showToast(`Ciência registrada para ${prontas} proposição(ões) da unidade ${unidade || "—"}.`);
+  snapshot.forEach(({ rotulo, prontas }) => {
+    showToast(`Ciência registrada para ${prontas} proposição(ões) de ${rotulo || "—"}.`);
   });
 
   render();
@@ -604,7 +626,7 @@ const render = () => {
   if (modo === "overview") {
     content = renderOverview(grupos, currentState);
     subtitle =
-      "Grupos (correição × unidade) com proposições aguardando ciência. A ciência só pode ser efetuada quando o grupo está completo.";
+      "Grupos (correição × destinatário) com proposições aguardando ciência. A ciência só pode ser efetuada quando o grupo está completo.";
   } else {
     content = renderModoGrupo(grupos, filtros);
     subtitle =

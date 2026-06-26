@@ -12,8 +12,8 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `criar_diligencia
 - Existe ao menos uma proposição com `statusFluxo = AGUARDANDO_SECRETARIA` (recém-referendada pela CN ou retornada via decisão `necessita mais informações`).
 
 ## Fluxo principal
-1. Acessa **Aguardando diligência** → vê panorama (total, novas, retornadas) e tabela por correição com `Proposições aguardando` e `Unidades prontas / total`.
-2. Entra em Modo Fila (clique em correição/ramo ou "Ver todas").
+1. Acessa **Aguardando diligência** → vê panorama (total, novas, retornadas) e tabela por correição com `Proposições aguardando` e `Destinatários prontos / total`.
+2. Entra numa correição → painel **Destinatários** subdividido em 3 seções na ordem **Administração Superior › Unidades › Membros** (seções vazias ocultas); clica num destinatário para entrar na fila, ou "Ver todas".
 3. Aplica filtros (prioridade, temática, UF, correição, membro, sub-status, busca).
 4. Marca **"Selecionar todos os N visíveis"** (seleção é cumulativa entre filtros).
 5. Preenche prazo (≥ hoje) e descrição únicos para o lote.
@@ -33,8 +33,8 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `criar_diligencia
 - Diligências em lote compartilham `loteId`.
 - Prazo não pode ser anterior à data atual.
 - Ciência ao correicionado é fluxo separado (`secretaria-ciencia.html`).
-- Grupos usam `(correicaoId, unidadeId)`; registros legados sem `unidadeId` usam temporariamente o nome da unidade.
-- Uma unidade está pronta quando todas as suas proposições com fluxo principal aberto estão em `AGUARDANDO_SECRETARIA`. Proposições em `BAIXA_DEFINITIVA` saem integralmente do cálculo.
+- Grupos usam `(correicaoId, destinatarioRef)` via `getDestinatarioRef`: membro→`membro:<membroId>` (segue a pessoa, não a unidade de origem); unidade e administração superior→`id:<unidadeId>`. A seção exibida vem de `getTipoDestinatario`. Deep-links legados com `unidadeRef=id:...` continuam aceitos como alias.
+- Um destinatário está pronto quando todas as suas proposições com fluxo principal aberto estão em `AGUARDANDO_SECRETARIA`. Proposições em `BAIXA_DEFINITIVA` saem integralmente do cálculo.
 
 ## Pós-condições
 - Cada proposição selecionada migra para `AGUARDANDO_COMPROVACAO` com diligência aberta.

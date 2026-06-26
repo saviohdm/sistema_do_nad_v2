@@ -2,7 +2,7 @@ import { requireAuth, hasPermission } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
 import { queryParam, formatDate } from "../app/utils.js";
-import { Prioridade, StatusFluxo } from "../domain/enums.js";
+import { Labels, Prioridade, StatusFluxo, TipoDestinatario } from "../domain/enums.js";
 import {
   confirmarRascunhoCN,
   criarProposicao,
@@ -11,6 +11,13 @@ import {
 } from "../domain/proposicoes.js";
 import { listCorreicoes } from "../domain/correicoes.js";
 import { listMembros, listUnidades } from "../domain/correicionados.js";
+import {
+  criarDestinatarioMembro,
+  criarDestinatarioUnidade,
+  criarDestinatarioAdmSuperior,
+  listAdmSuperiores,
+  getDestinatario,
+} from "../domain/destinatario.js";
 import { renderAlert } from "../ui/components.js";
 
 requireAuth();
@@ -107,6 +114,33 @@ if (!membroSelecionado && valor("membro")) membroSelecionado = LEGADO_VALUE;
 const getMembrosDisponiveis = () =>
   membrosDiretorio.filter((membro) => membro.lotacaoUnidadeId === unidadeSelecionada);
 
+// --- Orientação do destinatário (membro XOR unidade XOR administração superior) ---
+const admSuperioresDiretorio = listAdmSuperiores(state());
+const destinatarioExistente = proposicaoParaEditar ? getDestinatario(proposicaoParaEditar) : null;
+let orientacaoSelecionada = destinatarioExistente?.tipo || TipoDestinatario.MEMBRO;
+let admSuperiorSelecionada = "";
+if (destinatarioExistente?.tipo === TipoDestinatario.ADMINISTRACAO_SUPERIOR) {
+  const ref = destinatarioExistente.administracaoSuperior || {};
+  admSuperiorSelecionada =
+    admSuperioresDiretorio.find((a) => a.ramoMP === ref.ramoMP && a.tipo === ref.tipo)?.id || "";
+}
+
+const getAdmSuperioresDisponiveis = () => {
+  const ramoMP = correicoesById.get(correicaoSelecionadaId)?.ramoMP;
+  if (!ramoMP) return [];
+  return admSuperioresDiretorio.filter((a) => a.ramoMP === ramoMP);
+};
+
+const renderAdmSuperioresOptions = () => {
+  const options = getAdmSuperioresDisponiveis()
+    .map(
+      (a) =>
+        `<option value="${escapeAttr(a.id)}"${admSuperiorSelecionada === a.id ? " selected" : ""}>${escapeHtml(a.nome)} — ${escapeHtml(Labels.tipoAdmSuperior?.[a.tipo] || a.tipo)}</option>`,
+    )
+    .join("");
+  return `<option value="">Selecione uma administração superior…</option>${options}`;
+};
+
 const renderUnidadesOptions = () => {
   const legado =
     isEdicao && unidadeSelecionada === LEGADO_VALUE
@@ -132,7 +166,7 @@ const renderMembrosOptions = () => {
         `<option value="${escapeAttr(membro.id)}"${membroSelecionado === membro.id ? " selected" : ""}>${escapeHtml(membro.nome)}</option>`,
     )
     .join("");
-  return `<option value="">Proposição da unidade</option>${legado}${options}`;
+  return `<option value="">Selecione um membro…</option>${legado}${options}`;
 };
 
 const renderPreview = (c) => {
@@ -240,19 +274,37 @@ const render = () => {
         </div>
 
         <div class="field">
-          <label for="unidadeId">Unidade *</label>
-          <select id="unidadeId" name="unidadeId" required>
-            ${renderUnidadesOptions()}
-          </select>
-          <p class="muted modal-helper">Somente unidades do mesmo ramo da correição selecionada.</p>
+          <label>Orientação do destinatário *</label>
+          <div class="button-row" role="radiogroup" id="orientacao-group" style="gap: var(--space-4);">
+            <label><input type="radio" name="orientacao" value="${TipoDestinatario.MEMBRO}" ${orientacaoSelecionada === TipoDestinatario.MEMBRO ? "checked" : ""} /> Membro</label>
+            <label><input type="radio" name="orientacao" value="${TipoDestinatario.UNIDADE}" ${orientacaoSelecionada === TipoDestinatario.UNIDADE ? "checked" : ""} /> Unidade</label>
+            <label><input type="radio" name="orientacao" value="${TipoDestinatario.ADMINISTRACAO_SUPERIOR}" ${orientacaoSelecionada === TipoDestinatario.ADMINISTRACAO_SUPERIOR ? "checked" : ""} /> Administração Superior</label>
+          </div>
+          <p class="muted modal-helper">Define o que a proposição acompanha quando lotações mudam. A orientação é fixada quando a proposição é ativada (após referendo/encaminhamento).</p>
         </div>
 
-        <div class="field">
-          <label for="membroId">Membro</label>
+        <div class="field" id="campo-unidade">
+          <label for="unidadeId">Unidade *</label>
+          <select id="unidadeId" name="unidadeId">
+            ${renderUnidadesOptions()}
+          </select>
+          <p class="muted modal-helper" id="unidade-helper">Somente unidades do mesmo ramo da correição selecionada.</p>
+        </div>
+
+        <div class="field" id="campo-membro">
+          <label for="membroId">Membro *</label>
           <select id="membroId" name="membroId">
             ${renderMembrosOptions()}
           </select>
-          <p class="muted modal-helper">Opcional. Selecione um membro lotado na unidade ou mantenha a proposição vinculada à unidade.</p>
+          <p class="muted modal-helper">Selecione o membro lotado na unidade. A unidade acima fica registrada como lotação de origem (histórico).</p>
+        </div>
+
+        <div class="field" id="campo-admsup">
+          <label for="admSuperiorId">Administração Superior *</label>
+          <select id="admSuperiorId" name="admSuperiorId">
+            ${renderAdmSuperioresOptions()}
+          </select>
+          <p class="muted modal-helper">Em regra PGJ ou CGJ do ramo da correição. Os usuários que respondem são parametrizados no sistema.</p>
         </div>
 
         <div class="field">
@@ -306,11 +358,43 @@ const render = () => {
   const selectCorreicao = document.querySelector("#correicaoId");
   const selectUnidade = document.querySelector("#unidadeId");
   const selectMembro = document.querySelector("#membroId");
+  const selectAdmsup = document.querySelector("#admSuperiorId");
 
   const atualizarSeletoresDiretorio = () => {
     if (selectUnidade) selectUnidade.innerHTML = renderUnidadesOptions();
     if (selectMembro) selectMembro.innerHTML = renderMembrosOptions();
+    if (selectAdmsup) selectAdmsup.innerHTML = renderAdmSuperioresOptions();
   };
+
+  // Mostra/oculta os campos conforme a orientação (membro/unidade/adm superior).
+  const aplicarVisibilidadeOrientacao = () => {
+    const isMembro = orientacaoSelecionada === TipoDestinatario.MEMBRO;
+    const isAdm = orientacaoSelecionada === TipoDestinatario.ADMINISTRACAO_SUPERIOR;
+    const campoUnidade = document.querySelector("#campo-unidade");
+    const campoMembro = document.querySelector("#campo-membro");
+    const campoAdmsup = document.querySelector("#campo-admsup");
+    const unidadeHelper = document.querySelector("#unidade-helper");
+    if (campoUnidade) campoUnidade.style.display = isAdm ? "none" : "";
+    if (campoMembro) campoMembro.style.display = isMembro ? "" : "none";
+    if (campoAdmsup) campoAdmsup.style.display = isAdm ? "" : "none";
+    if (unidadeHelper) {
+      unidadeHelper.textContent = isMembro
+        ? "Unidade de lotação de origem do membro (fica registrada como histórico)."
+        : "Unidade alvo da proposição (somente do ramo da correição).";
+    }
+  };
+  aplicarVisibilidadeOrientacao();
+
+  document.querySelectorAll("input[name='orientacao']").forEach((radio) => {
+    radio.addEventListener("change", (e) => {
+      orientacaoSelecionada = e.target.value;
+      aplicarVisibilidadeOrientacao();
+    });
+  });
+
+  selectAdmsup?.addEventListener("change", (e) => {
+    admSuperiorSelecionada = e.target.value;
+  });
 
   if (selectCorreicao) {
     selectCorreicao.addEventListener("change", (e) => {
@@ -346,32 +430,44 @@ const render = () => {
     const action = submitter?.value || (isEdicao ? "editar" : "rascunho");
 
     const data = new FormData(e.currentTarget);
-    const unidadeValue = data.get("unidadeId");
-    const unidadeDiretorio = unidadesById.get(unidadeValue);
-    const membroValue = data.get("membroId");
-    const membroDiretorio = membrosById.get(membroValue);
-    const mantendoUnidadeLegada = unidadeValue === LEGADO_VALUE && isEdicao;
-    const mantendoMembroLegado = membroValue === LEGADO_VALUE && isEdicao;
+    const orientacao = data.get("orientacao") || orientacaoSelecionada;
 
-    if (!unidadeDiretorio && !mantendoUnidadeLegada) {
-      alert("Selecione uma unidade vinculada ao ramo da correição.");
-      return;
-    }
-    if (
-      membroDiretorio &&
-      unidadeDiretorio &&
-      membroDiretorio.lotacaoUnidadeId !== unidadeDiretorio.id
-    ) {
-      alert("Selecione um membro lotado na unidade escolhida.");
-      return;
+    let destinatario = null;
+    if (orientacao === TipoDestinatario.ADMINISTRACAO_SUPERIOR) {
+      const adm = admSuperioresDiretorio.find((a) => a.id === data.get("admSuperiorId"));
+      if (!adm) {
+        alert("Selecione uma administração superior do ramo da correição.");
+        return;
+      }
+      destinatario = criarDestinatarioAdmSuperior(adm.ramoMP, adm.tipo);
+    } else {
+      const unidadeDiretorio = unidadesById.get(data.get("unidadeId"));
+      if (!unidadeDiretorio) {
+        alert("Selecione uma unidade vinculada ao ramo da correição.");
+        return;
+      }
+      if (orientacao === TipoDestinatario.MEMBRO) {
+        const membroDiretorio = membrosById.get(data.get("membroId"));
+        if (!membroDiretorio) {
+          alert("Selecione o membro destinatário (lotado na unidade).");
+          return;
+        }
+        if (membroDiretorio.lotacaoUnidadeId !== unidadeDiretorio.id) {
+          alert("Selecione um membro lotado na unidade escolhida.");
+          return;
+        }
+        destinatario = criarDestinatarioMembro(membroDiretorio.id, {
+          unidadeId: unidadeDiretorio.id,
+          unidade: unidadeDiretorio.nome,
+        });
+      } else {
+        destinatario = criarDestinatarioUnidade(unidadeDiretorio.id);
+      }
     }
 
     const dados = {
       tipo: data.get("tipo"),
-      unidadeId: unidadeDiretorio?.id || null,
-      unidade: unidadeDiretorio?.nome || valor("unidade"),
-      membroId: membroDiretorio?.id || null,
-      membro: membroDiretorio?.nome || (mantendoMembroLegado ? valor("membro") : ""),
+      destinatario,
       descricao: data.get("descricao"),
       prioridade: data.get("prioridade"),
       sensivel: data.get("sensivel") === "on",
@@ -389,7 +485,7 @@ const render = () => {
       mutateState((draft) => {
         const item = draft.proposicoes.find((entry) => entry.id === proposicaoParaEditar.id);
         if (item) {
-          editarProposicao(item, dados);
+          editarProposicao(item, dados, draft);
           if (confirmar) confirmarRascunhoCN(draft, item);
         }
         return draft;

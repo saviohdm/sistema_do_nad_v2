@@ -73,7 +73,7 @@ export const listGruposAguardandoDiligencia = (state) => {
         const db = b.prontoEm || "";
         if (da !== db) return da.localeCompare(db);
       }
-      return (a.unidade || "").localeCompare(b.unidade || "");
+      return (a.rotulo || a.unidade || "").localeCompare(b.rotulo || b.unidade || "");
     });
 };
 
@@ -102,7 +102,7 @@ export const listGruposParciaisSecretaria = (state) => {
     .filter((grupo) => grupo.prontas > 0 && grupo.pendentes > 0)
     .sort((a, b) => {
       if (b.percentual !== a.percentual) return b.percentual - a.percentual;
-      return (a.unidade || "").localeCompare(b.unidade || "");
+      return (a.rotulo || a.unidade || "").localeCompare(b.rotulo || b.unidade || "");
     });
 };
 
@@ -159,7 +159,7 @@ export const listFilaAguardandoCiencia = (state) => {
         const db = b.prontoEm || "";
         if (db !== da) return db.localeCompare(da);
       }
-      return (a.unidade || "").localeCompare(b.unidade || "");
+      return (a.rotulo || a.unidade || "").localeCompare(b.rotulo || b.unidade || "");
     });
 };
 

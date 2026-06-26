@@ -1,5 +1,6 @@
-import { StatusFluxo } from "./enums.js";
+import { StatusFluxo, TipoDestinatario } from "./enums.js";
 import { listProposicoes } from "./proposicoes.js";
+import { getDestinatario, getTipoDestinatario } from "./destinatario.js";
 
 export const StatusFilaOperacional = {
   REFERENDO: [StatusFluxo.RASCUNHO_CN, StatusFluxo.AGUARDANDO_REFERENDO_CNMP],
@@ -17,11 +18,42 @@ export const getUnidadeRef = (proposicao) =>
     ? `id:${proposicao.unidadeId}`
     : `legado:${proposicao.unidade || "sem-unidade"}`;
 
-export const getGrupoOperacionalKey = (correicaoId, unidadeRef) =>
-  `${correicaoId || "sem-correicao"}::${unidadeRef || "legado:sem-unidade"}`;
+// Ref de agrupamento por DESTINATÁRIO (orientação da proposição), que define a
+// quem ela "segue". Só o membro muda de ref — ele segue a pessoa, não a unidade
+// de origem; unidade e administração superior mantêm o ref de unidade (= id:...).
+export const getDestinatarioRef = (proposicao) => {
+  if (getTipoDestinatario(proposicao) === TipoDestinatario.MEMBRO) {
+    const { membroId } = getDestinatario(proposicao);
+    return `membro:${membroId || proposicao.membroId || "sem-membro"}`;
+  }
+  return getUnidadeRef(proposicao);
+};
+
+// Campos de exibição do destinatário, derivados dos campos flat já hidratados
+// (sem precisar de state). Usados para seccionar/rotular/ordenar as filas.
+export const getDestinatarioDisplay = (proposicao) => {
+  const tipoDestinatario = getTipoDestinatario(proposicao);
+  if (tipoDestinatario === TipoDestinatario.MEMBRO) {
+    return {
+      tipoDestinatario,
+      rotulo: proposicao.membro || "Membro",
+      rotuloSecundario: proposicao.unidade || "", // unidade de origem (snapshot)
+    };
+  }
+  // Unidade e administração superior: o flat `unidade` já traz o nome correto
+  // (nome da unidade ou nome da adm. superior, via projetarDestinatario).
+  return {
+    tipoDestinatario,
+    rotulo: proposicao.unidade || "—",
+    rotuloSecundario: "",
+  };
+};
+
+export const getGrupoOperacionalKey = (correicaoId, destinatarioRef) =>
+  `${correicaoId || "sem-correicao"}::${destinatarioRef || "legado:sem-unidade"}`;
 
 export const getGrupoOperacionalKeyDaProposicao = (proposicao) =>
-  getGrupoOperacionalKey(proposicao.correicaoId, getUnidadeRef(proposicao));
+  getGrupoOperacionalKey(proposicao.correicaoId, getDestinatarioRef(proposicao));
 
 const getCorreicaoRef = (proposicao) =>
   proposicao.correicaoId ||
@@ -32,36 +64,49 @@ const getCorreicao = (state, correicaoId) =>
 
 const getGrupoBase = (state, proposicao) => {
   const correicao = getCorreicao(state, proposicao.correicaoId);
-  const unidadeRef = getUnidadeRef(proposicao);
+  const destinatarioRef = getDestinatarioRef(proposicao);
+  const display = getDestinatarioDisplay(proposicao);
   return {
-    key: getGrupoOperacionalKey(proposicao.correicaoId, unidadeRef),
+    key: getGrupoOperacionalKey(proposicao.correicaoId, destinatarioRef),
     correicaoId: proposicao.correicaoId,
+    destinatarioRef,
+    unidadeRef: destinatarioRef, // alias de compat (deep-links do dashboard, ciência)
     unidadeId: proposicao.unidadeId || null,
-    unidadeRef,
     unidade: proposicao.unidade,
+    tipoDestinatario: display.tipoDestinatario,
+    rotulo: display.rotulo,
+    rotuloSecundario: display.rotuloSecundario,
     ramoMP: correicao?.ramoMP || proposicao.ramoMP,
     ramoMPNome: correicao?.ramoMPNome || proposicao.ramoMPNome,
     proposicoes: [],
   };
 };
 
+// Agrupa proposições por DESTINATÁRIO (membro / unidade / adm. superior) dentro
+// de uma correição. Stateless: lê os campos flat já hidratados. O consumidor
+// secciona por `tipoDestinatario` e rotula por `rotulo`/`rotuloSecundario`.
 export const groupProposicoesPorUnidadeOperacional = (proposicoes) => {
   const grupos = new Map();
   proposicoes.forEach((proposicao) => {
-    const unidadeRef = getUnidadeRef(proposicao);
+    const destinatarioRef = getDestinatarioRef(proposicao);
+    const display = getDestinatarioDisplay(proposicao);
     const entry =
-      grupos.get(unidadeRef) || {
-        key: unidadeRef,
+      grupos.get(destinatarioRef) || {
+        key: destinatarioRef,
+        destinatarioRef,
+        unidadeRef: destinatarioRef, // alias de compat
         unidadeId: proposicao.unidadeId || null,
-        unidadeRef,
         unidade: proposicao.unidade,
+        tipoDestinatario: display.tipoDestinatario,
+        rotulo: display.rotulo,
+        rotuloSecundario: display.rotuloSecundario,
         total: 0,
       };
     entry.total += 1;
-    grupos.set(unidadeRef, entry);
+    grupos.set(destinatarioRef, entry);
   });
   return Array.from(grupos.values()).sort((a, b) =>
-    (a.unidade || "").localeCompare(b.unidade || ""),
+    (a.rotulo || "").localeCompare(b.rotulo || ""),
   );
 };
 
@@ -101,13 +146,13 @@ export const listGruposOperacionaisDaFila = (state, statusFila) => {
 export const listPanoramaFilaPorCorreicao = (state, statusFila) => {
   const gruposAbertos = listGruposAbertosPorUnidade(state);
   const gruposFila = listGruposOperacionaisDaFila(state, statusFila);
-  const unidadesTotalPorCorreicao = new Map();
+  const destinatariosTotalPorCorreicao = new Map();
 
   gruposAbertos.forEach((grupo) => {
     const correicaoRef = getCorreicaoRef(grupo);
-    unidadesTotalPorCorreicao.set(
+    destinatariosTotalPorCorreicao.set(
       correicaoRef,
-      (unidadesTotalPorCorreicao.get(correicaoRef) || 0) + 1,
+      (destinatariosTotalPorCorreicao.get(correicaoRef) || 0) + 1,
     );
   });
 
@@ -121,11 +166,11 @@ export const listPanoramaFilaPorCorreicao = (state, statusFila) => {
         ramoMP: grupo.ramoMP,
         ramoMPNome: grupo.ramoMPNome,
         proposicoesAguardando: 0,
-        unidadesProntas: 0,
-        unidadesTotal: unidadesTotalPorCorreicao.get(correicaoRef) || 0,
+        destinatariosProntos: 0,
+        destinatariosTotal: destinatariosTotalPorCorreicao.get(correicaoRef) || 0,
       };
     entry.proposicoesAguardando += grupo.prontas;
-    if (grupo.completo) entry.unidadesProntas += 1;
+    if (grupo.completo) entry.destinatariosProntos += 1;
     correicoes.set(correicaoRef, entry);
   });
 

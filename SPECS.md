@@ -15,12 +15,20 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 
 ## Diretório CNMP e identidade do correicionado
 
-- O sistema mantém um diretório de membros (`state.diretorioCnmp.membros`) e unidades (`state.diretorioCnmp.unidades`).
+- O sistema mantém um diretório de membros (`state.diretorioCnmp.membros`), unidades (`state.diretorioCnmp.unidades`) e administrações superiores (`state.diretorioCnmp.administracoesSuperiores`). No protótipo, o diretório faz de *stand-in* do **Banco de Cadastro de Membros e Unidades do CNMP** (serviço externo).
 - Cada membro tem `id`, `nome`, `cpf`, `email`, `cargo`, `lotacaoUnidadeId` e `chefiaDeUnidadeIds[]`.
-- Cada proposição carrega `unidadeId` (obrigatório) e `membroId` (opcional, `null` quando a proposição é "da unidade").
-- **Regra de visibilidade Modelo C**: o correicionado logado vê uma proposição quando
-  `proposicao.membroId === user.id` **OU** `proposicao.unidadeId` está em `user.chefiaDeUnidadeIds`.
+- Cada proposição carrega o agregado **`destinatario`** (orientação a membro, unidade ou administração superior — ver seção "Destinatário"). Os campos achatados `unidadeId/unidade/membroId/membro` são mantidos como **espelho denormalizado** derivado do agregado, na borda de escrita/leitura, para compatibilidade com filtros e agrupamentos.
+- **Regra de visibilidade (híbrida, substitui o Modelo C)**: o correicionado logado vê uma proposição quando é a **audiência da orientação resolvida ao vivo** (membro → o próprio membro; unidade → responsável atual da unidade no cadastro; administração superior → qualquer usuário parametrizado) **OU** já foi **recebedor concreto** de alguma diligência/ciência da proposição. Comprovar uma diligência *aberta* segue restrito ao destinatário dela. Implementado em `proposicaoVisivelPara(state, proposicao, user)` e `usuarioFoiNotificado`.
 - Em produção, o login é via SSO do CNMP; no protótipo, simulado por um seletor de membro na tela de login.
+
+## Destinatário (orientação da proposição)
+
+- O agregado `proposicao.destinatario` informa **a quem a proposição se destina** e, principalmente, **o que ela acompanha** quando lotações mudam (membros são promovidos/removidos). Tem a forma `{ tipo, membroId?, unidadeOrigemSnapshot?, unidadeId?, administracaoSuperior? }`, com `tipo ∈ {membro, unidade, administracao_superior}` e **apenas o alvo do tipo preenchido** (exatamente uma orientação).
+- **Imutável após ativação**: a orientação é definida na criação (migração do SCI ou criação manual) e só pode ser corrigida enquanto a proposição está em `rascunho_cn`/`aguardando_referendo_cnmp`. Ao ser encaminhada à Secretaria, trava de vez (corrigir = apagar e recriar).
+- **Orientação a membro**: o destinatário é o próprio membro, que a proposição acompanha mesmo se ele mudar de unidade. A **unidade de origem** (lotação no momento da originação) é congelada em `unidadeOrigemSnapshot` — apenas informativa/histórica, fora da orientação (o cadastro só conhece o estado atual).
+- **Orientação a unidade**: a proposição acompanha a unidade. No momento de **cada diligência/ciência**, o sistema busca no cadastro CNMP o **responsável atual** e dá à Secretaria a oportunidade de **confirmar ou trocar** o destinatário (válvula universal). Se a unidade estiver **vaga** (sem responsável no cadastro), o envio é **bloqueado** até escolha manual.
+- **Orientação a administração superior**: identidade `{ ramoMP, tipo }` (em regra `PGJ`/`CGJ` por ramo). O catálogo e o mapeamento `(ramoMP, tipo) → usuário(s)` são **parametrizados no NAD** (tela `administracao-superior`). A comunicação vai a **todos os usuários mapeados** (uma entrada de `caixaDeSaida` por usuário).
+- **Resolução da pessoa de carne e osso** é por comunicação (snapshot): `resolverUsuariosDestinatarios(state, proposicao)` devolve `{ tipo, sugeridos[], candidatos[], vago }`. A escolha efetiva é gravada na diligência/ciência e na `caixaDeSaida`; a orientação nunca muda. O acesso a essas regras é isolado em `assets/js/domain/destinatario.js`.
 
 ## Comprovação pelo correicionado
 
@@ -43,9 +51,9 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 - Ações da Secretaria que comunicam o correicionado disparam um e-mail simulado:
   - `criar diligência` → evento `email_diligencia_enviado` + entrada em `state.caixaDeSaida[]` do tipo `diligencia`.
   - `cientificar` → evento `email_ciencia_enviado` em cada proposição cientificada + entrada em `state.caixaDeSaida[]` do tipo `ciencia` (agregada por destinatário).
-- Estrutura da caixa de saída: `{id, tipo, destinatarioId, destinatarioNome, destinatarioEmail, proposicaoIds[], assunto, corpoResumo, linkAcesso, enviadoEm, enviadoPor}`.
+- Estrutura da caixa de saída: `{id, tipo, usuarioNotificadoId, usuarioNotificadoNome, usuarioNotificadoEmail, override, proposicaoIds[], assunto, corpoResumo, linkAcesso, enviadoEm, enviadoPor}`. O termo **`usuarioNotificado`** designa o **recebedor concreto** (pessoa de carne e osso) da comunicação — distinto do agregado `destinatario` da proposição (a orientação). `override = true` quando a Secretaria definiu o destinatário manualmente.
 - A página "Caixa de saída (demo)" é acessível apenas a Secretaria e Corregedor.
-- O destinatário de cada e-mail é resolvido por `resolveDestinatarioCorreicionado`: `proposicao.membroId` (se houver), senão o primeiro chefe da `proposicao.unidadeId` encontrado no diretório.
+- O recebedor de cada e-mail é **resolvido por comunicação** a partir da orientação (`resolverUsuariosDestinatarios`): membro → o próprio membro; unidade → responsável atual da unidade (a Secretaria confirma/troca); administração superior → **todos** os usuários parametrizados (uma entrada por usuário). Unidade/adm superior **vaga** bloqueia o envio até definição manual.
 
 ## Ciência e visualização pelo correicionado
 
@@ -83,11 +91,12 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 
 #### Panorama operacional por correição
 
-- As cinco bandejas `Por correição` (`aguardando referendo`, `aguardando diligência`, `avaliação`, `decisão` e `aguardando ciência`) exibem `Proposições aguardando` e `Unidades prontas / total`.
+- As cinco bandejas `Por correição` (`aguardando referendo`, `aguardando diligência`, `avaliação`, `decisão` e `aguardando ciência`) exibem `Proposições aguardando` e `Destinatários prontos / total`.
+- Ao entrar numa correição, a lista de destinatários é subdividida em três seções, na ordem de prioridade **Administração Superior › Unidades › Membros** (seções vazias são ocultadas). A seção vem de `getTipoDestinatario`.
 - Para esses indicadores, o fluxo principal está aberto enquanto `statusFluxo !== baixa_definitiva`. Proposições cientificadas ou apagadas não entram no numerador, no denominador nem bloqueiam a prontidão, mesmo se ainda houver providência paralela pendente.
-- A unidade operacional é identificada por `(correicaoId × unidadeId)`. Dados legados sem `unidadeId` usam temporariamente o nome da unidade como fallback.
+- A unidade operacional é o **destinatário**, identificado por `(correicaoId × destinatarioRef)` via `getDestinatarioRef`: orientação a membro usa `membro:<membroId>` (acompanha a pessoa, não a unidade de origem); unidade e administração superior usam `id:<unidadeId>`. Deep-links legados com `unidadeRef=id:...` continuam aceitos como alias.
 - `Proposições aguardando` contabiliza as proposições abertas presentes na bandeja. Rascunhos da persona contam como presentes em `aguardando referendo` (`rascunho_cn`) e `decisão` (`rascunho_decisao_cn`).
-- `Unidades prontas / total` compara: (a) unidades cujas proposições abertas estão todas na bandeja; e (b) todas as unidades da correição que possuem ao menos uma proposição com fluxo principal aberto.
+- `Destinatários prontos / total` compara: (a) destinatários cujas proposições abertas estão todas na bandeja; e (b) todos os destinatários da correição que possuem ao menos uma proposição com fluxo principal aberto.
 - Os indicadores são informativos. Apenas a ciência exige grupo completo por regra de negócio.
 
 ### 2. Diligência e comprovação
@@ -255,6 +264,14 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   "numero": "PROP-2024-0001",
   "correicaoId": "ObjectId",
   "tipo": "Determinação",
+  "destinatario": {
+    "tipo": "membro",                       // "membro" | "unidade" | "administracao_superior" (apenas um alvo)
+    "membroId": "ObjectId",                 // tipo === "membro"
+    "unidadeOrigemSnapshot": { "unidadeId": "ObjectId", "unidade": "..." }, // só p/ membro: lotação congelada na origem
+    "unidadeId": "ObjectId",                // tipo === "unidade"
+    "administracaoSuperior": { "ramoMP": "MPBA", "tipo": "PGJ" } // tipo === "administracao_superior"
+  },
+  // Espelho denormalizado do agregado (compat com filtros/agrupamentos):
   "unidadeId": "ObjectId",
   "unidade": "Procuradoria-Geral de Justiça",
   "membroId": "ObjectId|null",

@@ -1,13 +1,16 @@
 import { seedState } from "../../data/seed.js";
 import { expirarDiligenciasVencidas } from "../domain/diligencias.js";
+import { normalizarProposicoesDestinatario } from "../domain/destinatario.js";
 
-const STORAGE_KEY = "nad-sistema-state-v3";
+const STORAGE_KEY = "nad-sistema-state-v4";
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 let expirationDoneThisPageLoad = false;
 
 const aplicarExpiracaoLazy = (state) => {
+  // Materializa o agregado Destinatário em proposições legadas (idempotente).
+  normalizarProposicoesDestinatario(state);
   if (expirationDoneThisPageLoad) return state;
   expirationDoneThisPageLoad = true;
   const afetadas = expirarDiligenciasVencidas(state);

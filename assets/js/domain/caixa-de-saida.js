@@ -29,21 +29,23 @@ const buildCorpoCiencia = (proposicoes) =>
 
 const proximoId = (state) => uid("cx");
 
-export const previewEmailDiligencia = (proposicao, diligencia, destinatario) => ({
-  destinatarioId: destinatario?.id || null,
-  destinatarioNome: destinatario?.nome || "(sem cadastro no diretório CNMP)",
-  destinatarioEmail: destinatario?.email || "(sem e-mail no cadastro)",
+// `usuarioNotificado` é a pessoa de carne e osso RESOLVIDA para esta comunicação
+// (não confundir com o agregado `destinatario` da proposição, que é a orientação).
+export const previewEmailDiligencia = (proposicao, diligencia, usuarioNotificado) => ({
+  usuarioNotificadoId: usuarioNotificado?.id || null,
+  usuarioNotificadoNome: usuarioNotificado?.nome || "(sem cadastro no diretório CNMP)",
+  usuarioNotificadoEmail: usuarioNotificado?.email || "(sem e-mail no cadastro)",
   assunto: buildAssuntoDiligencia(proposicao),
   corpoResumo: buildCorpoDiligencia(proposicao, diligencia),
   linkAcesso: "/pages/correicionado-comprovacoes.html",
 });
 
-export const previewEmailCiencia = (proposicoes, destinatario) => {
+export const previewEmailCiencia = (proposicoes, usuarioNotificado) => {
   const numeros = proposicoes.map((p) => p.numero);
   return {
-    destinatarioId: destinatario?.id || null,
-    destinatarioNome: destinatario?.nome || "(sem cadastro no diretório CNMP)",
-    destinatarioEmail: destinatario?.email || "(sem e-mail no cadastro)",
+    usuarioNotificadoId: usuarioNotificado?.id || null,
+    usuarioNotificadoNome: usuarioNotificado?.nome || "(sem cadastro no diretório CNMP)",
+    usuarioNotificadoEmail: usuarioNotificado?.email || "(sem e-mail no cadastro)",
     assunto: buildAssuntoCiencia(numeros),
     corpoResumo: buildCorpoCiencia(proposicoes),
     linkAcesso: "/pages/correicionado-ciencias.html",
@@ -54,18 +56,20 @@ export const adicionarEmailDiligencia = (
   state,
   proposicao,
   diligencia,
-  destinatario,
+  usuarioNotificado,
   enviadoPor = "Secretaria Processual da CN",
+  { override = false, motivoOverride = null } = {},
 ) => {
   if (!state.caixaDeSaida) state.caixaDeSaida = [];
   const id = proximoId(state);
-  const preview = previewEmailDiligencia(proposicao, diligencia, destinatario);
+  const preview = previewEmailDiligencia(proposicao, diligencia, usuarioNotificado);
   const entry = {
     id,
     tipo: TipoCaixaSaida.DILIGENCIA,
-    destinatarioId: preview.destinatarioId,
-    destinatarioNome: preview.destinatarioNome,
-    destinatarioEmail: preview.destinatarioEmail,
+    usuarioNotificadoId: preview.usuarioNotificadoId,
+    usuarioNotificadoNome: preview.usuarioNotificadoNome,
+    usuarioNotificadoEmail: preview.usuarioNotificadoEmail,
+    override,
     proposicaoIds: [proposicao.id],
     assunto: preview.assunto,
     corpoResumo: preview.corpoResumo,
@@ -75,12 +79,15 @@ export const adicionarEmailDiligencia = (
   };
   state.caixaDeSaida.push(entry);
 
+  const descOverride = override ? " (destinatário definido manualmente pela Secretaria)" : "";
   appendHistory(
     proposicao,
     buildHistoryEvent(TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, enviadoPor, {
-      descricao: `E-mail de notificação enviado a ${preview.destinatarioNome} (${preview.destinatarioEmail}).`,
-      destinatarioId: preview.destinatarioId,
-      destinatarioEmail: preview.destinatarioEmail,
+      descricao: `E-mail de notificação enviado a ${preview.usuarioNotificadoNome} (${preview.usuarioNotificadoEmail}).${descOverride}`,
+      usuarioNotificadoId: preview.usuarioNotificadoId,
+      usuarioNotificadoEmail: preview.usuarioNotificadoEmail,
+      override,
+      motivoOverride,
       caixaSaidaId: id,
       diligenciaId: diligencia?.id || null,
     }),
@@ -91,18 +98,20 @@ export const adicionarEmailDiligencia = (
 export const adicionarEmailCiencia = (
   state,
   proposicoes,
-  destinatario,
+  usuarioNotificado,
   enviadoPor = "Secretaria Processual da CN",
+  { override = false, motivoOverride = null } = {},
 ) => {
   if (!state.caixaDeSaida) state.caixaDeSaida = [];
   const id = proximoId(state);
-  const preview = previewEmailCiencia(proposicoes, destinatario);
+  const preview = previewEmailCiencia(proposicoes, usuarioNotificado);
   const entry = {
     id,
     tipo: TipoCaixaSaida.CIENCIA,
-    destinatarioId: preview.destinatarioId,
-    destinatarioNome: preview.destinatarioNome,
-    destinatarioEmail: preview.destinatarioEmail,
+    usuarioNotificadoId: preview.usuarioNotificadoId,
+    usuarioNotificadoNome: preview.usuarioNotificadoNome,
+    usuarioNotificadoEmail: preview.usuarioNotificadoEmail,
+    override,
     proposicaoIds: proposicoes.map((p) => p.id),
     assunto: preview.assunto,
     corpoResumo: preview.corpoResumo,
@@ -112,13 +121,16 @@ export const adicionarEmailCiencia = (
   };
   state.caixaDeSaida.push(entry);
 
+  const descOverride = override ? " (destinatário definido manualmente pela Secretaria)" : "";
   proposicoes.forEach((proposicao) => {
     appendHistory(
       proposicao,
       buildHistoryEvent(TipoHistorico.EMAIL_CIENCIA_ENVIADO, enviadoPor, {
-        descricao: `E-mail de ciência enviado a ${preview.destinatarioNome} (${preview.destinatarioEmail}).`,
-        destinatarioId: preview.destinatarioId,
-        destinatarioEmail: preview.destinatarioEmail,
+        descricao: `E-mail de ciência enviado a ${preview.usuarioNotificadoNome} (${preview.usuarioNotificadoEmail}).${descOverride}`,
+        usuarioNotificadoId: preview.usuarioNotificadoId,
+        usuarioNotificadoEmail: preview.usuarioNotificadoEmail,
+        override,
+        motivoOverride,
         caixaSaidaId: id,
       }),
     );
@@ -130,11 +142,11 @@ export const listarCaixaSaida = (state, filtros = {}) => {
   const items = [...(state.caixaDeSaida || [])];
   const filtered = items.filter((entry) => {
     if (filtros.tipo && entry.tipo !== filtros.tipo) return false;
-    if (filtros.destinatarioId && entry.destinatarioId !== filtros.destinatarioId)
+    if (filtros.usuarioNotificadoId && entry.usuarioNotificadoId !== filtros.usuarioNotificadoId)
       return false;
     if (filtros.q) {
       const termo = filtros.q.toLowerCase();
-      const hay = `${entry.assunto} ${entry.corpoResumo} ${entry.destinatarioNome} ${entry.destinatarioEmail}`.toLowerCase();
+      const hay = `${entry.assunto} ${entry.corpoResumo} ${entry.usuarioNotificadoNome} ${entry.usuarioNotificadoEmail}`.toLowerCase();
       if (!hay.includes(termo)) return false;
     }
     return true;

@@ -25,7 +25,13 @@ import {
   cienciaJaVisualizadaPor,
   getDataVisualizacaoCiencia,
 } from "../domain/correicionados.js";
-import { Labels, SituacaoApreciacao, StatusFluxo, TipoHistorico } from "../domain/enums.js";
+import { Labels, SituacaoApreciacao, StatusFluxo, TipoDestinatario, TipoHistorico } from "../domain/enums.js";
+import {
+  getDestinatario,
+  resolverUsuariosDestinatarios,
+  findAdmSuperior,
+  listUsuariosAdmSuperior,
+} from "../domain/destinatario.js";
 import {
   confirmarRascunhoCN,
   descartarRascunhoDecisaoCN,
@@ -444,6 +450,40 @@ const getUltimaComprovacao = (proposicao) =>
     .filter((event) => event.tipo === TipoHistorico.COMPROVACAO)
     .sort((a, b) => new Date(b.data) - new Date(a.data))[0] || null;
 
+// Linhas de metadados específicas da orientação do destinatário.
+const metaDestinatario = (proposicao) => {
+  const st = state();
+  const dest = getDestinatario(proposicao);
+  const tipo = dest.tipo;
+  const rows = [{ label: "Orientação", value: Labels.tipoDestinatario?.[tipo] || tipo }];
+
+  if (tipo === TipoDestinatario.MEMBRO) {
+    rows.push({ label: "Membro", value: proposicao.membro || "—" });
+    const snap = dest.unidadeOrigemSnapshot;
+    if (snap?.unidade) rows.push({ label: "Unidade de origem", value: snap.unidade });
+    return rows;
+  }
+
+  if (tipo === TipoDestinatario.UNIDADE) {
+    rows.push({ label: "Unidade", value: proposicao.unidade || "—" });
+    const { sugeridos, vago } = resolverUsuariosDestinatarios(st, proposicao);
+    rows.push({
+      label: "Responsável atual",
+      value: vago ? "(sem responsável no cadastro CNMP)" : sugeridos.map((m) => m.nome).join(", "),
+    });
+    return rows;
+  }
+
+  const adm = findAdmSuperior(st, dest.administracaoSuperior);
+  rows.push({ label: "Administração Superior", value: adm?.nome || proposicao.unidade || "—" });
+  const usuarios = listUsuariosAdmSuperior(st, adm);
+  rows.push({
+    label: "Usuários que respondem",
+    value: usuarios.length ? usuarios.map((m) => m.nome).join(", ") : "(não parametrizado)",
+  });
+  return rows;
+};
+
 const buildMeta = (proposicao, persona) => {
   const core = [
     { label: "Número", value: proposicao.numero },
@@ -452,10 +492,9 @@ const buildMeta = (proposicao, persona) => {
       label: "Status atual",
       value: Labels.statusFluxo[proposicao.statusFluxo] || proposicao.statusFluxo,
     },
-    { label: "Unidade", value: proposicao.unidade },
+    ...metaDestinatario(proposicao),
     { label: "Ramo do MP", value: proposicao.ramoMPNome || proposicao.ramoMP },
     { label: "Temática", value: proposicao.tematica },
-    { label: "Membro", value: proposicao.membro },
   ];
   if (persona === PERSONAS.CORREICIONADO) return core;
   return [
@@ -820,11 +859,11 @@ const render = () => {
       window.location.href = "/pages/login.html";
       return;
     }
-    if (!proposicaoVisivelPara(proposicao, user)) {
+    if (!proposicaoVisivelPara(state(), proposicao, user)) {
       mountPage({
         activePage: "proposicao-detalhe",
         title: "Proposição não vinculada a você",
-        subtitle: "Você só pode visualizar proposições nominadas a você ou de unidades em que é chefe.",
+        subtitle: "Você só pode visualizar proposições orientadas a você, à unidade que chefia atualmente ou à administração superior que responde — ou que já lhe foram comunicadas.",
         actions: `<a class="button button--ghost" href="correicionado-comprovacoes.html">Voltar</a>`,
         content: `<div class="empty-state">Esta proposição não pertence a você.</div>`,
       });

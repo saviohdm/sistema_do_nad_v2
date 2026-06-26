@@ -7,6 +7,7 @@ import {
   StatusFluxo,
   SituacaoApreciacao,
   TipoConclusao,
+  TipoDestinatario,
 } from "../domain/enums.js";
 import {
   filtrarProposicoes,
@@ -42,6 +43,7 @@ const FILTRO_KEYS = [
   "unidade",
   "tematica",
   "membro",
+  "tipoDestinatario",
   "correicaoId",
   "dataInicioDe",
   "dataFimAte",
@@ -434,6 +436,15 @@ const buildFiltersPanel = (opcoes, filtros, todas) => {
         <div class="acervo-filter-grid">
           ${selectSimples("filtro-tipo", "tipo", "Tipo", opcoes.tipos, filtros.tipo)}
           <div class="field">
+            <label for="filtro-orientacao">Orientação</label>
+            <select id="filtro-orientacao" name="tipoDestinatario">
+              <option value="">Todas</option>
+              ${Object.values(TipoDestinatario)
+                .map((t) => option(t, Labels.tipoDestinatario[t], filtros.tipoDestinatario || ""))
+                .join("")}
+            </select>
+          </div>
+          <div class="field">
             <label for="filtro-prioridade">Prioridade</label>
             <select id="filtro-prioridade" name="prioridade">
               ${prioridadeOptions}
@@ -587,6 +598,12 @@ const buildActiveFiltersChips = (filtros, opcoes) => {
     chips.push({
       label: `Membro: ${filtros.membro}`,
       removeHref: removeFilterFromUrl(filtros, { key: "membro" }),
+    });
+  }
+  if (filtros.tipoDestinatario) {
+    chips.push({
+      label: `Orientação: ${Labels.tipoDestinatario[filtros.tipoDestinatario] || filtros.tipoDestinatario}`,
+      removeHref: removeFilterFromUrl(filtros, { key: "tipoDestinatario" }),
     });
   }
   if (filtros.correicaoId) {

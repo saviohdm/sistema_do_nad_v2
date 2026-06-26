@@ -16,6 +16,17 @@ export const StatusCorreicao = {
   ENCERRADA: "encerrada",
 };
 
+export const TipoDestinatario = {
+  MEMBRO: "membro",
+  UNIDADE: "unidade",
+  ADMINISTRACAO_SUPERIOR: "administracao_superior",
+};
+
+export const TipoAdmSuperior = {
+  PGJ: "PGJ",
+  CGJ: "CGJ",
+};
+
 export const SituacaoApreciacao = {
   NECESSITA_MAIS_INFORMACOES: "necessita_mais_informacoes",
   CONCLUIDA: "concluida",
@@ -109,6 +120,15 @@ export const Labels = {
     [Prioridade.URGENTE]: "Urgente",
     [Prioridade.IMPORTANTE]: "Importante",
     [Prioridade.NORMAL]: "Normal",
+  },
+  tipoDestinatario: {
+    [TipoDestinatario.MEMBRO]: "Membro",
+    [TipoDestinatario.UNIDADE]: "Unidade",
+    [TipoDestinatario.ADMINISTRACAO_SUPERIOR]: "Administração Superior",
+  },
+  tipoAdmSuperior: {
+    [TipoAdmSuperior.PGJ]: "Procuradoria-Geral de Justiça",
+    [TipoAdmSuperior.CGJ]: "Corregedoria-Geral de Justiça",
   },
   sensivel: {
     true: "Sim",

@@ -302,7 +302,7 @@ const renderGrupoDiligenciaRow = (grupo) => `
     data-ids="${escapeAttr(grupo.proposicoes.map((p) => p.id).join(","))}"
   >
     <div class="secretaria-dashboard__row-main">
-      <strong>${grupo.unidade || "—"}</strong>
+      <strong>${grupo.rotulo || grupo.unidade || "—"}</strong>
       <span class="muted">${grupo.ramoMPNome || grupo.ramoMP || "—"} · Correição ${grupo.correicaoId || "—"}</span>
     </div>
     <div class="secretaria-dashboard__row-meta">
@@ -328,7 +328,7 @@ const renderGrupoCienciaRow = (grupo) => {
       data-key="${escapeAttr(grupo.key)}"
     >
       <div class="secretaria-dashboard__row-main">
-        <strong>${grupo.unidade || "—"}</strong>
+        <strong>${grupo.rotulo || grupo.unidade || "—"}</strong>
         <span class="muted">${grupo.ramoMPNome || grupo.ramoMP || "—"} · Correição ${grupo.correicaoId || "—"}</span>
       </div>
       <div class="secretaria-dashboard__row-meta">
@@ -367,7 +367,7 @@ const renderGrupoParcialRow = (grupo) => {
   return `
     <li class="secretaria-dashboard__row secretaria-dashboard__row--static secretaria-dashboard__row--action secretaria-dashboard__row--partial">
       <div class="secretaria-dashboard__row-main">
-        <strong>${grupo.unidade || "—"}</strong>
+        <strong>${grupo.rotulo || grupo.unidade || "—"}</strong>
         <span class="muted">${grupo.ramoMPNome || grupo.ramoMP || "—"} · Correição ${grupo.correicaoId || "—"}</span>
       </div>
       <div class="secretaria-dashboard__row-meta">

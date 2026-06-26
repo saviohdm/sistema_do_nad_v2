@@ -3,7 +3,7 @@ import { mutateState } from "../app/store.js";
 import { state } from "../app/bootstrap.js";
 import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
-import { Labels, SituacaoApreciacao } from "../domain/enums.js";
+import { Labels, SituacaoApreciacao, TipoDestinatario } from "../domain/enums.js";
 import { filtrarProposicoes } from "../domain/proposicoes.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import {
@@ -12,7 +12,11 @@ import {
 } from "../domain/secretaria-filas.js";
 import { criarDiligenciaEmLote } from "../domain/diligencias.js";
 import { adicionarEmailDiligencia } from "../domain/caixa-de-saida.js";
-import { resolveDestinatarioCorreicionado } from "../domain/correicionados.js";
+import {
+  resolverUsuariosDestinatarios,
+  getTipoDestinatario,
+  findMembroById,
+} from "../domain/destinatario.js";
 import {
   renderBadge,
   renderFilaProposicaoEditorial,
@@ -158,15 +162,95 @@ const ensureModalRoot = () => {
   return root;
 };
 
+const labelOrientacao = (tipo) => Labels.tipoDestinatario?.[tipo] || tipo;
+
+// Controle de destinatário por proposição no modal de confirmação.
+// - membro/unidade: um destinatário, com seletor (Secretaria confirma ou troca =
+//   válvula universal). Unidade vaga => sem sugerido => obriga escolha antes do envio.
+// - administração superior: envia a TODOS os usuários mapeados (sem override individual).
+const renderDestinatarioControl = (currentState, p) => {
+  const tipo = getTipoDestinatario(p);
+  const { sugeridos, candidatos, vago } = resolverUsuariosDestinatarios(currentState, p);
+
+  if (tipo === TipoDestinatario.ADMINISTRACAO_SUPERIOR) {
+    if (vago) {
+      return `<span class="muted" data-dest-admsup-vago="1">⚠ Administração superior sem usuários parametrizados — parametrize antes de enviar.</span>`;
+    }
+    const nomes = sugeridos.map((m) => m.nome).join(", ");
+    return `<span class="muted">Administração superior — enviará a ${sugeridos.length} usuário(s): ${nomes}</span>`;
+  }
+
+  const sugeridoId = sugeridos[0]?.id || "";
+  const placeholder = sugeridoId ? "" : `<option value="" selected>Selecione um destinatário…</option>`;
+  const options = candidatos
+    .map(
+      (m) =>
+        `<option value="${escapeAttr(m.id)}"${m.id === sugeridoId ? " selected" : ""}>${m.nome}${m.id === sugeridoId ? " (sugerido)" : ""}</option>`,
+    )
+    .join("");
+  const vagoHint = vago
+    ? `<small class="alert alert--warning" style="display:block;margin-top:0.25rem;">Unidade sem responsável atual no cadastro CNMP — escolha um destinatário para liberar o envio.</small>`
+    : "";
+  return `
+    <label class="muted" style="display:block;font-size:0.85rem;">Destinatário (confirmar ou trocar):
+      <select data-dest-prop="${escapeAttr(p.id)}" style="display:block;width:100%;margin-top:0.25rem;">
+        ${placeholder}${options}
+      </select>
+    </label>${vagoHint}`;
+};
+
+const lerOverridesDestinatario = () => {
+  const map = {};
+  document.querySelectorAll("[data-dest-prop]").forEach((sel) => {
+    map[sel.dataset.destProp] = sel.value || null;
+  });
+  return map;
+};
+
 const confirmarCriacaoEmLote = (prazo, descricao, render) => {
+  // Validação ANTES de criar qualquer diligência: sempre tem que cair numa pessoa
+  // de carne e osso (premissa a). Vaga (unidade ou adm superior) bloqueia o envio.
+  if (document.querySelectorAll("[data-dest-admsup-vago]").length > 0) {
+    window.alert(
+      "Há proposição orientada à administração superior sem usuários parametrizados. Parametrize na tela de Administração Superior antes de enviar.",
+    );
+    return;
+  }
+  const overrides = lerOverridesDestinatario();
+  const faltando = Object.entries(overrides).filter(([, v]) => !v);
+  if (faltando.length > 0) {
+    window.alert(
+      "Defina o destinatário das proposições com unidade sem responsável atual antes de confirmar.",
+    );
+    return;
+  }
+
   const idsParaCriar = Array.from(selecaoIds);
   mutateState((draft) => {
     const proposicoesAlvo = draft.proposicoes.filter((p) => idsParaCriar.includes(p.id));
     if (proposicoesAlvo.length === 0) return draft;
     const { criadas } = criarDiligenciaEmLote(proposicoesAlvo, { prazo, descricao });
     criadas.forEach(({ proposicao, diligencia }) => {
-      const destinatario = resolveDestinatarioCorreicionado(draft, proposicao);
-      adicionarEmailDiligencia(draft, proposicao, diligencia, destinatario);
+      const tipo = getTipoDestinatario(proposicao);
+      const { sugeridos } = resolverUsuariosDestinatarios(draft, proposicao);
+      if (tipo === TipoDestinatario.ADMINISTRACAO_SUPERIOR) {
+        // Uma comunicação por usuário mapeado.
+        sugeridos.forEach((usuario) =>
+          adicionarEmailDiligencia(draft, proposicao, diligencia, usuario),
+        );
+        return;
+      }
+      const escolhidoId = overrides[proposicao.id];
+      const usuario = findMembroById(draft, escolhidoId);
+      const override = escolhidoId !== (sugeridos[0]?.id || null);
+      adicionarEmailDiligencia(
+        draft,
+        proposicao,
+        diligencia,
+        usuario,
+        "Secretaria Processual da CN",
+        { override },
+      );
     });
     return draft;
   });
@@ -182,32 +266,19 @@ const abrirModalConfirmacao = (proposicoesSelecionadas, prazo, descricao, render
   const itens = proposicoesSelecionadas
     .map((p) => hydrateProposicao(currentState, p))
     .map((p) => {
-      const destinatario = resolveDestinatarioCorreicionado(currentState, p);
-      const dest = destinatario
-        ? `${destinatario.nome} &lt;${destinatario.email}&gt;`
-        : `<em>(sem destinatário cadastrado — unidade ${p.unidade})</em>`;
-      return `<li><strong>${p.numero}</strong> · ${p.unidade} · ${p.ramoMP || "—"}<br><span class="muted" style="font-size: 0.85rem;">E-mail para: ${dest}</span></li>`;
+      const tipo = getTipoDestinatario(p);
+      const control = renderDestinatarioControl(currentState, p);
+      return `<li style="margin-bottom: var(--space-3);"><strong>${p.numero}</strong> · ${p.unidade} · <span class="badge badge--neutral">${labelOrientacao(tipo)}</span><div style="margin-top:0.25rem;">${control}</div></li>`;
     })
     .join("");
-
-  const semDestinatario = proposicoesSelecionadas.filter(
-    (p) => !resolveDestinatarioCorreicionado(currentState, p),
-  );
-  const avisoSemDestinatario =
-    semDestinatario.length > 0
-      ? `<div class="alert alert--warning" role="alert" style="margin-top: var(--space-3);">
-          ${semDestinatario.length} proposição(ões) não têm destinatário identificável no diretório CNMP. O e-mail será registrado na caixa de saída como "sem destinatário", e o evento de envio constará no histórico para auditoria.
-        </div>`
-      : "";
 
   const body = `
     <p>Você está prestes a criar <strong>${proposicoesSelecionadas.length}</strong> diligência(s) com os seguintes dados:</p>
     <p><strong>Prazo:</strong> ${formatBR(prazo)}</p>
     <p><strong>Descrição:</strong></p>
     <blockquote class="muted" style="border-left: 3px solid var(--line); padding-left: var(--space-3); margin: var(--space-2) 0;">${descricao.replace(/\n/g, "<br>")}</blockquote>
-    <p><strong>Cada proposição também disparará um e-mail ao correicionado:</strong></p>
-    <div class="lote-resumo-list"><ul>${itens}</ul></div>
-    ${avisoSemDestinatario}
+    <p><strong>Destinatário de cada proposição</strong> (resolvido no momento da diligência; a Secretaria pode confirmar ou trocar):</p>
+    <div class="lote-resumo-list"><ul style="list-style:none;padding-left:0;">${itens}</ul></div>
     <div class="button-row" style="justify-content: flex-end; margin-top: var(--space-4);">
       <button class="button button--ghost" type="button" data-modal-close>Cancelar</button>
       <button class="button button--primary" type="button" data-action="confirmar-lote">Confirmar criação e envio</button>
@@ -245,7 +316,7 @@ montarFilaNavegavel({
   subtitlePorModo: {
     overview:
       'Proposições recém-referendadas ou que retornaram com apreciação "necessita mais informações".',
-    correicao: "Escolha uma unidade dentro da correição para entrar na fila.",
+    correicao: "Escolha um destinatário dentro da correição para entrar na fila.",
     fila: "Selecione múltiplas proposições e crie diligências em lote com um único prazo e descrição.",
   },
   textos: {
@@ -253,12 +324,12 @@ montarFilaNavegavel({
     panoramaIntro:
       'Proposições que aguardam criação de diligência pela Secretaria — recém-referendadas (novas) ou que retornaram após decisão "necessita mais informações".',
     contagemLabel: "Aguardando diligência",
-    porCorreicaoHint: "Clique em uma correição para ver suas unidades.",
-    unidadesHint: "Clique em uma unidade para entrar na fila daquela unidade.",
+    porCorreicaoHint: "Clique em uma correição para ver seus destinatários.",
+    unidadesHint: "Clique em um destinatário para entrar na fila.",
     filaTitulo: "Fila de diligência",
     filaIntroVazia: "Todas as proposições aguardando diligência.",
     emptyCorreicoes: "Nenhuma correição com proposições aguardando diligência.",
-    emptyUnidades: "Nenhuma unidade nesta correição com proposições aguardando diligência.",
+    emptyUnidades: "Nenhum destinatário nesta correição com proposições aguardando diligência.",
     emptyFila: "Nenhuma proposição corresponde aos filtros selecionados.",
     contadorIntro: "Visíveis com os filtros atuais:",
     totalSistemaLabel: "Total aguardando diligência no sistema",
@@ -355,7 +426,7 @@ montarFilaNavegavel({
       .querySelector("[data-action='toggle-grupos-completos']")
       ?.addEventListener("change", (event) => {
         const novos = { ...ctx.filtros, gruposCompletos: event.target.checked };
-        if (!novos.unidadeRef && !novos.unidade) novos.filaForcada = true;
+        if (!novos.destinatarioRef && !novos.unidadeRef && !novos.unidade) novos.filaForcada = true;
         ctx.aplicarFiltros(novos);
       });
 

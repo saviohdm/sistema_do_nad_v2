@@ -1,8 +1,8 @@
 import { StatusFluxo, TipoHistorico } from "./enums.js";
 import { appendHistory, buildHistoryEvent } from "./historico.js";
 import { adicionarEmailCiencia } from "./caixa-de-saida.js";
-import { resolveDestinatarioCorreicionado } from "./correicionados.js";
-import { getUnidadeRef, isFluxoPrincipalAberto } from "./filas-operacionais.js";
+import { resolverUsuariosDestinatarios } from "./destinatario.js";
+import { getDestinatarioRef, isFluxoPrincipalAberto } from "./filas-operacionais.js";
 
 const hasCientificacao = (proposicao) =>
   proposicao.historico.some((event) => event.tipo === TipoHistorico.CIENTIFICACAO);
@@ -27,26 +27,26 @@ export const cientificarProposicao = (
 export const cientificarGrupo = (
   state,
   correicaoId,
-  unidadeRef,
+  destinatarioRef,
   usuario = "Secretaria Processual da CN",
 ) => {
   const grupoAberto = state.proposicoes.filter(
     (proposicao) =>
       proposicao.correicaoId === correicaoId &&
-      getUnidadeRef(proposicao) === unidadeRef &&
+      getDestinatarioRef(proposicao) === destinatarioRef &&
       isFluxoPrincipalAberto(proposicao),
   );
   if (
     grupoAberto.length === 0 ||
     grupoAberto.some((proposicao) => proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_CIENCIA)
   ) {
-    throw new Error("Ciência só pode ser registrada quando todas as proposições abertas da unidade estão prontas.");
+    throw new Error("Ciência só pode ser registrada quando todas as proposições abertas do destinatário estão prontas.");
   }
 
   const afetadas = [];
   state.proposicoes.forEach((proposicao) => {
     if (proposicao.correicaoId !== correicaoId) return;
-    if (getUnidadeRef(proposicao) !== unidadeRef) return;
+    if (getDestinatarioRef(proposicao) !== destinatarioRef) return;
     if (proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_CIENCIA) return;
 
     cientificarProposicao(proposicao, usuario);
@@ -62,27 +62,31 @@ export const cientificarGruposEmLote = (
   grupos,
   usuario = "Secretaria Processual da CN",
 ) => {
-  return grupos.map(({ correicaoId, unidadeRef }) => ({
+  return grupos.map(({ correicaoId, destinatarioRef }) => ({
     correicaoId,
-    unidadeRef,
-    afetadas: cientificarGrupo(state, correicaoId, unidadeRef, usuario),
+    destinatarioRef,
+    afetadas: cientificarGrupo(state, correicaoId, destinatarioRef, usuario),
   }));
 };
 
 export const enviarEmailsAgregados = (state, proposicoes, usuario) => {
   const buckets = new Map();
   proposicoes.forEach((proposicao) => {
-    const destinatario = resolveDestinatarioCorreicionado(state, proposicao);
-    const chave = destinatario?.id || `sem-destinatario:${proposicao.unidadeId || proposicao.unidade}`;
-    const bucket = buckets.get(chave) || { destinatario, proposicoes: [] };
-    bucket.proposicoes.push(proposicao);
-    buckets.set(chave, bucket);
+    const { sugeridos } = resolverUsuariosDestinatarios(state, proposicao);
+    // Administração superior pode mapear vários usuários -> uma comunicação por
+    // usuário. Unidade vaga (sugeridos vazio) -> bucket placeholder por proposição.
+    const destinatarios = sugeridos.length > 0 ? sugeridos : [null];
+    destinatarios.forEach((destinatario) => {
+      const chave = destinatario?.id || `sem-destinatario:${proposicao.id}`;
+      const bucket = buckets.get(chave) || { destinatario, proposicoes: [] };
+      bucket.proposicoes.push(proposicao);
+      buckets.set(chave, bucket);
+    });
   });
 
   const entries = [];
   buckets.forEach(({ destinatario, proposicoes: lote }) => {
-    const entry = adicionarEmailCiencia(state, lote, destinatario, usuario);
-    entries.push(entry);
+    entries.push(adicionarEmailCiencia(state, lote, destinatario, usuario));
   });
   return entries;
 };

@@ -57,6 +57,7 @@ const PERSONA_MENU_OVERRIDES = {
     { href: "correicoes-lista.html", label: "Correições" },
     { href: "proposicoes-lista.html", label: "Consulta" },
     { href: "proposicoes-criar.html", label: "Criar proposição" },
+    { href: "administracao-superior.html", label: "Administração Superior" },
     { href: "caixa-de-saida.html", label: "Caixa de saída (demo)" },
   ],
   [PERSONAS.SECRETARIA]: [
@@ -69,6 +70,7 @@ const PERSONA_MENU_OVERRIDES = {
     },
     { href: "secretaria-providencia.html", label: "Providências pendentes" },
     { href: "proposicoes-lista.html", label: "Consulta" },
+    { href: "administracao-superior.html", label: "Administração Superior" },
     { href: "caixa-de-saida.html", label: "Caixa de saída (demo)" },
   ],
   [PERSONAS.CORREICIONADO]: [

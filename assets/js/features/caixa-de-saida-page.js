@@ -47,7 +47,7 @@ const renderEntry = (entry, state) => {
         ${renderTipoBadge(entry.tipo)}
       </header>
       <div>
-        <p style="margin: 0;"><strong>Para:</strong> ${entry.destinatarioNome} &lt;${entry.destinatarioEmail}&gt;</p>
+        <p style="margin: 0;"><strong>Para:</strong> ${entry.usuarioNotificadoNome} &lt;${entry.usuarioNotificadoEmail}&gt;${entry.override ? ` <span class="badge badge--neutral">destinatário manual</span>` : ""}</p>
         ${
           proposicoes.length > 0
             ? `<p style="margin: 0.25rem 0 0;"><strong>Proposições:</strong> ${proposicoes

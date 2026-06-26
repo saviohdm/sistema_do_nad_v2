@@ -1,6 +1,11 @@
-import { StatusFluxo, TipoHistorico } from "./enums.js";
+import { StatusFluxo, TipoDestinatario, TipoHistorico } from "./enums.js";
 import { appendHistory, buildHistoryEvent } from "./historico.js";
 import { listProposicoes } from "./proposicoes.js";
+import {
+  getDestinatario,
+  resolverUsuariosDestinatarios,
+  resolverUsuarioDestinatario,
+} from "./destinatario.js";
 
 const VISIBLE_TO_CORREICIONADO = new Set([
   TipoHistorico.CRIACAO,
@@ -21,15 +26,42 @@ const VISIBLE_TO_CORREICIONADO = new Set([
 export const filtrarHistoricoParaCorreicionado = (historico) =>
   (historico || []).filter((event) => VISIBLE_TO_CORREICIONADO.has(event.tipo));
 
-export const proposicaoVisivelPara = (proposicao, user) => {
+// Quem já foi recebedor concreto de alguma comunicação (diligência/ciência) desta
+// proposição — mantém acesso ao que atuou (parte "histórica" da visibilidade híbrida).
+export const usuarioFoiNotificado = (state, proposicao, userId) => {
+  if (!userId || !proposicao) return false;
+  const naCaixa = (state?.caixaDeSaida || []).some(
+    (e) =>
+      e.usuarioNotificadoId === userId &&
+      (e.proposicaoIds || []).includes(proposicao.id),
+  );
+  if (naCaixa) return true;
+  return (proposicao.historico || []).some(
+    (ev) =>
+      ev.usuarioNotificadoId === userId &&
+      (ev.tipo === TipoHistorico.EMAIL_DILIGENCIA_ENVIADO ||
+        ev.tipo === TipoHistorico.EMAIL_CIENCIA_ENVIADO),
+  );
+};
+
+// Visibilidade híbrida (substitui o Modelo C): audiência da orientação resolvida
+// AO VIVO (membro -> o membro; unidade -> responsável atual; adm superior -> todos
+// os mapeados) MAIS quem já foi recebedor concreto. Para orientação-unidade, também
+// vale qualquer chefe atual da unidade (cobre múltiplas chefias no cadastro).
+export const proposicaoVisivelPara = (state, proposicao, user) => {
   if (!proposicao || !user) return false;
-  if (proposicao.membroId && proposicao.membroId === user.id) return true;
-  const chefias = user.chefiaDeUnidadeIds || [];
-  return chefias.includes(proposicao.unidadeId);
+  const { sugeridos } = resolverUsuariosDestinatarios(state, proposicao);
+  if (sugeridos.some((m) => m.id === user.id)) return true;
+  const dest = getDestinatario(proposicao);
+  if (dest.tipo === TipoDestinatario.UNIDADE) {
+    const chefias = user.chefiaDeUnidadeIds || [];
+    if (dest.unidadeId && chefias.includes(dest.unidadeId)) return true;
+  }
+  return usuarioFoiNotificado(state, proposicao, user.id);
 };
 
 export const listProposicoesCorreicionado = (state, user) =>
-  listProposicoes(state).filter((p) => proposicaoVisivelPara(p, user));
+  listProposicoes(state).filter((p) => proposicaoVisivelPara(state, p, user));
 
 export const listProposicoesCorreicionadoPendentes = (state, user) =>
   listProposicoesCorreicionado(state, user).filter(
@@ -90,21 +122,11 @@ export const getEmailDiligenciaEvent = (proposicao, diligenciaId) =>
         (!diligenciaId || event.diligenciaId === diligenciaId),
     ) || null;
 
-const findMembroById = (state, id) =>
-  (state.diretorioCnmp?.membros || []).find((m) => m.id === id) || null;
-
-const findChefeDaUnidade = (state, unidadeId) =>
-  (state.diretorioCnmp?.membros || []).find((m) =>
-    (m.chefiaDeUnidadeIds || []).includes(unidadeId),
-  ) || null;
-
-export const resolveDestinatarioCorreicionado = (state, proposicao) => {
-  if (proposicao.membroId) {
-    const membro = findMembroById(state, proposicao.membroId);
-    if (membro) return membro;
-  }
-  return findChefeDaUnidade(state, proposicao.unidadeId);
-};
+// Compat: resolve UM destinatário concreto (primeiro sugerido pela orientação
+// atual). Novos fluxos com múltiplos recebedores (adm superior) devem usar
+// resolverUsuariosDestinatarios de destinatario.js.
+export const resolveDestinatarioCorreicionado = (state, proposicao) =>
+  resolverUsuarioDestinatario(state, proposicao);
 
 export const listMembros = (state) => state.diretorioCnmp?.membros || [];
 
