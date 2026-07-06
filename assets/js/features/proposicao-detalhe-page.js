@@ -28,7 +28,9 @@ import {
 import { Labels, SituacaoApreciacao, StatusFluxo, TipoDestinatario, TipoHistorico } from "../domain/enums.js";
 import {
   getDestinatario,
+  getTipoDestinatario,
   resolverUsuariosDestinatarios,
+  findMembroById,
   findAdmSuperior,
   listUsuariosAdmSuperior,
 } from "../domain/destinatario.js";
@@ -67,6 +69,12 @@ import {
   renderApreciacaoForm,
 } from "../ui/forms.js";
 import { openEditarMetadadosModal } from "../ui/modal.js";
+import { adicionarEmailDiligencia } from "../domain/caixa-de-saida.js";
+import {
+  renderDestinatarioControl,
+  lerOverridesDestinatario,
+  temAdmSuperiorVago,
+} from "../ui/destinatario-control.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
 const veioDaFilaMembro = queryParam("fromMembro") === "1";
@@ -129,13 +137,43 @@ const bindHandlers = (proposicao) => {
 
   document.querySelector("#form-diligencia-local")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
+
+    // Válvula universal do destinatário (paridade com a fila): sempre cai numa pessoa
+    // real. Adm. superior sem parametrização ou unidade vaga sem escolha bloqueiam.
+    if (temAdmSuperiorVago(form)) {
+      window.alert(
+        "Proposição orientada à administração superior sem usuários parametrizados. Parametrize na tela de Administração Superior antes de abrir a diligência.",
+      );
+      return;
+    }
+    const overrides = lerOverridesDestinatario(form);
+    if (Object.values(overrides).some((valor) => !valor)) {
+      window.alert("Defina o destinatário (unidade sem responsável atual) antes de abrir a diligência.");
+      return;
+    }
+
     mutateState((draft) => {
       const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
-      criarDiligencia(item, {
+      const { diligencia } = criarDiligencia(item, {
         descricao: data.get("descricao"),
         prazo: data.get("prazo"),
       });
+      // Notifica o correicionado (paridade com a fila): adm. superior => um e-mail por
+      // usuário mapeado; membro/unidade => e-mail ao escolhido (override se != sugerido).
+      const tipo = getTipoDestinatario(item);
+      const { sugeridos } = resolverUsuariosDestinatarios(draft, item);
+      if (tipo === TipoDestinatario.ADMINISTRACAO_SUPERIOR) {
+        sugeridos.forEach((usuario) => adicionarEmailDiligencia(draft, item, diligencia, usuario));
+      } else {
+        const escolhidoId = overrides[item.id];
+        const usuario = findMembroById(draft, escolhidoId);
+        const override = escolhidoId !== (sugeridos[0]?.id || null);
+        adicionarEmailDiligencia(draft, item, diligencia, usuario, "Secretaria Processual da CN", {
+          override,
+        });
+      }
       return draft;
     });
     render();
@@ -583,6 +621,9 @@ const renderAcaoSecretaria = (proposicao, available) => {
         <div class="field">
           <label for="prazo-diligencia">Prazo</label>
           <input id="prazo-diligencia" name="prazo" type="date" required />
+        </div>
+        <div class="field">
+          ${renderDestinatarioControl(state(), proposicao)}
         </div>
         <button class="button" type="submit">Abrir diligência</button>
       </form>

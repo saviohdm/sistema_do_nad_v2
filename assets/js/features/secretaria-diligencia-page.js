@@ -3,7 +3,7 @@ import { mutateState } from "../app/store.js";
 import { state } from "../app/bootstrap.js";
 import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
-import { Labels, SituacaoApreciacao, TipoDestinatario } from "../domain/enums.js";
+import { SituacaoApreciacao, TipoDestinatario } from "../domain/enums.js";
 import { filtrarProposicoes } from "../domain/proposicoes.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import {
@@ -23,6 +23,12 @@ import {
   renderStatCard,
 } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
+import {
+  renderDestinatarioControl,
+  lerOverridesDestinatario,
+  temAdmSuperiorVago,
+  labelOrientacao,
+} from "../ui/destinatario-control.js";
 
 const SELECAO_KEY = "nad-secretaria-diligencia-selecao";
 const MODAL_ROOT_ID = "nad-modal-root";
@@ -162,55 +168,14 @@ const ensureModalRoot = () => {
   return root;
 };
 
-const labelOrientacao = (tipo) => Labels.tipoDestinatario?.[tipo] || tipo;
-
-// Controle de destinatário por proposição no modal de confirmação.
-// - membro/unidade: um destinatário, com seletor (Secretaria confirma ou troca =
-//   válvula universal). Unidade vaga => sem sugerido => obriga escolha antes do envio.
-// - administração superior: envia a TODOS os usuários mapeados (sem override individual).
-const renderDestinatarioControl = (currentState, p) => {
-  const tipo = getTipoDestinatario(p);
-  const { sugeridos, candidatos, vago } = resolverUsuariosDestinatarios(currentState, p);
-
-  if (tipo === TipoDestinatario.ADMINISTRACAO_SUPERIOR) {
-    if (vago) {
-      return `<span class="muted" data-dest-admsup-vago="1">⚠ Administração superior sem usuários parametrizados — parametrize antes de enviar.</span>`;
-    }
-    const nomes = sugeridos.map((m) => m.nome).join(", ");
-    return `<span class="muted">Administração superior — enviará a ${sugeridos.length} usuário(s): ${nomes}</span>`;
-  }
-
-  const sugeridoId = sugeridos[0]?.id || "";
-  const placeholder = sugeridoId ? "" : `<option value="" selected>Selecione um destinatário…</option>`;
-  const options = candidatos
-    .map(
-      (m) =>
-        `<option value="${escapeAttr(m.id)}"${m.id === sugeridoId ? " selected" : ""}>${m.nome}${m.id === sugeridoId ? " (sugerido)" : ""}</option>`,
-    )
-    .join("");
-  const vagoHint = vago
-    ? `<small class="alert alert--warning" style="display:block;margin-top:0.25rem;">Unidade sem responsável atual no cadastro CNMP — escolha um destinatário para liberar o envio.</small>`
-    : "";
-  return `
-    <label class="muted" style="display:block;font-size:0.85rem;">Destinatário (confirmar ou trocar):
-      <select data-dest-prop="${escapeAttr(p.id)}" style="display:block;width:100%;margin-top:0.25rem;">
-        ${placeholder}${options}
-      </select>
-    </label>${vagoHint}`;
-};
-
-const lerOverridesDestinatario = () => {
-  const map = {};
-  document.querySelectorAll("[data-dest-prop]").forEach((sel) => {
-    map[sel.dataset.destProp] = sel.value || null;
-  });
-  return map;
-};
+// `renderDestinatarioControl`, `lerOverridesDestinatario`, `temAdmSuperiorVago` e
+// `labelOrientacao` vêm de ../ui/destinatario-control.js (reuso entre a fila de
+// diligência, a fila de ciência e o detalhe da proposição).
 
 const confirmarCriacaoEmLote = (prazo, descricao, render) => {
   // Validação ANTES de criar qualquer diligência: sempre tem que cair numa pessoa
   // de carne e osso (premissa a). Vaga (unidade ou adm superior) bloqueia o envio.
-  if (document.querySelectorAll("[data-dest-admsup-vago]").length > 0) {
+  if (temAdmSuperiorVago()) {
     window.alert(
       "Há proposição orientada à administração superior sem usuários parametrizados. Parametrize na tela de Administração Superior antes de enviar.",
     );

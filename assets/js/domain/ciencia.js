@@ -1,7 +1,11 @@
-import { StatusFluxo, TipoHistorico } from "./enums.js";
+import { StatusFluxo, TipoDestinatario, TipoHistorico } from "./enums.js";
 import { appendHistory, buildHistoryEvent } from "./historico.js";
 import { adicionarEmailCiencia } from "./caixa-de-saida.js";
-import { resolverUsuariosDestinatarios } from "./destinatario.js";
+import {
+  resolverUsuariosDestinatarios,
+  findMembroById,
+  getTipoDestinatario,
+} from "./destinatario.js";
 import { getDestinatarioRef, isFluxoPrincipalAberto } from "./filas-operacionais.js";
 
 const hasCientificacao = (proposicao) =>
@@ -29,6 +33,7 @@ export const cientificarGrupo = (
   correicaoId,
   destinatarioRef,
   usuario = "Secretaria Processual da CN",
+  { destinatarioOverrideId = null } = {},
 ) => {
   const grupoAberto = state.proposicoes.filter(
     (proposicao) =>
@@ -53,7 +58,7 @@ export const cientificarGrupo = (
     afetadas.push(proposicao);
   });
 
-  enviarEmailsAgregados(state, afetadas, usuario);
+  enviarEmailsAgregados(state, afetadas, usuario, { destinatarioOverrideId });
   return afetadas;
 };
 
@@ -69,7 +74,26 @@ export const cientificarGruposEmLote = (
   }));
 };
 
-export const enviarEmailsAgregados = (state, proposicoes, usuario) => {
+export const enviarEmailsAgregados = (
+  state,
+  proposicoes,
+  usuario,
+  { destinatarioOverrideId = null } = {},
+) => {
+  // Override de comunicação (membro/unidade): a Secretaria escolheu manualmente quem
+  // recebe a ciência deste grupo -> um único e-mail ao usuário escolhido, marcado como
+  // override. Administração superior SEMPRE faz multi-envio (um e-mail por usuário
+  // mapeado) e ignora qualquer override, mesmo que um seja passado.
+  const ehAdmSuperior =
+    proposicoes.length > 0 &&
+    getTipoDestinatario(proposicoes[0]) === TipoDestinatario.ADMINISTRACAO_SUPERIOR;
+  if (destinatarioOverrideId && !ehAdmSuperior) {
+    const usuarioNotificado = findMembroById(state, destinatarioOverrideId);
+    return [
+      adicionarEmailCiencia(state, proposicoes, usuarioNotificado, usuario, { override: true }),
+    ];
+  }
+
   const buckets = new Map();
   proposicoes.forEach((proposicao) => {
     const { sugeridos } = resolverUsuariosDestinatarios(state, proposicao);

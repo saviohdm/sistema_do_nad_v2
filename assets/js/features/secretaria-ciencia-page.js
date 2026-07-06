@@ -15,6 +15,11 @@ import {
 } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
 import {
+  renderDestinatarioControl,
+  lerOverridesDestinatario,
+  temAdmSuperiorVago,
+} from "../ui/destinatario-control.js";
+import {
   StatusFilaOperacional,
   getGrupoOperacionalKey,
   getDestinatarioRef,
@@ -472,56 +477,41 @@ const showToast = (mensagem) => {
   }, 3500);
 };
 
-const computarDestinatariosDoLote = (currentState, gruposSelecionados) => {
-  const proposicoesAlvo = currentState.proposicoes.filter((p) => {
-    if (p.statusFluxo !== StatusFluxo.AGUARDANDO_CIENCIA) return false;
-    return gruposSelecionados.some(
-      (g) => g.correicaoId === p.correicaoId && g.destinatarioRef === getDestinatarioRef(p),
-    );
-  });
-  const map = new Map();
-  proposicoesAlvo.forEach((p) => {
-    // Reflete o envio real (enviarEmailsAgregados): adm superior -> todos os
-    // mapeados (multi); unidade vaga -> placeholder por proposição.
-    const { sugeridos } = resolverUsuariosDestinatarios(currentState, p);
-    const destinatarios = sugeridos.length > 0 ? sugeridos : [null];
-    destinatarios.forEach((dest) => {
-      const chave = dest?.id || `sem-destinatario:${p.id}`;
-      const bucket = map.get(chave) || { destinatario: dest, proposicoes: [] };
-      bucket.proposicoes.push(p);
-      map.set(chave, bucket);
-    });
-  });
-  return Array.from(map.values());
-};
+// Uma proposição representativa (pronta) do grupo, para resolver os candidatos do
+// controle de destinatário. Todas as proposições do grupo compartilham o destinatário.
+const repProposicaoDoGrupo = (currentState, grupo) =>
+  currentState.proposicoes.find(
+    (p) =>
+      p.correicaoId === grupo.correicaoId &&
+      getDestinatarioRef(p) === grupo.destinatarioRef &&
+      p.statusFluxo === StatusFluxo.AGUARDANDO_CIENCIA,
+  ) || null;
 
 const abrirModalCiencia = (gruposSelecionados) => {
   const root = ensureModalRoot();
+  const currentState = state();
   const totalProposicoes = gruposSelecionados.reduce((s, g) => s + g.prontas, 0);
   const totalProvidencias = gruposSelecionados.reduce((s, g) => s + (g.comProvidencia || 0), 0);
 
+  // Cada grupo exibe seu controle de destinatário (confirmar/trocar). Membro/unidade =>
+  // <select> (1 e-mail); administração superior => nota multi-envio (1 e-mail por usuário).
+  let totalEmails = 0;
   const itens = gruposSelecionados
-    .map(
-      (g) => `
-        <li>
+    .map((g) => {
+      const rep = repProposicaoDoGrupo(currentState, g);
+      const control = rep
+        ? renderDestinatarioControl(currentState, rep, grupoKey(g))
+        : `<span class="muted">(sem proposição pronta)</span>`;
+      if (rep) {
+        const { tipo, sugeridos } = resolverUsuariosDestinatarios(currentState, rep);
+        totalEmails +=
+          tipo === TipoDestinatario.ADMINISTRACAO_SUPERIOR ? Math.max(sugeridos.length, 1) : 1;
+      }
+      return `
+        <li style="margin-bottom: var(--space-3);">
           <strong>${g.rotulo || "—"}</strong> · Correição ${g.correicaoId || "—"} · ${g.prontas} proposição(ões)
           ${g.comProvidencia > 0 ? ` · <em>${g.comProvidencia} gerará(ão) pendência paralela</em>` : ""}
-        </li>
-      `,
-    )
-    .join("");
-
-  const destinatarios = computarDestinatariosDoLote(state(), gruposSelecionados);
-  const emailsHtml = destinatarios
-    .map(({ destinatario, proposicoes }) => {
-      const dest = destinatario
-        ? `${destinatario.nome} &lt;${destinatario.email}&gt;`
-        : `<em>(sem destinatário cadastrado)</em>`;
-      const numeros = proposicoes.map((p) => p.numero).join(", ");
-      return `
-        <li>
-          <strong>Para:</strong> ${dest}<br>
-          <span class="muted" style="font-size: 0.85rem;">${proposicoes.length} proposição(ões): ${numeros}</span>
+          <div style="margin-top:0.25rem;">${control}</div>
         </li>
       `;
     })
@@ -535,14 +525,11 @@ const abrirModalCiencia = (gruposSelecionados) => {
   const body = `
     <p>Você está prestes a cientificar <strong>${gruposSelecionados.length}</strong> grupo(s), totalizando <strong>${totalProposicoes}</strong> proposição(ões). Cada proposição transitará para <em>baixa definitiva</em>.</p>
     ${providenciaLine}
-    <p><strong>Grupos selecionados:</strong></p>
+    <p><strong>Grupos e destinatários</strong> (confirme ou troque o destinatário de cada grupo; administração superior envia a todos os usuários mapeados):</p>
     <div class="lote-resumo-list">
-      <ul>${itens}</ul>
+      <ul style="list-style:none;padding-left:0;">${itens}</ul>
     </div>
-    <p style="margin-top: var(--space-3);"><strong>E-mails de ciência que serão disparados (${destinatarios.length}):</strong></p>
-    <div class="lote-resumo-list">
-      <ul>${emailsHtml}</ul>
-    </div>
+    <p class="muted" style="margin-top: var(--space-3);">Serão disparados <strong>${totalEmails}</strong> e-mail(s) de ciência.</p>
     <div class="button-row" style="justify-content: flex-end; margin-top: var(--space-4);">
       <button class="button button--ghost" type="button" data-modal-close>Cancelar</button>
       <button class="button button--primary" type="button" data-action="confirmar-ciencia">Confirmar ciência e envio</button>
@@ -573,16 +560,32 @@ const abrirModalCiencia = (gruposSelecionados) => {
 };
 
 const confirmarCienciaEmLote = (gruposSelecionados) => {
+  // Lê os overrides ANTES de mutar (o modal ainda está no DOM). Validação: adm. superior
+  // sem parametrização ou unidade vaga sem escolha bloqueiam — sempre cai numa pessoa real.
+  const modalRoot = document.getElementById(MODAL_ROOT_ID);
+  if (temAdmSuperiorVago(modalRoot)) {
+    window.alert(
+      "Há grupo orientado à administração superior sem usuários parametrizados. Parametrize na tela de Administração Superior antes de cientificar.",
+    );
+    return;
+  }
+  const overrides = lerOverridesDestinatario(modalRoot);
+  if (Object.values(overrides).some((valor) => !valor)) {
+    window.alert("Defina o destinatário dos grupos com unidade sem responsável atual antes de cientificar.");
+    return;
+  }
+
   const snapshot = gruposSelecionados.map((g) => ({
     correicaoId: g.correicaoId,
     destinatarioRef: g.destinatarioRef,
     rotulo: g.rotulo,
     prontas: g.prontas,
+    destinatarioOverrideId: overrides[grupoKey(g)] || null,
   }));
 
   mutateState((draft) => {
-    snapshot.forEach(({ correicaoId, destinatarioRef }) => {
-      cientificarGrupo(draft, correicaoId, destinatarioRef);
+    snapshot.forEach(({ correicaoId, destinatarioRef, destinatarioOverrideId }) => {
+      cientificarGrupo(draft, correicaoId, destinatarioRef, undefined, { destinatarioOverrideId });
     });
     return draft;
   });

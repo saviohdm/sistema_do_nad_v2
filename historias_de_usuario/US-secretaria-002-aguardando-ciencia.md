@@ -17,7 +17,7 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `registrar_cienti
 3. No modo Grupo, aplica filtros laterais (Ramo, Correição, Estado completo/parcial, Pronto em hoje/últimos 7 dias).
 4. Marca grupos completos por `(correição × unidadeId)` (apenas grupos completos têm checkbox; parciais aparecem desabilitados com badge "Aguardando N decisões pendentes").
 5. Sticky batch bar exibe `M grupo(s) selecionado(s) · N proposição(ões)` e botão `Cientificar todas`.
-6. Confirma no modal, que sumariza por grupo (`Unidade · Correição · K proposições · X gerarão pendência paralela`).
+6. Confirma no modal, que sumariza por grupo (`Destinatário · Correição · K proposições · X gerarão pendência paralela`) e exibe, para cada grupo **membro/unidade**, o seletor **confirmar ou trocar destinatário** (administração superior mostra o multi-envio). Ver [US-secretaria-005](US-secretaria-005-confirmar-destinatario.md).
 7. Sistema invoca `cientificarGrupo` para cada `(correição, unidadeId)` selecionado, registra evento `CIENTIFICACAO` em cada proposição e transita `statusFluxo` para `BAIXA_DEFINITIVA`.
 8. Toast confirma cada grupo cientificado; grupos somem da fila; badge cross-page do menu decrementa.
 
@@ -32,6 +32,7 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `registrar_cienti
 - Ciência só pode ser registrada para proposições em `statusFluxo = AGUARDANDO_CIENCIA`.
 - Ciência em bloco ocorre por `(correição, unidadeId)`; a unidade é o bloco-mínimo. Multi-grupo é apenas um agregador de UX — internamente, cada grupo é processado individualmente. Registros legados sem `unidadeId` usam temporariamente o nome da unidade.
 - Apenas grupos **completos** (todas as proposições da unidade naquela correição em `AGUARDANDO_CIENCIA`) são selecionáveis.
+- No modal, a Secretaria pode **confirmar ou trocar** o destinatário de cada grupo membro/unidade (o override marca a `caixaDeSaida` e o histórico); administração superior mantém o multi-envio. A **orientação** da proposição nunca muda (só o recebedor daquele e-mail). Ver `enviarEmailsAgregados({ destinatarioOverrideId })`.
 - Após ciência, `statusFluxo` da proposição vira `BAIXA_DEFINITIVA`. Providências pendentes permanecem ativas em `pendenciasSecretaria[]`, mas **não impedem** a transição.
 - Proposições em `BAIXA_DEFINITIVA` saem integralmente de `Unidades prontas / total`, mesmo quando preservam providência paralela pendente.
 - Badge cross-page no menu lateral da Secretaria mostra a contagem de **grupos completos prontos** (não de proposições).

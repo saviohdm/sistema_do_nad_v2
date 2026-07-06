@@ -49,11 +49,12 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 ## E-mail simulado e caixa de saída
 
 - Ações da Secretaria que comunicam o correicionado disparam um e-mail simulado:
-  - `criar diligência` → evento `email_diligencia_enviado` + entrada em `state.caixaDeSaida[]` do tipo `diligencia`.
+  - `criar diligência` → evento `email_diligencia_enviado` + entrada em `state.caixaDeSaida[]` do tipo `diligencia`. Vale tanto na **fila de diligência** (em lote) quanto na **criação unitária pelo detalhe da proposição** — ambas resolvem o destinatário e disparam o e-mail.
   - `cientificar` → evento `email_ciencia_enviado` em cada proposição cientificada + entrada em `state.caixaDeSaida[]` do tipo `ciencia` (agregada por destinatário).
 - Estrutura da caixa de saída: `{id, tipo, usuarioNotificadoId, usuarioNotificadoNome, usuarioNotificadoEmail, override, proposicaoIds[], assunto, corpoResumo, linkAcesso, enviadoEm, enviadoPor}`. O termo **`usuarioNotificado`** designa o **recebedor concreto** (pessoa de carne e osso) da comunicação — distinto do agregado `destinatario` da proposição (a orientação). `override = true` quando a Secretaria definiu o destinatário manualmente.
 - A página "Caixa de saída (demo)" é acessível apenas a Secretaria e Corregedor.
 - O recebedor de cada e-mail é **resolvido por comunicação** a partir da orientação (`resolverUsuariosDestinatarios`): membro → o próprio membro; unidade → responsável atual da unidade (a Secretaria confirma/troca); administração superior → **todos** os usuários parametrizados (uma entrada por usuário). Unidade/adm superior **vaga** bloqueia o envio até definição manual.
+- O controle **confirmar/trocar destinatário** (com bloqueio quando vago) é o mesmo componente compartilhado (`assets/js/ui/destinatario-control.js`) nas três superfícies de comunicação da Secretaria: **fila de diligência** (lote), **detalhe da proposição** (diligência unitária) e **fila de ciência** (lote por grupo — override por grupo membro/unidade). Trocar o destinatário marca `override` no e-mail e no histórico, mas **nunca** altera o agregado `destinatario` da proposição.
 
 ## Ciência e visualização pelo correicionado
 
@@ -163,7 +164,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   - reinicia o ciclo de comprovação
 - Toda decisão do tipo `concluída` transita a proposição para `aguardando_ciencia` e leva a `CIENTIFICAR`.
 - O ato de ciência (evento `CIENTIFICACAO`) transita o `statusFluxo` para `baixa_definitiva` e encerra o fluxo principal da proposição.
-- A ciência ocorre em bloco por `(correição × unidadeId)`: só é liberada quando todas as proposições daquela unidade naquela correição estão em `aguardando_ciencia`. Pendências em `pendenciasSecretaria[]` são ortogonais e **não bloqueiam** a transição para `baixa_definitiva`.
+- A ciência ocorre em bloco por `(correição × destinatário)`: só é liberada quando todas as proposições daquele destinatário naquela correição estão em `aguardando_ciencia`. Pendências em `pendenciasSecretaria[]` são ortogonais e **não bloqueiam** a transição para `baixa_definitiva`.
 - Se o resultado for `parcialmente cumprida` ou `não cumprida` e houver providência adicional:
   - a proposição segue para `CIENTIFICAR`; e
   - em paralelo, o sistema cria uma pendência para a `Secretaria Processual da CN` informar o cumprimento da providência
