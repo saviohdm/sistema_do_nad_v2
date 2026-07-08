@@ -263,11 +263,6 @@ const buildHero = (todas) => {
           <p class="acervo-overline acervo-overline--accent">Acervo · ${formatDatelineEditorial()}</p>
           <span class="acervo-hero__mark">NAD</span>
         </div>
-        <h1 class="acervo-hero__title">Consulta de Proposições</h1>
-        <p class="acervo-hero__subtitle">
-          Sumário do acervo de proposições oriundas das correições conduzidas pela Corregedoria Nacional.
-          Use os atalhos abaixo para filas comuns ou refine a busca pelos critérios completos.
-        </p>
       </div>
       <div class="acervo-hero__kpis" aria-label="Indicadores do acervo">
         <div class="acervo-hero__kpi">
@@ -824,8 +819,9 @@ const render = () => {
 
   mountPage({
     activePage: "proposicoes-lista",
-    title: "",
-    subtitle: "",
+    title: "Consulta de proposições",
+    subtitle:
+      "Sumário do acervo de proposições oriundas das correições conduzidas pela Corregedoria Nacional. Use os atalhos para filas comuns ou refine a busca pelos critérios completos.",
     actions: createButton,
     content: `
       <section class="stack" style="gap: var(--space-6);">

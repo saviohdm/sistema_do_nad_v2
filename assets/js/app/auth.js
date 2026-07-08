@@ -47,15 +47,15 @@ const PERMISSIONS = {
 
 const PERSONA_MENU_OVERRIDES = {
   [PERSONAS.MEMBRO]: [
-    { href: "membro-auxiliar.html", label: "Minha fila" },
-    { href: "proposicoes-lista.html", label: "Consulta" },
+    { href: "membro-auxiliar.html", label: "Minha fila de avaliação" },
+    { href: "proposicoes-lista.html", label: "Consulta de proposições" },
   ],
   [PERSONAS.CORREGEDOR]: [
     { href: "dashboard.html", label: "Dashboard" },
     { href: "corregedor-referendo.html", label: "Aguardando referendo do CNMP" },
     { href: "corregedor-decisao.html", label: "Aguardando decisão" },
     { href: "correicoes-lista.html", label: "Correições" },
-    { href: "proposicoes-lista.html", label: "Consulta" },
+    { href: "proposicoes-lista.html", label: "Consulta de proposições" },
     { href: "proposicoes-criar.html", label: "Criar proposição" },
     { href: "administracao-superior.html", label: "Administração Superior" },
     { href: "caixa-de-saida.html", label: "Caixa de saída (demo)" },
@@ -69,7 +69,7 @@ const PERSONA_MENU_OVERRIDES = {
       badgeKey: "gruposCompletosProntos",
     },
     { href: "secretaria-providencia.html", label: "Providências pendentes" },
-    { href: "proposicoes-lista.html", label: "Consulta" },
+    { href: "proposicoes-lista.html", label: "Consulta de proposições" },
     { href: "administracao-superior.html", label: "Administração Superior" },
     { href: "caixa-de-saida.html", label: "Caixa de saída (demo)" },
   ],
@@ -84,7 +84,7 @@ const PERSONA_MENU_OVERRIDES = {
       label: "Minhas ciências",
       badgeKey: "minhasCienciasNaoVisualizadas",
     },
-    { href: "proposicoes-lista.html", label: "Consulta" },
+    { href: "proposicoes-lista.html", label: "Consulta de proposições" },
   ],
 };
 

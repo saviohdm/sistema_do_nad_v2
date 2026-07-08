@@ -191,7 +191,7 @@ const render = () => {
   if (!isEdicao && correicoesDisponiveis.length === 0) {
     mountPage({
       activePage: "proposicoes-criar",
-      title: "Criar nova proposição",
+      title: "Criar proposição",
       subtitle: "É preciso ter ao menos uma correição cadastrada para vincular a proposição.",
       actions: baseActions,
       content: `
@@ -209,7 +209,7 @@ const render = () => {
 
   const title = isEdicao
     ? `Editar proposição ${proposicaoParaEditar.numero}`
-    : "Criar nova proposição";
+    : "Criar proposição";
   const subtitle = editandoRascunho
     ? "Atualize o rascunho desta proposição. Você pode salvá-lo como rascunho (sem confirmar) ou confirmar e encaminhá-lo ao referendo do CNMP. Histórico e demais campos são preservados."
     : isEdicao
