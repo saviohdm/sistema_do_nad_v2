@@ -17,11 +17,7 @@ import {
   getTipoDestinatario,
   findMembroById,
 } from "../domain/destinatario.js";
-import {
-  renderBadge,
-  renderFilaProposicaoEditorial,
-  renderStatCard,
-} from "../ui/components.js";
+import { renderBadge, renderFilaProposicaoEditorial } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
 import {
   renderDestinatarioControl,
@@ -285,7 +281,7 @@ montarFilaNavegavel({
     fila: "Selecione múltiplas proposições e crie diligências em lote com um único prazo e descrição.",
   },
   textos: {
-    panoramaTitulo: "Panorama da fila",
+    panoramaTitulo: "Panorama da diligência",
     panoramaIntro:
       'Proposições que aguardam criação de diligência pela Secretaria — recém-referendadas (novas) ou que retornaram após decisão "necessita mais informações".',
     contagemLabel: "Aguardando diligência",
@@ -368,15 +364,25 @@ montarFilaNavegavel({
       ${renderGruposCompletoToggle(ctx.extras.gruposCompletoCount, !!filtros.gruposCompletos)}
     `;
   },
-  renderStats: (proposicoes) => {
-    const novas = proposicoes.filter((p) => !p.apreciacaoDoCN).length;
-    const retornadas = proposicoes.filter(isRetornada).length;
-    return `
-      ${renderStatCard("Total aguardando diligência", proposicoes.length)}
-      ${renderStatCard("Novas", novas)}
-      ${renderStatCard("Retornadas (necessita mais informações)", retornadas)}
-    `;
-  },
+  getKpis: (proposicoes) => [
+    {
+      label: "Aguardando diligência",
+      valor: proposicoes.length,
+      filtros: { filaForcada: true },
+    },
+    {
+      label: "Novas (primeira diligência)",
+      valor: proposicoes.filter((p) => !p.apreciacaoDoCN).length,
+      filtros: { subStatus: "nova", filaForcada: true },
+      title: "Recém-referendadas, ainda sem diligência.",
+    },
+    {
+      label: "Retornadas (necessita mais informações)",
+      valor: proposicoes.filter(isRetornada).length,
+      filtros: { subStatus: "retornada", filaForcada: true },
+      title: "Retornaram por decisão do Corregedor — exigem nova diligência.",
+    },
+  ],
   renderItens: (filtradas) =>
     filtradas.map((proposicao, index) => renderCardSelecionavel(proposicao, index)).join(""),
   renderFilaTopo: (ctx) => renderSelectAllRow(ctx.filtradas),

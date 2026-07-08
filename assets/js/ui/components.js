@@ -101,6 +101,32 @@ export const renderStatCard = (label, value) => `
   </article>
 `;
 
+// KPI dos panoramas das filas operacionais. Com `filtros` e valor > 0 o cartão vira
+// botão; quem monta a tela faz o bind de [data-kpi-filtros] -> aplicarFiltros(JSON).
+export const renderPanoramaKpi = ({ label, valor, filtros, destaque, title }) => {
+  const clicavel = Boolean(filtros) && valor > 0;
+  const classes = [
+    "panorama-kpi",
+    clicavel ? "panorama-kpi--link" : "",
+    destaque && valor > 0 ? "panorama-kpi--destaque" : "",
+    valor === 0 ? "panorama-kpi--zero" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const titleAttr = title ? ` title="${escapeHtml(title)}"` : "";
+  const inner = `
+    <span class="panorama-kpi__value">${valor}</span>
+    <span class="panorama-kpi__label">${label}</span>`;
+  return clicavel
+    ? `<button type="button" class="${classes}" data-kpi-filtros="${escapeHtml(
+        JSON.stringify(filtros),
+      )}"${titleAttr}>${inner}</button>`
+    : `<div class="${classes}"${titleAttr}>${inner}</div>`;
+};
+
+export const renderPanoramaKpis = (kpis) =>
+  `<div class="panorama-kpis">${kpis.map(renderPanoramaKpi).join("")}</div>`;
+
 export const renderChartCard = (title, slices, { subtitle, showPercent = true, highlight = false, actions = [] } = {}) => {
   const total = slices.reduce((s, d) => s + d.value, 0);
   const radius = 42;
@@ -202,16 +228,6 @@ export const renderSoloChartCard = (title, value, { caption, subtitle, actions =
     </article>
   `;
 };
-
-export const renderMetricSection = (title, cardsHtml, { subtitle } = {}) => `
-  <section class="metric-section">
-    <header class="metric-section__header">
-      <h3 class="panel__title">${title}</h3>
-      ${subtitle ? `<p class="muted">${subtitle}</p>` : ""}
-    </header>
-    <div class="stats-grid">${cardsHtml}</div>
-  </section>
-`;
 
 export const renderRamoMPTable = (linhas) => {
   const maxAtivas = linhas.length ? Math.max(...linhas.map((l) => l.ativas), 1) : 1;

@@ -1,18 +1,11 @@
 import { PERSONAS } from "../app/auth.js";
 import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
-import {
-  groupByCorreicao,
-  groupByRamoMP,
-  listProposicoesParaAvaliar,
-} from "../domain/proposicoes.js";
+import { listProposicoesParaAvaliar } from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
+import { Prioridade } from "../domain/enums.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import { listarIdsComRascunho } from "../domain/rascunhos-avaliacao.js";
-import {
-  renderBadge,
-  renderFilaProposicaoEditorial,
-  renderStatCard,
-} from "../ui/components.js";
+import { renderBadge, renderFilaProposicaoEditorial } from "../ui/components.js";
 
 const renderCard = (proposicao, temRascunho, index) =>
   renderFilaProposicaoEditorial(proposicao, {
@@ -36,7 +29,7 @@ montarFilaNavegavel({
     fila: "Avalie cada proposição uma a uma. Use os filtros da direita para refinar a seleção.",
   },
   textos: {
-    panoramaTitulo: "Panorama",
+    panoramaTitulo: "Panorama da avaliação",
     contagemLabel: "Pendentes",
     porCorreicaoHint: "Clique em uma correição para avaliar as proposições daquela correição.",
     unidadesHint: "Clique em um destinatário para entrar na fila de avaliação.",
@@ -55,15 +48,26 @@ montarFilaNavegavel({
     label: "Somente com rascunho",
     detectar: (proposicao, ctx) => ctx.extras.idsComRascunho.includes(proposicao.id),
   },
-  renderStats: (proposicoes) => {
-    const ramos = groupByRamoMP(proposicoes);
-    const correicoes = groupByCorreicao(proposicoes);
-    return `
-      ${renderStatCard("Pendentes de avaliação", proposicoes.length)}
-      ${renderStatCard("Ramos envolvidos", ramos.length)}
-      ${renderStatCard("Correições envolvidas", correicoes.length)}
-    `;
-  },
+  getKpis: (proposicoes, ctx) => [
+    {
+      label: "Pendentes de avaliação",
+      valor: proposicoes.length,
+      filtros: { filaForcada: true },
+    },
+    {
+      label: "Com rascunho a retomar",
+      valor: proposicoes.filter((p) => ctx.extras.idsComRascunho.includes(p.id)).length,
+      filtros: { comRascunho: true },
+      destaque: true,
+      title: "Avaliações iniciadas e ainda não submetidas.",
+    },
+    {
+      label: "Urgentes",
+      valor: proposicoes.filter((p) => p.prioridade === Prioridade.URGENTE).length,
+      filtros: { prioridade: Prioridade.URGENTE, filaForcada: true },
+      title: "Proposições com prioridade urgente — avalie primeiro.",
+    },
+  ],
   renderItens: (filtradas, ctx) =>
     filtradas
       .map((p, index) => renderCard(p, ctx.extras.idsComRascunho.includes(p.id), index))

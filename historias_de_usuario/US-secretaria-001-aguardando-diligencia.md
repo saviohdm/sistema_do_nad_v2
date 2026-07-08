@@ -12,7 +12,7 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `criar_diligencia
 - Existe ao menos uma proposição com `statusFluxo = AGUARDANDO_SECRETARIA` (recém-referendada pela CN ou retornada via decisão `necessita mais informações`).
 
 ## Fluxo principal
-1. Acessa **Aguardando diligência** → vê panorama (total, novas, retornadas) e tabela por correição com `Proposições aguardando` e `Destinatários prontos / total`.
+1. Acessa **Aguardando diligência** → vê panorama com 3 indicadores clicáveis (aguardando diligência, novas, retornadas — o clique abre a fila já filtrada) e tabela por correição com `Proposições aguardando` e `Destinatários prontos / total`.
 2. Entra numa correição → painel **Destinatários** subdividido em 3 seções na ordem **Administração Superior › Unidades › Membros** (seções vazias ocultas); clica num destinatário para entrar na fila, ou "Ver todas".
 3. Aplica filtros (prioridade, temática, UF, correição, membro, sub-status, busca).
 4. Marca **"Selecionar todos os N visíveis"** (seleção é cumulativa entre filtros).

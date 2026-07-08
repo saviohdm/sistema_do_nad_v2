@@ -11,7 +11,7 @@ import {
   renderFilaEmptyState,
   renderFilaFiltrosAtivos,
   renderFilaOperacionalHeader,
-  renderStatCard,
+  renderPanoramaKpis,
 } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
 import {
@@ -155,10 +155,28 @@ const filtrarGrupos = (grupos, filtros) =>
 // ---------------------------------------------------------------------------
 
 const renderOverview = (grupos, currentState) => {
-  const totalProposicoes = grupos.reduce((s, g) => s + g.prontas, 0);
-  const completos = grupos.filter((g) => g.completo).length;
-  const parciais = grupos.filter((g) => !g.completo).length;
-  const prontosHoje = grupos.filter((g) => g.completo && isHoje(g.prontoEm)).length;
+  const completos = grupos.filter((g) => g.completo);
+  const kpis = [
+    {
+      label: "Grupos prontos para ciência",
+      valor: completos.length,
+      filtros: { estado: "completo" },
+      destaque: true,
+      title: "Grupos completos — todas as proposições prontas para a ciência em bloco.",
+    },
+    {
+      label: "Proposições a cientificar",
+      valor: completos.reduce((s, g) => s + g.prontas, 0),
+      filtros: { estado: "completo" },
+      title: "Proposições dos grupos completos, prontas para ciência.",
+    },
+    {
+      label: "Prontos hoje",
+      valor: completos.filter((g) => isHoje(g.prontoEm)).length,
+      filtros: { prontoEm: "hoje" },
+      title: "Grupos que ficaram completos hoje.",
+    },
+  ];
 
   const correicoes = listPanoramaFilaPorCorreicao(currentState, StatusFilaOperacional.CIENCIA);
 
@@ -180,17 +198,12 @@ const renderOverview = (grupos, currentState) => {
   return `
     <section class="stack">
       <div class="panel">
-        <h3 class="panel__title">Panorama da fila</h3>
+        <h3 class="panel__title">Panorama da ciência</h3>
         <p class="muted">
           Grupos (correição × destinatário) cujas proposições aguardam ciência ao correicionado.
           A ciência só pode ser efetuada em bloco quando todas as proposições do grupo estão prontas.
         </p>
-        <div class="cards-grid">
-          ${renderStatCard("Proposições aguardando", totalProposicoes)}
-          ${renderStatCard("Grupos completos", completos)}
-          ${renderStatCard("Grupos parciais", parciais)}
-          ${renderStatCard("Prontos hoje", prontosHoje)}
-        </div>
+        ${renderPanoramaKpis(kpis)}
         <div class="button-row" style="margin-top: 1rem;">
           <button class="button" type="button" data-action="ver-todos">Ver todos em uma fila</button>
         </div>
@@ -654,6 +667,10 @@ const bindHandlers = (filtros, grupos) => {
     row.addEventListener("click", () => {
       aplicarFiltros({ correicaoId: correicao });
     });
+  });
+
+  document.querySelectorAll("[data-kpi-filtros]").forEach((kpi) => {
+    kpi.addEventListener("click", () => aplicarFiltros(JSON.parse(kpi.dataset.kpiFiltros)));
   });
 
   document.querySelector("[data-action='ver-todos']")?.addEventListener("click", () => {

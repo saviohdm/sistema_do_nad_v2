@@ -12,11 +12,7 @@ import {
 import { hydrateProposicao } from "../domain/correicoes.js";
 import { StatusFluxo } from "../domain/enums.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
-import {
-  renderBadge,
-  renderFilaProposicaoEditorial,
-  renderStatCard,
-} from "../ui/components.js";
+import { renderBadge, renderFilaProposicaoEditorial } from "../ui/components.js";
 import { openRelatorioFinalModal } from "../ui/modal.js";
 
 const ehRascunho = (proposicao) => proposicao.statusFluxo === StatusFluxo.RASCUNHO_CN;
@@ -173,26 +169,32 @@ montarFilaNavegavel({
     label: "Somente com rascunho",
     detectar: (proposicao) => ehRascunho(proposicao),
   },
-  renderStats: (proposicoes, ctx) => {
-    const correicoes = groupByCorreicao(proposicoes);
-    const rascunhos = contarRascunhos(ctx.proposicoes);
-    return `
-      ${renderStatCard("Proposições aguardando referendo", proposicoes.length)}
-      ${renderStatCard("Correições envolvidas", correicoes.length)}
-      ${renderStatCard("Rascunhos de criação pendentes", rascunhos)}
-    `;
+  getKpis: (proposicoes, ctx) => {
+    const aguardando = proposicoes.filter((p) => !ehRascunho(p));
+    const correicoesProntas = groupByCorreicao(aguardando).filter(
+      (c) => c.correicaoId && getRascunhosDaCorreicao(ctx.state, c.correicaoId).length === 0,
+    ).length;
+    return [
+      {
+        label: "Proposições aguardando referendo",
+        valor: aguardando.length,
+        filtros: { filaForcada: true },
+      },
+      {
+        label: "Correições prontas para referendar",
+        valor: correicoesProntas,
+        destaque: true,
+        title: "Correições sem rascunho pendente — referende em bloco na tabela Por correição.",
+      },
+      {
+        label: "Rascunhos a confirmar",
+        valor: contarRascunhos(ctx.proposicoes),
+        filtros: { comRascunho: true },
+      },
+    ];
   },
-  renderOverviewActions: (ctx) => {
-    const rascunhos = contarRascunhos(ctx.proposicoes);
-    const verRascunhos =
-      rascunhos > 0
-        ? `<button class="button button--ghost" type="button" data-action="ver-rascunhos">Ver rascunhos (${rascunhos})</button>`
-        : "";
-    return `
-      <a class="button button--ghost" href="/pages/proposicoes-criar.html">Criar nova proposição</a>
-      ${verRascunhos}
-    `;
-  },
+  renderOverviewActions: () =>
+    `<a class="button button--ghost" href="/pages/proposicoes-criar.html">Criar nova proposição</a>`,
   renderCorreicaoRowAcoes: (item, ctx) => renderAcoesCorreicao(item.correicaoId, ctx),
   renderFilaHeaderActions: (ctx) =>
     ctx.filtros.correicaoId &&
@@ -231,8 +233,5 @@ montarFilaNavegavel({
         handleConfirmarRascunho(btn.dataset.proposicaoId, ctx);
       });
     });
-    document
-      .querySelector("[data-action='ver-rascunhos']")
-      ?.addEventListener("click", () => ctx.aplicarFiltros({ comRascunho: true }));
   },
 });

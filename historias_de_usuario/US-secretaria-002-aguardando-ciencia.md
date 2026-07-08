@@ -12,7 +12,7 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `registrar_cienti
 - Existe ao menos uma proposição com `statusFluxo = AGUARDANDO_CIENCIA` (decisão conclusiva proferida e ainda sem evento `CIENTIFICACAO`).
 
 ## Fluxo principal
-1. Acessa **Aguardando ciência** → vê panorama com 4 stat cards (proposições aguardando, grupos completos, grupos parciais, prontos hoje) e tabelas por Ramo e por Correição com colunas `Proposições aguardando` e `Unidades prontas / total`.
+1. Acessa **Aguardando ciência** → vê panorama com 3 indicadores clicáveis (grupos prontos para ciência, proposições a cientificar, prontos hoje — o clique abre a fila já filtrada) e tabelas por Ramo e por Correição com colunas `Proposições aguardando` e `Unidades prontas / total`.
 2. Drilldown: clica em ramo → modo Ramo lista correições do ramo; clica em correição → modo Grupo com cards por `(correição × unidadeId)`.
 3. No modo Grupo, aplica filtros laterais (Ramo, Correição, Estado completo/parcial, Pronto em hoje/últimos 7 dias).
 4. Marca grupos completos por `(correição × unidadeId)` (apenas grupos completos têm checkbox; parciais aparecem desabilitados com badge "Aguardando N decisões pendentes").

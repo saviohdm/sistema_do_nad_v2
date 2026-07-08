@@ -118,8 +118,7 @@
   letter-spacing: 0.07em;
 }
 
-.stats-grid,
-.summary-grid {
+.stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--space-4);
@@ -141,6 +140,82 @@
 
 .stat-card__label {
   color: var(--muted);
+}
+
+/* Panorama das filas operacionais — KPIs orientados a ação (visual do cn-kpi) */
+.panorama-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4) var(--space-5);
+  padding-top: var(--space-2);
+}
+
+.panorama-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+button.panorama-kpi {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  text-align: left;
+}
+
+.panorama-kpi__value {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.panorama-kpi__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.panorama-kpi--destaque .panorama-kpi__value {
+  color: var(--primary);
+}
+
+.panorama-kpi--destaque .panorama-kpi__label {
+  color: var(--primary-dark);
+}
+
+.panorama-kpi--zero .panorama-kpi__value {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.panorama-kpi--link {
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.panorama-kpi--link:hover .panorama-kpi__value,
+.panorama-kpi--link:focus-visible .panorama-kpi__value {
+  color: var(--primary);
+}
+
+.panorama-kpi--link:hover .panorama-kpi__label,
+.panorama-kpi--link:focus-visible .panorama-kpi__label {
+  color: var(--primary-dark);
+}
+
+.panorama-kpi--link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 /* Dashboard: Grade 2x2 uniforme para os gráficos do Corregedor */
@@ -635,12 +710,6 @@
 .meta-item strong {
   display: block;
   margin-top: var(--space-1);
-}
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-4);
 }
 
 .empty-state {

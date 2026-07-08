@@ -11,7 +11,9 @@
 //   textos                                             -> rótulos/empty-states (ver defaults)
 //   getProposicoes(state)                              -> lista já hidratada (obrigatório)
 //   prepare(state) -> extras                           -> dados por render (ex.: idsComRascunho)
-//   renderStats(proposicoes, ctx)                      -> cards de KPI (obrigatório)
+//   getKpis(proposicoes, ctx)                          -> KPIs do panorama (obrigatório):
+//       [{ label, valor, filtros?, destaque?, title? }]. Com `filtros` e valor > 0 o KPI
+//       é clicável e aplica os filtros na própria fila (incluir filaForcada: true).
 //   renderItens(filtradas, ctx)                        -> HTML dos cards da fila (obrigatório)
 //   renderCorreicaoRowAcoes(item, ctx)   (opcional)    -> célula extra de ações nas correições
 //   renderOverviewActions(ctx)           (opcional)    -> botões extras no panorama
@@ -42,6 +44,7 @@ import {
   renderFilaEmptyState,
   renderFilaFiltrosAtivos,
   renderFilaOperacionalHeader,
+  renderPanoramaKpis,
 } from "../ui/components.js";
 
 const escapeAttr = (value) => String(value ?? "").replace(/"/g, "&quot;");
@@ -159,7 +162,7 @@ export function montarFilaNavegavel(config) {
         <div class="panel">
           <h3 class="panel__title">${textos.panoramaTitulo || "Panorama"}</h3>
           ${textos.panoramaIntro ? `<p class="muted">${textos.panoramaIntro}</p>` : ""}
-          <div class="cards-grid">${config.renderStats(proposicoes, ctx)}</div>
+          ${renderPanoramaKpis(config.getKpis(proposicoes, ctx))}
           <div class="button-row" style="margin-top: 1rem;">
             <button class="button" type="button" data-action="ver-todas">Ver todas em uma fila</button>
             ${config.renderOverviewActions ? config.renderOverviewActions(ctx) : ""}
@@ -509,6 +512,10 @@ export function montarFilaNavegavel(config) {
           destinatarioRef: row.dataset.navDestinatarioRef,
         }),
       );
+    });
+
+    document.querySelectorAll("[data-kpi-filtros]").forEach((kpi) => {
+      kpi.addEventListener("click", () => aplicarFiltros(JSON.parse(kpi.dataset.kpiFiltros)));
     });
 
     document
