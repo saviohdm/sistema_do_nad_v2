@@ -4,6 +4,7 @@ import {
   getCurrentUser,
   hasPermission,
   getMenuOverrideForCurrentPersona,
+  getHomeForPersona,
 } from "../app/auth.js";
 import { loadState, saveState } from "../app/store.js";
 import { countGruposCompletosProntos } from "../domain/secretaria-filas.js";
@@ -14,18 +15,12 @@ import {
 } from "../domain/correicionados.js";
 import { expirarDiligenciasVencidas } from "../domain/diligencias.js";
 
-const baseNavItems = [
-  { href: "dashboard.html", label: "Dashboard" },
-  { href: "membro-auxiliar.html", label: "Minha fila", permission: "ver_fila_membro_auxiliar" },
-  { href: "proposicoes-criar.html", label: "Criar Proposição", permission: "criar_proposicao" },
-  { href: "proposicao-detalhe.html?id=prop-003", label: "Detalhe da proposição" },
-];
+const getNavItemsForCurrentPersona = () => getMenuOverrideForCurrentPersona() || [];
 
-const getNavItemsForCurrentPersona = () => {
-  const override = getMenuOverrideForCurrentPersona();
-  if (override) return override;
-  return baseNavItems.filter((item) => !item.permission || hasPermission(item.permission));
-};
+const pageSlug = (href) => href.split("?")[0].split("/").pop().replace(/\.html$/i, "");
+
+export const activePageParaPersona = (slug, fallback = "proposicoes-lista") =>
+  getNavItemsForCurrentPersona().some((item) => pageSlug(item.href) === slug) ? slug : fallback;
 
 const computeBadgeValue = (badgeKey) => {
   if (!badgeKey) return null;
@@ -138,18 +133,19 @@ export const renderAppShell = ({ activePage, title, subtitle, content, actions =
     <div class="app-shell">
       <aside class="sidebar">
         ${renderPersonaBadge()}
-        <p class="sidebar__title">NAD</p>
+        <p class="sidebar__title"><a href="${getHomeForPersona()}" title="Ir para a página inicial">NAD</a></p>
         <p class="sidebar__subtitle">Gestão de proposições, diligências, decisões e pendências da Secretaria Processual.</p>
         <nav>
           ${navItems
-            .map(
-              (item) => `
-                <a class="nav-link ${item.href.includes(activePage) ? "is-active" : ""}" href="${item.href}">
+            .map((item) => {
+              const ativo = pageSlug(item.href) === activePage;
+              return `
+                <a class="nav-link ${ativo ? "is-active" : ""}"${ativo ? ' aria-current="page"' : ""} href="${item.href}">
                   <span class="nav-link__label">${item.label}</span>
                   ${renderNavBadge(item.badgeKey)}
                 </a>
-              `,
-            )
+              `;
+            })
             .join("")}
         </nav>
       </aside>

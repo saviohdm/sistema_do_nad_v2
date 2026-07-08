@@ -125,6 +125,13 @@ export const getCurrentUser = () => {
   return membros.find((m) => m.id === userId) || null;
 };
 
+export const getHomeForPersona = (persona = getCurrentPersona()) => {
+  if (persona === PERSONAS.CORREICIONADO) return "/pages/correicionado-comprovacoes.html";
+  if (persona === PERSONAS.MEMBRO) return "/pages/membro-auxiliar.html";
+  if (persona === PERSONAS.CORREGEDOR || persona === PERSONAS.SECRETARIA) return "/pages/dashboard.html";
+  return "/pages/login.html";
+};
+
 export const hasPermission = (action) => {
   const persona = getCurrentPersona();
   if (!persona) return false;

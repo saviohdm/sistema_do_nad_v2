@@ -1,4 +1,4 @@
-import { PERSONAS, setCurrentPersona, setCurrentUser } from "../app/auth.js";
+import { PERSONAS, setCurrentPersona, setCurrentUser, getHomeForPersona } from "../app/auth.js";
 import { loadState } from "../app/store.js";
 import { listMembros, findUnidadeById } from "../domain/correicionados.js";
 
@@ -102,17 +102,13 @@ const render = () => {
       }
       setCurrentPersona(persona);
       setCurrentUser(userId);
-      window.location.href = "/pages/correicionado-comprovacoes.html";
+      window.location.href = getHomeForPersona(persona);
       return;
     }
 
     setCurrentPersona(persona);
     setCurrentUser(null);
-    const destino =
-      persona === PERSONAS.MEMBRO
-        ? "/pages/membro-auxiliar.html"
-        : "/pages/dashboard.html";
-    window.location.href = destino;
+    window.location.href = getHomeForPersona(persona);
   });
 };
 

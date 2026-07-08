@@ -12,12 +12,20 @@
   gap: var(--space-2);
 }
 
-.nav-link:hover,
-.nav-link.is-active {
+.nav-link:hover {
   background: var(--surface-alt);
   transform: translateX(2px);
   border-color: var(--primary);
   color: var(--primary-dark);
+}
+
+.nav-link.is-active {
+  background: var(--surface-alt);
+  border-color: var(--primary-dark);
+  box-shadow: inset 4px 0 0 var(--primary-dark);
+  color: var(--primary-dark);
+  font-weight: 700;
+  transform: none;
 }
 
 .nav-link__label {

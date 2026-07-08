@@ -98,6 +98,16 @@ button {
   margin: 0 0 var(--space-2);
 }
 
+.sidebar__title a {
+  color: inherit;
+}
+
+.sidebar__title a:hover,
+.sidebar__title a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
 .sidebar__subtitle {
   margin: 0 0 var(--space-6);
   color: rgba(255, 255, 255, 0.8);
