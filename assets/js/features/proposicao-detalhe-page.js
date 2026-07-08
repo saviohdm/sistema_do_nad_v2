@@ -1,5 +1,6 @@
-import { PERSONAS, requireAuth, getCurrentPersona, getCurrentUser } from "../app/auth.js";
+import { PERSONAS, requireAuth, getCurrentPersona, getCurrentUser, hasPermission } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
+import { activePageParaPersona, renderBreadcrumb, resolverOrigemDetalhe } from "../ui/layout.js";
 import { mutateState } from "../app/store.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
 import { formatDate, formatDateTime, queryParam } from "../app/utils.js";
@@ -75,10 +76,11 @@ import {
 } from "../ui/destinatario-control.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
-const veioDaFilaMembro = queryParam("fromMembro") === "1";
-const fromCorregedor = queryParam("fromCorregedor");
-const veioDaFilaReferendo = fromCorregedor === "referendo";
-const veioDaFilaDecisao = fromCorregedor === "decisao";
+const origem = resolverOrigemDetalhe({
+  from: queryParam("from"),
+  fromMembro: queryParam("fromMembro"),
+  fromCorregedor: queryParam("fromCorregedor"),
+});
 
 // Filtro de categoria do histórico unificado; sobrevive aos re-renders da página.
 let filtroHistoricoAtivo = "todos";
@@ -101,43 +103,27 @@ const bindContextoHandler = () => {
   });
 };
 
-const voltarParaFilaMembro = () => {
-  const filtrosSalvos = sessionStorage.getItem("nad-membro-auxiliar-filtros");
-  let query = "";
-  if (filtrosSalvos) {
-    try {
-      const filtros = JSON.parse(filtrosSalvos);
-      const params = new URLSearchParams();
-      Object.entries(filtros).forEach(([key, value]) => {
-        if (value === true) params.set(key, "1");
-        else if (value) params.set(key, String(value));
-      });
-      const q = params.toString();
-      if (q) query = `?${q}`;
-    } catch {
-      query = "";
-    }
-  }
-  window.location.href = `/pages/membro-auxiliar.html${query}`;
+const voltarParaOrigem = (proposicao) => {
+  window.location.href = origem.href(proposicao);
 };
 
-const voltarParaFilaCorregedor = (qual) => {
-  const page = qual === "decisao" ? "corregedor-decisao.html" : "corregedor-referendo.html";
-  window.location.href = `/pages/${page}`;
-};
+const botaoVoltar = (proposicao) =>
+  origem
+    ? `<a class="button button--ghost" href="${origem.href(proposicao)}">${origem.voltarLabel}</a>`
+    : `<a class="button button--ghost" href="proposicoes-lista.html">Voltar à consulta</a>`;
 
-const botaoVoltar = () => {
-  if (veioDaFilaMembro) {
-    return `<a class="button button--ghost" href="membro-auxiliar.html">Voltar à fila</a>`;
-  }
-  if (veioDaFilaReferendo) {
-    return `<a class="button button--ghost" href="corregedor-referendo.html">Voltar à fila de referendo</a>`;
-  }
-  if (veioDaFilaDecisao) {
-    return `<a class="button button--ghost" href="corregedor-decisao.html">Voltar à fila de decisão</a>`;
-  }
-  return `<a class="button button--ghost" href="proposicoes-lista.html">Voltar à lista</a>`;
-};
+const renderTrilha = (proposicao) =>
+  renderBreadcrumb([
+    proposicao.correicao
+      ? {
+          label: `Correição ${proposicao.correicao.numero}${proposicao.ramoMP ? ` · ${proposicao.ramoMP}` : ""}`,
+          href: hasPermission("gerir_correicao")
+            ? `/pages/correicoes-criar.html?id=${proposicao.correicaoId}`
+            : null,
+        }
+      : null,
+    { label: `Proposição ${proposicao.numero}` },
+  ]);
 
 const bindHandlers = (proposicao) => {
   document.querySelector("#form-comprovacao")?.addEventListener("submit", (event) => {
@@ -207,8 +193,8 @@ const bindHandlers = (proposicao) => {
       return draft;
     });
     removerRascunhoAvaliacao(proposicao.id);
-    if (veioDaFilaMembro) {
-      voltarParaFilaMembro();
+    if (origem?.slug === "membro-auxiliar") {
+      voltarParaOrigem(proposicao);
       return;
     }
     render();
@@ -336,8 +322,8 @@ const bindHandlers = (proposicao) => {
         if (item) markPropositionDeleted(item);
         return draft;
       });
-      if (veioDaFilaReferendo) {
-        voltarParaFilaCorregedor("referendo");
+      if (origem?.slug === "corregedor-referendo") {
+        voltarParaOrigem(proposicao);
         return;
       }
       render();
@@ -358,8 +344,8 @@ const bindHandlers = (proposicao) => {
         if (item) confirmarRascunhoCN(draft, item);
         return draft;
       });
-      if (veioDaFilaReferendo) {
-        voltarParaFilaCorregedor("referendo");
+      if (origem?.slug === "corregedor-referendo") {
+        voltarParaOrigem(proposicao);
         return;
       }
       render();
@@ -650,7 +636,7 @@ const renderAcaoCorregedor = (proposicao, available) => {
           (ou diretamente à Secretaria, se a correição já estiver referendada).
         </p>
         <div class="button-row">
-          <a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar rascunho</a>
+          <a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}${origem ? `&from=${origem.slug}` : ""}">Editar rascunho</a>
           <button class="button" type="button" data-action="confirmar-rascunho">Confirmar e encaminhar</button>
           <button class="button button--danger" type="button" data-action="apagar-proposicao">Apagar rascunho</button>
         </div>
@@ -669,7 +655,7 @@ const renderAcaoCorregedor = (proposicao, available) => {
         <div class="button-row">
           ${
             available.podeEditarProposicao
-              ? `<a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar proposição</a>`
+              ? `<a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}${origem ? `&from=${origem.slug}` : ""}">Editar proposição</a>`
               : ""
           }
           ${
@@ -857,7 +843,7 @@ const render = () => {
 
   if (!proposicao) {
     mountPage({
-      activePage: "proposicao-detalhe",
+      activePage: activePageParaPersona("proposicoes-lista"),
       title: "Proposição não encontrada",
       subtitle: "O identificador informado não existe na base carregada.",
       actions: baseActions,
@@ -877,7 +863,7 @@ const render = () => {
     }
     if (!proposicaoVisivelPara(state(), proposicao, user)) {
       mountPage({
-        activePage: "proposicao-detalhe",
+        activePage: "correicionado-comprovacoes",
         title: "Proposição não vinculada a você",
         subtitle: "Você só pode visualizar proposições orientadas a você, à unidade que chefia atualmente ou à administração superior que responde — ou que já lhe foram comunicadas.",
         actions: `<a class="button button--ghost" href="correicionado-comprovacoes.html">Voltar</a>`,
@@ -903,6 +889,7 @@ const render = () => {
           : "correicionado-comprovacoes",
       title: "Detalhe da proposição",
       subtitle: "Visão do correicionado: acompanhe diligências, comprove ou tome ciência da apreciação final.",
+      breadcrumb: renderTrilha(propAtualizada),
       actions: `<a class="button button--ghost" href="correicionado-comprovacoes.html">Comprovações</a><a class="button button--ghost" href="correicionado-ciencias.html">Ciências</a>`,
       content: renderDetalheContent({
         proposicao: propAtualizada,
@@ -922,11 +909,12 @@ const render = () => {
   }
 
   mountPage({
-    activePage: "proposicao-detalhe",
+    activePage: activePageParaPersona(origem?.activePage || "proposicoes-lista"),
     title: "Detalhe da proposição",
     subtitle:
       "Painel completo do caso: a ação da sua persona em destaque e o dossiê (diligências, providências e histórico) logo abaixo.",
-    actions: `${baseActions}${botaoVoltar()}`,
+    breadcrumb: renderTrilha(proposicao),
+    actions: `${baseActions}${botaoVoltar(proposicao)}`,
     content: renderDetalheContent({
       proposicao,
       meta: buildMeta(proposicao, persona),

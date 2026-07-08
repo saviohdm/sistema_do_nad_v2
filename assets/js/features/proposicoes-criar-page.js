@@ -19,11 +19,16 @@ import {
   getDestinatario,
 } from "../domain/destinatario.js";
 import { renderAlert } from "../ui/components.js";
+import { resolverOrigemDetalhe } from "../ui/layout.js";
 
 requireAuth();
 
 const editId = queryParam("id");
-const fromCorregedor = queryParam("fromCorregedor");
+// Origem ecoada de volta ao detalhe ao salvar/cancelar (aliases legados aceitos).
+const origemEco = resolverOrigemDetalhe({
+  from: queryParam("from"),
+  fromCorregedor: queryParam("fromCorregedor"),
+});
 
 if (!editId && !hasPermission("criar_proposicao")) {
   alert("Sem permissão para criar proposições");
@@ -344,12 +349,12 @@ const render = () => {
   });
 
   document.querySelector("#btn-cancelar").addEventListener("click", () => {
-    if (isEdicao && fromCorregedor === "referendo") {
-      window.location.href = "/pages/corregedor-referendo.html";
+    if (isEdicao && origemEco?.slug === "corregedor-referendo") {
+      window.location.href = origemEco.href();
       return;
     }
     if (isEdicao) {
-      window.location.href = `/pages/proposicao-detalhe.html?id=${proposicaoParaEditar.id}`;
+      window.location.href = `/pages/proposicao-detalhe.html?id=${proposicaoParaEditar.id}${origemEco ? `&from=${origemEco.slug}` : ""}`;
       return;
     }
     window.location.href = "/pages/proposicoes-lista.html";
@@ -497,10 +502,10 @@ const render = () => {
             ? "Rascunho atualizado."
             : "Alterações salvas.",
       );
-      if (fromCorregedor === "referendo") {
-        window.location.href = "/pages/corregedor-referendo.html";
+      if (origemEco?.slug === "corregedor-referendo") {
+        window.location.href = origemEco.href();
       } else {
-        window.location.href = `/pages/proposicao-detalhe.html?id=${proposicaoParaEditar.id}&fromCorregedor=referendo`;
+        window.location.href = `/pages/proposicao-detalhe.html?id=${proposicaoParaEditar.id}${origemEco ? `&from=${origemEco.slug}` : ""}`;
       }
       return;
     }

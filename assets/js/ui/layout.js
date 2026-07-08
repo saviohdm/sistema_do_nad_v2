@@ -22,6 +22,104 @@ const pageSlug = (href) => href.split("?")[0].split("/").pop().replace(/\.html$/
 export const activePageParaPersona = (slug, fallback = "proposicoes-lista") =>
   getNavItemsForCurrentPersona().some((item) => pageSlug(item.href) === slug) ? slug : fallback;
 
+const buildHrefComFiltrosSalvos = (href, storageKey) => {
+  try {
+    const filtros = JSON.parse(sessionStorage.getItem(storageKey) || "null");
+    if (!filtros) return href;
+    const params = new URLSearchParams();
+    Object.entries(filtros).forEach(([key, value]) => {
+      if (value === true) params.set(key, "1");
+      else if (value) params.set(key, String(value));
+    });
+    const query = params.toString();
+    return query ? `${href}?${query}` : href;
+  } catch {
+    return href;
+  }
+};
+
+// Origens válidas do detalhe da proposição (whitelist). O slug é o mesmo da página
+// emissora; as filas navegáveis reabrem com os filtros que o usuário deixou salvos.
+export const ORIGENS_DETALHE = {
+  "dashboard": {
+    activePage: "dashboard",
+    voltarLabel: "Voltar ao dashboard",
+    href: () => "/pages/dashboard.html",
+  },
+  "proposicoes-lista": {
+    activePage: "proposicoes-lista",
+    voltarLabel: "Voltar à consulta",
+    href: () => "/pages/proposicoes-lista.html",
+  },
+  "membro-auxiliar": {
+    activePage: "membro-auxiliar",
+    voltarLabel: "Voltar à minha fila",
+    href: () => buildHrefComFiltrosSalvos("/pages/membro-auxiliar.html", "nad-membro-auxiliar-filtros"),
+  },
+  "corregedor-referendo": {
+    activePage: "corregedor-referendo",
+    voltarLabel: "Voltar à fila de referendo",
+    href: () => buildHrefComFiltrosSalvos("/pages/corregedor-referendo.html", "nad-corregedor-referendo-filtros"),
+  },
+  "corregedor-decisao": {
+    activePage: "corregedor-decisao",
+    voltarLabel: "Voltar à fila de decisão",
+    href: () => buildHrefComFiltrosSalvos("/pages/corregedor-decisao.html", "nad-corregedor-decisao-filtros"),
+  },
+  "secretaria-diligencia": {
+    activePage: "secretaria-diligencia",
+    voltarLabel: "Voltar à fila de diligência",
+    href: () => buildHrefComFiltrosSalvos("/pages/secretaria-diligencia.html", "nad-secretaria-diligencia-filtros"),
+  },
+  "secretaria-providencia": {
+    activePage: "secretaria-providencia",
+    voltarLabel: "Voltar às providências",
+    href: () => "/pages/secretaria-providencia.html",
+  },
+  "caixa-de-saida": {
+    activePage: "caixa-de-saida",
+    voltarLabel: "Voltar à caixa de saída",
+    href: () => "/pages/caixa-de-saida.html",
+  },
+  "correicoes-criar": {
+    activePage: "correicoes-lista",
+    voltarLabel: "Voltar à correição",
+    href: (proposicao) =>
+      proposicao?.correicaoId
+        ? `/pages/correicoes-criar.html?id=${proposicao.correicaoId}`
+        : "/pages/correicoes-lista.html",
+  },
+  "correicionado-comprovacoes": {
+    activePage: "correicionado-comprovacoes",
+    voltarLabel: "Voltar às comprovações",
+    href: () => "/pages/correicionado-comprovacoes.html",
+  },
+  "correicionado-ciencias": {
+    activePage: "correicionado-ciencias",
+    voltarLabel: "Voltar às ciências",
+    href: () => "/pages/correicionado-ciencias.html",
+  },
+};
+
+// `fromMembro`/`fromCorregedor` são aliases legados aceitos apenas na leitura.
+export const resolverOrigemDetalhe = ({ from, fromMembro, fromCorregedor }) => {
+  if (from && ORIGENS_DETALHE[from]) return { slug: from, ...ORIGENS_DETALHE[from] };
+  if (fromMembro === "1") return { slug: "membro-auxiliar", ...ORIGENS_DETALHE["membro-auxiliar"] };
+  if (fromCorregedor === "referendo") return { slug: "corregedor-referendo", ...ORIGENS_DETALHE["corregedor-referendo"] };
+  if (fromCorregedor === "decisao") return { slug: "corregedor-decisao", ...ORIGENS_DETALHE["corregedor-decisao"] };
+  return null;
+};
+
+export const renderBreadcrumb = (items) =>
+  items
+    .filter(Boolean)
+    .map(({ label, href }) =>
+      href
+        ? `<a class="breadcrumb__link" href="${href}">${escapeHtml(label)}</a>`
+        : `<span class="breadcrumb__atual">${escapeHtml(label)}</span>`,
+    )
+    .join(`<span class="breadcrumb__sep" aria-hidden="true">›</span>`);
+
 const computeBadgeValue = (badgeKey) => {
   if (!badgeKey) return null;
   try {
@@ -124,7 +222,7 @@ const renderAvancarTempoButton = () => {
   `;
 };
 
-export const renderAppShell = ({ activePage, title, subtitle, content, actions = "" }) => {
+export const renderAppShell = ({ activePage, title, subtitle, content, actions = "", breadcrumb = "" }) => {
   const navItems = getNavItemsForCurrentPersona();
   const avancarTempo = renderAvancarTempoButton();
   const actionsAumentadas = [avancarTempo, actions].filter(Boolean).join(" ");
@@ -152,8 +250,9 @@ export const renderAppShell = ({ activePage, title, subtitle, content, actions =
       <main class="page">
         <header class="page-header">
           <div class="page-header__content">
+            ${breadcrumb ? `<nav class="breadcrumb" aria-label="Trilha de contexto">${breadcrumb}</nav>` : ""}
             <h1 class="page-title">${title}</h1>
-            <p class="page-subtitle">${subtitle}</p>
+            ${subtitle ? `<p class="page-subtitle">${subtitle}</p>` : ""}
           </div>
           ${actionsAumentadas ? `<div class="toolbar page-actions">${actionsAumentadas}</div>` : ""}
         </header>

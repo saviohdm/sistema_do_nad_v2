@@ -64,7 +64,7 @@ const renderCardSelecionavel = (proposicao, index) => {
     ? renderBadge("Retornou · necessita mais informações", "warning")
     : renderBadge("Nova proposição", "primary");
   return renderFilaProposicaoEditorial(proposicao, {
-    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}`,
+    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=secretaria-diligencia`,
     checkboxHtml: `<input type="checkbox" data-prop-checkbox="${escapeAttr(proposicao.id)}" ${selecionado ? "checked" : ""} aria-label="Selecionar proposição ${proposicao.numero}" />`,
     badges: subStatusBadge,
     selecionado,

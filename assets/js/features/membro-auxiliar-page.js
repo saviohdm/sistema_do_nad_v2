@@ -9,7 +9,7 @@ import { renderBadge, renderFilaProposicaoEditorial } from "../ui/components.js"
 
 const renderCard = (proposicao, temRascunho, index) =>
   renderFilaProposicaoEditorial(proposicao, {
-    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&fromMembro=1`,
+    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=membro-auxiliar`,
     badges: temRascunho ? renderBadge("Rascunho salvo", "warning") : "",
     cta: temRascunho ? "Retomar avaliação" : "Avaliar proposição",
     index,

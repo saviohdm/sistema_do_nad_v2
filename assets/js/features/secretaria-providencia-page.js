@@ -183,7 +183,7 @@ const renderHeaderProposicao = (proposicao) => {
             : ""
         }</p>
       </div>
-      <a class="button button--ghost button--small" href="proposicao-detalhe.html?id=${escapeAttr(proposicao.id)}">Abrir proposição</a>
+      <a class="button button--ghost button--small" href="proposicao-detalhe.html?id=${escapeAttr(proposicao.id)}&from=secretaria-providencia">Abrir proposição</a>
     </header>
     <div class="pill-list">
       ${renderSensivelBadge(proposicao.sensivel)}

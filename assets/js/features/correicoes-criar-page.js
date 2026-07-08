@@ -59,7 +59,7 @@ const renderProposicoesVinculadas = () => {
             .map(
               (p) => `
                 <tr>
-                  <td><a href="proposicao-detalhe.html?id=${p.id}"><strong>${escapeHtml(p.numero)}</strong></a></td>
+                  <td><a href="proposicao-detalhe.html?id=${p.id}&from=correicoes-criar"><strong>${escapeHtml(p.numero)}</strong></a></td>
                   <td>${escapeHtml(p.tipo)}</td>
                   <td>${escapeHtml(p.unidade)}</td>
                 </tr>

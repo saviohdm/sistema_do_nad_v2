@@ -67,7 +67,7 @@ const renderCardComprovacao = (proposicao) => {
           : ""
       }
       <div class="button-row">
-        <a class="button" href="proposicao-detalhe.html?id=${proposicao.id}">
+        <a class="button" href="proposicao-detalhe.html?id=${proposicao.id}&from=correicionado-comprovacoes">
           ${temRascunho ? "Retomar comprovação" : "Abrir para comprovar"}
         </a>
       </div>

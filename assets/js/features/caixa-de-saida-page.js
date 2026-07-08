@@ -51,7 +51,7 @@ const renderEntry = (entry, state) => {
         ${
           proposicoes.length > 0
             ? `<p style="margin: 0.25rem 0 0;"><strong>Proposições:</strong> ${proposicoes
-                .map((p) => `<a href="proposicao-detalhe.html?id=${p.id}">${p.numero}</a>`)
+                .map((p) => `<a href="proposicao-detalhe.html?id=${p.id}&from=caixa-de-saida">${p.numero}</a>`)
                 .join(", ")}</p>`
             : ""
         }

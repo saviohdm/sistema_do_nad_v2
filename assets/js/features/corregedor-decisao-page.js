@@ -18,7 +18,7 @@ const renderCard = (proposicao, index) => {
         comAvaliacao ? "primary" : "warning",
       );
   return renderFilaProposicaoEditorial(proposicao, {
-    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&fromCorregedor=decisao`,
+    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=corregedor-decisao`,
     badges: statusBadge,
     cta: rascunho ? "Retomar decisão" : "Abrir para decidir",
     index,

@@ -98,7 +98,7 @@ const renderCardCiencia = (proposicao) => {
           : ""
       }
       <div class="button-row">
-        <a class="button" href="proposicao-detalhe.html?id=${proposicao.id}">
+        <a class="button" href="proposicao-detalhe.html?id=${proposicao.id}&from=correicionado-ciencias">
           ${visualizada ? "Reabrir detalhe" : "Tomar ciência"}
         </a>
       </div>

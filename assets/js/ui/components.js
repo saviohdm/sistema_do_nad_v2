@@ -274,7 +274,7 @@ export const renderRamoMPTable = (linhas) => {
   `;
 };
 
-export const renderProposicaoTable = (proposicoes) => `
+export const renderProposicaoTable = (proposicoes, { origem } = {}) => `
   <div class="panel">
     <div class="table-wrap">
       <table class="table">
@@ -294,7 +294,7 @@ export const renderProposicaoTable = (proposicoes) => `
               (item) => `
                 <tr>
                   <td>
-                    <a href="proposicao-detalhe.html?id=${item.id}">
+                    <a href="proposicao-detalhe.html?id=${item.id}${origem ? `&from=${origem}` : ""}">
                       <strong>${item.numero}</strong>
                     </a>
                   </td>
@@ -714,32 +714,6 @@ export const renderCnHero = ({ dateline, saudacao, headline, kpis = [] }) => {
 };
 
 
-export const renderProposicaoCard = (proposicao) => {
-  const statusBadge = renderStatusBadge(proposicao.statusFluxo);
-  const apreciacaoBadge = renderApreciacaoBadge(proposicao.apreciacaoDoCN);
-
-  return `
-    <a href="/pages/proposicao-detalhe.html?id=${proposicao.id}" class="proposicao-card">
-      <div class="proposicao-card__header">
-        <div>
-          <div class="proposicao-card__numero">${proposicao.numero}</div>
-          <div class="proposicao-card__tipo">${proposicao.tipo}</div>
-        </div>
-        <div class="pill-list">
-          ${renderSensivelBadge(proposicao.sensivel)}
-          ${statusBadge}
-          ${apreciacaoBadge}
-        </div>
-      </div>
-      <div class="proposicao-card__content">
-        <div><strong>Unidade:</strong> ${proposicao.unidade}</div>
-        <div><strong>Membro:</strong> ${proposicao.membro}</div>
-        <div class="proposicao-card__descricao">${proposicao.descricao.substring(0, 150)}${proposicao.descricao.length > 150 ? "..." : ""}</div>
-      </div>
-    </a>
-  `;
-};
-
 export const renderEditorialOverline = (text, { tag = "p", className = "" } = {}) => {
   const classes = ["acervo-overline", className].filter(Boolean).join(" ");
   return `<${tag} class="${classes}">${text}</${tag}>`;
@@ -948,7 +922,7 @@ export const renderActiveFilterChip = ({ label, removeHref }) => `
   </a>
 `;
 
-export const renderProposicaoTableEditorial = (proposicoes) => {
+export const renderProposicaoTableEditorial = (proposicoes, { origem = "proposicoes-lista" } = {}) => {
   if (!proposicoes.length) {
     return "";
   }
@@ -967,7 +941,7 @@ export const renderProposicaoTableEditorial = (proposicoes) => {
       return `
         <tr class="acervo-row ${prioClass}" style="--reveal-delay:${delay * 30}ms;">
           <td class="acervo-row__numero-cell">
-            <a href="proposicao-detalhe.html?id=${item.id}" class="acervo-row__numero">
+            <a href="proposicao-detalhe.html?id=${item.id}&from=${origem}" class="acervo-row__numero">
               <span class="acervo-row__capitular" aria-hidden="true">${capitular}</span>
               <span class="acervo-row__numero-rest">${resto}</span>
             </a>
@@ -1013,7 +987,7 @@ export const renderProposicaoTableEditorial = (proposicoes) => {
   `;
 };
 
-export const renderProposicaoCardGrid = (proposicoes) => {
+export const renderProposicaoCardGrid = (proposicoes, { origem = "proposicoes-lista" } = {}) => {
   if (!proposicoes.length) {
     return "";
   }
@@ -1029,7 +1003,7 @@ export const renderProposicaoCardGrid = (proposicoes) => {
         : "";
       const delay = Math.min(idx, 24);
       return `
-        <a class="acervo-card ${prioClass}" href="proposicao-detalhe.html?id=${item.id}" style="--reveal-delay:${delay * 30}ms;">
+        <a class="acervo-card ${prioClass}" href="proposicao-detalhe.html?id=${item.id}&from=${origem}" style="--reveal-delay:${delay * 30}ms;">
           <header class="acervo-card__head">
             <div class="acervo-card__numero">
               <span class="acervo-card__capitular" aria-hidden="true">${capitular}</span>

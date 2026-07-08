@@ -20,7 +20,7 @@ const ehRascunho = (proposicao) => proposicao.statusFluxo === StatusFluxo.RASCUN
 const contarRascunhos = (proposicoes) => proposicoes.filter(ehRascunho).length;
 
 const renderAcoesCard = (proposicao) => {
-  const editar = `<a class="button button--ghost" href="/pages/proposicoes-criar.html?id=${proposicao.id}&fromCorregedor=referendo">Editar</a>`;
+  const editar = `<a class="button button--ghost" href="/pages/proposicoes-criar.html?id=${proposicao.id}&from=corregedor-referendo">Editar</a>`;
   const apagar = `<button class="button button--ghost" type="button" data-action="apagar-proposicao" data-proposicao-id="${proposicao.id}">Apagar</button>`;
   if (ehRascunho(proposicao)) {
     const confirmar = `<button class="button" type="button" data-action="confirmar-rascunho" data-proposicao-id="${proposicao.id}">Confirmar e encaminhar</button>`;
@@ -31,7 +31,7 @@ const renderAcoesCard = (proposicao) => {
 
 const renderCard = (proposicao, index) =>
   renderFilaProposicaoEditorial(proposicao, {
-    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&fromCorregedor=referendo`,
+    href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=corregedor-referendo`,
     badges: ehRascunho(proposicao) ? renderBadge("Rascunho", "warning") : "",
     actions: renderAcoesCard(proposicao),
     attributes: `data-proposicao-id="${proposicao.id}"`,

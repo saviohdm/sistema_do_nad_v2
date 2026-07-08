@@ -49,7 +49,7 @@ const pendenciasPanel = `
             ${comPendencia
               .map(
                 (item) => `
-                  <a class="status-card" href="proposicao-detalhe.html?id=${item.id}">
+                  <a class="status-card" href="proposicao-detalhe.html?id=${item.id}&from=dashboard">
                     <strong>${item.numero}</strong>
                     <span>${item.unidade}</span>
                   </a>
@@ -69,7 +69,7 @@ const atalhosPanel = `
     <div class="button-row">
       <a class="button" href="proposicoes-lista.html">Ir para proposições</a>
       <a class="button button--secondary" href="secretaria-diligencia.html">Abrir pendências</a>
-      <a class="button button--ghost" href="proposicao-detalhe.html?id=prop-003">Abrir caso com avaliação pendente</a>
+      <a class="button button--ghost" href="proposicao-detalhe.html?id=prop-003&from=dashboard">Abrir caso com avaliação pendente</a>
     </div>
   </section>
 `;
@@ -217,7 +217,7 @@ const buildDefaultContent = () => {
 
       <section class="page-grid page-grid--two">
         <div class="stack">
-          ${renderProposicaoTable(recentes)}
+          ${renderProposicaoTable(recentes, { origem: "dashboard" })}
         </div>
         <div class="stack">
           ${pendenciasPanel}
@@ -347,7 +347,7 @@ const renderProvidenciaRow = (item) => {
     .replace(/</g, "&lt;");
   const reticencias = (item.descricao || "").length > 80 ? "…" : "";
   return `
-    <a class="secretaria-dashboard__row secretaria-dashboard__row--action secretaria-dashboard__row--providencia" href="proposicao-detalhe.html?id=${escapeAttr(item.proposicaoId)}">
+    <a class="secretaria-dashboard__row secretaria-dashboard__row--action secretaria-dashboard__row--providencia" href="proposicao-detalhe.html?id=${escapeAttr(item.proposicaoId)}&from=dashboard">
       <div class="secretaria-dashboard__row-main">
         <strong>${item.numero}</strong>
         <span class="muted">${item.unidade || "—"} · Correição ${item.correicaoId || "—"}</span>

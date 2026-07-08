@@ -48,6 +48,35 @@
   flex-shrink: 0;
 }
 
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.breadcrumb__sep {
+  color: var(--muted);
+}
+
+.breadcrumb__link {
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+.breadcrumb__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.breadcrumb__atual {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
