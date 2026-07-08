@@ -237,6 +237,20 @@ export const seedState = {
       sensivel: false,
       observacoesGerais: "Diligência inicial aberta; aguardando comprovação do correicionado.",
       correicaoId: "corr-2026-BA-PGJ",
+      // Contexto de origem na correição, enviado pelo SCI na migração (chave
+      // "Contexto" do JSON). Estrutura livre — ainda sem formato padronizado.
+      contexto: {
+        quesito: {
+          numero: "3.2",
+          secao: "Controle processual",
+          pergunta:
+            "A unidade mantém rotina formal de controle de prazos processuais e registro eletrônico de ciência dos membros?",
+        },
+        respostaDoCorreicionado:
+          "Informou que o controle é realizado em planilha mantida localmente pelo gabinete, sem trilha de auditoria nem registro eletrônico de ciência.",
+        observacoesDaEntrevista:
+          "Na entrevista, a equipe demonstrou a planilha em uso. Constatou-se ausência de padronização entre gabinetes e risco de perda de prazos em substituições. O Corregedor registrou a necessidade de rotina formal única.",
+      },
       statusFluxo: StatusFluxo.AGUARDANDO_COMPROVACAO,
       apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
@@ -330,6 +344,22 @@ export const seedState = {
       sensivel: true,
       observacoesGerais: "Caso submetido à decisão do Corregedor após avaliação técnica.",
       correicaoId: "corr-2026-leg-003",
+      contexto: {
+        origem: "Análise de procedimentos durante a entrevista",
+        procedimentoAnalisado: {
+          numero: "IC 1.26.000.001234/2025-71",
+          classe: "Inquérito Civil",
+          objeto: "Apuração de falhas no atendimento de demandas urgentes de saúde",
+          situacaoNaCorreicao: "Sem movimentação há 240 dias",
+        },
+        constatacoes: [
+          "Ausência de despacho de prorrogação no prazo regulamentar",
+          "Demandas urgentes sem protocolo formal de triagem e atendimento",
+          "Equipe não capacitada quanto ao fluxo de urgências",
+        ],
+        observacoesDaEntrevista:
+          "O responsável reconheceu a inexistência de protocolo escrito; alegou sobrecarga da equipe. Corregedor determinou formalização imediata do protocolo de urgências.",
+      },
       statusFluxo: StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
       apreciacaoDoCN: null,
       avaliacaoVigenteId: "hist-6",
@@ -564,6 +594,20 @@ export const seedState = {
       sensivel: false,
       observacoesGerais: "Caso encerrado após segunda diligência — a primeira expirou sem manifestação.",
       correicaoId: "corr-2026-BA-01",
+      contexto: {
+        origem: "Dados estatísticos do questionário de correição",
+        estatistica: {
+          titulo: "Produtividade mensal da unidade — 1º trimestre/2025",
+          indicadores: [
+            { indicador: "Manifestações em inquéritos civis", jan: 42, fev: 38, mar: 12 },
+            { indicador: "Audiências realizadas", jan: 18, fev: 17, mar: 5 },
+            { indicador: "Arquivamentos fundamentados", jan: 9, fev: 11, mar: 2 },
+          ],
+          fonte: "Bloco estatístico do questionário SCI",
+        },
+        observacoesDaEntrevista:
+          "Queda expressiva de produtividade em março sem justificativa documentada. A unidade atribuiu o resultado à transição de equipe administrativa, sem comprovação formal.",
+      },
       statusFluxo: StatusFluxo.BAIXA_DEFINITIVA,
       apreciacaoDoCN: {
         situacao: SituacaoApreciacao.CONCLUIDA,

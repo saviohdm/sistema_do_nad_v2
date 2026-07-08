@@ -573,6 +573,72 @@ export const renderMetaList = (items) => `
   </div>
 `;
 
+const humanizarChaveContexto = (chave) => {
+  const texto = String(chave)
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .toLowerCase()
+    .trim();
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+};
+
+/**
+ * Render livre do contexto enviado pelo SCI (formato ainda não padronizado pelo
+ * time): percorre qualquer JSON e apresenta tudo como texto legível — objetos
+ * viram pares rótulo/valor, arrays viram listas. Nunca interpreta nem desenha:
+ * um bloco de "gráfico" aparece como seus rótulos e números.
+ */
+const renderContextoLivre = (valor) => {
+  if (valor === null || valor === undefined || valor === "") {
+    return `<span class="muted">—</span>`;
+  }
+  if (typeof valor === "boolean") {
+    return valor ? "Sim" : "Não";
+  }
+  if (Array.isArray(valor)) {
+    if (valor.length === 0) return `<span class="muted">—</span>`;
+    return `<ul class="contexto-livre__lista">${valor
+      .map((item) => `<li>${renderContextoLivre(item)}</li>`)
+      .join("")}</ul>`;
+  }
+  if (typeof valor === "object") {
+    return `<div class="contexto-livre__grupo">${Object.entries(valor)
+      .map(
+        ([chave, filho]) => `
+          <div class="contexto-livre__campo">
+            <span class="contexto-livre__rotulo">${escapeHtml(humanizarChaveContexto(chave))}</span>
+            <div class="contexto-livre__valor">${renderContextoLivre(filho)}</div>
+          </div>
+        `,
+      )
+      .join("")}</div>`;
+  }
+  return escapeHtml(String(valor));
+};
+
+/**
+ * Seção "Contexto" do detalhe da proposição: a origem do caso na correição
+ * (quesito respondido, estatística ou procedimento analisado na entrevista).
+ * Colapsada por padrão — conteúdo volumoso, nem sempre útil; abre sob clique.
+ */
+export const renderContextoSection = (proposicao, { aberto = false } = {}) => {
+  if (!proposicao.contexto) return "";
+  return `
+    <details class="panel contexto-panel" data-contexto-panel${aberto ? " open" : ""}>
+      <summary class="contexto-panel__summary">
+        <span class="panel__title">Contexto</span>
+        <span class="contexto-panel__hint">Origem na correição · clique para expandir</span>
+      </summary>
+      <div class="contexto-panel__body">
+        <p class="contexto-panel__nota muted">
+          Conteúdo enviado pelo SCI na migração da correição; estrutura livre, exibida como texto.
+        </p>
+        ${renderContextoLivre(proposicao.contexto)}
+      </div>
+    </details>
+  `;
+};
+
 export const renderProposicaoHero = (proposicao) => `
   <section class="hero-card detail-hero">
     <div class="detail-hero__header">

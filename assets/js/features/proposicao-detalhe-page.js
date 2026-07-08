@@ -53,6 +53,7 @@ import {
 import {
   renderAnexoChips,
   renderApreciacaoResumo,
+  renderContextoSection,
   renderDetailActionZone,
   renderHistoricoUnificado,
   renderJudgingAnchor,
@@ -88,6 +89,15 @@ const bindHistoricoHandlers = () => {
       filtroHistoricoAtivo = chip.dataset.filtroHistorico;
       render();
     });
+  });
+};
+
+// Contexto colapsado por padrão; preserva a escolha do usuário entre re-renders.
+let contextoAberto = false;
+
+const bindContextoHandler = () => {
+  document.querySelector("[data-contexto-panel]")?.addEventListener("toggle", (event) => {
+    contextoAberto = event.currentTarget.open;
   });
 };
 
@@ -772,6 +782,7 @@ const renderDetalheContent = ({
       </div>
       ${renderMetaList(meta)}
     </section>
+    ${renderContextoSection(proposicao, { aberto: contextoAberto })}
     ${acaoPrincipalHtml || ""}
     ${renderDossie({ proposicao, historico, historicoNota, providenciasEditable })}
   </section>
@@ -906,6 +917,7 @@ const render = () => {
     });
     bindCorreicionadoHandlers(propAtualizada, user);
     bindHistoricoHandlers();
+    bindContextoHandler();
     return;
   }
 
@@ -928,6 +940,7 @@ const render = () => {
 
   bindHandlers(proposicao);
   bindHistoricoHandlers();
+  bindContextoHandler();
 };
 
 render();

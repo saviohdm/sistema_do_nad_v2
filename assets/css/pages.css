@@ -311,6 +311,100 @@
   margin-top: var(--space-1);
 }
 
+/* =========================================================================
+   Contexto da proposição — origem do caso na correição (quesito respondido,
+   estatística ou procedimento analisado), enviada pelo SCI em JSON livre.
+   Colapsado por padrão; o conteúdo é sempre apresentado como texto.
+   ========================================================================= */
+
+.contexto-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.contexto-panel__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.contexto-panel__summary::-webkit-details-marker {
+  display: none;
+}
+
+.contexto-panel__summary:hover {
+  background: var(--surface-warm);
+}
+
+.contexto-panel__summary .panel__title {
+  margin: 0;
+}
+
+.contexto-panel__hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.contexto-panel__summary::after {
+  content: "▾";
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-left: auto;
+  transform: rotate(-90deg);
+  transition: transform 180ms ease;
+}
+
+.contexto-panel[open] > .contexto-panel__summary::after {
+  transform: rotate(0deg);
+}
+
+.contexto-panel__body {
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.contexto-panel__nota {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.contexto-livre__grupo {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.contexto-livre__campo {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.contexto-livre__rotulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.contexto-livre__valor .contexto-livre__grupo {
+  border-left: 2px solid var(--line);
+  padding-left: var(--space-3);
+}
+
+.contexto-livre__lista {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: var(--space-1);
+}
+
 @media (max-width: 860px) {
   .split-callout {
     grid-template-columns: 1fr;
