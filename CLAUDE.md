@@ -93,6 +93,8 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 
 **Excalidraw.excalidraw**: Visual architecture diagram (requires Excalidraw to view).
 
+**modelagem_dados_historico.md**: Reference for the audit trail data model — common event envelope, per-event-type fields and emitters, embedded `apreciacao` schema, persona visibility rules, and known inconsistencies.
+
 **historias_de_usuario/**: One Markdown file per user story, kept short (~40 lines). Each file follows the same template: Connextra story (Como/eu quero/para que), Ator, Pré-condições, Fluxo principal, Fluxos alternativos, Regras de negócio, Pós-condições, Referências.
 
 ### Convenção de nomes em `historias_de_usuario/`

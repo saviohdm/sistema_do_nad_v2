@@ -51,16 +51,13 @@ import {
   salvarRascunhoAvaliacao,
 } from "../domain/rascunhos-avaliacao.js";
 import {
-  renderApreciacaoBadge,
+  renderAnexoChips,
   renderApreciacaoResumo,
   renderDetailActionZone,
-  renderDiligenciasCards,
-  renderEmptyState,
+  renderHistoricoUnificado,
   renderJudgingAnchor,
   renderMetaList,
-  renderPendenciasCards,
   renderProposicaoHero,
-  renderTimeline,
 } from "../ui/components.js";
 import {
   aplicarRegrasApreciacaoForm,
@@ -81,6 +78,18 @@ const veioDaFilaMembro = queryParam("fromMembro") === "1";
 const fromCorregedor = queryParam("fromCorregedor");
 const veioDaFilaReferendo = fromCorregedor === "referendo";
 const veioDaFilaDecisao = fromCorregedor === "decisao";
+
+// Filtro de categoria do histórico unificado; sobrevive aos re-renders da página.
+let filtroHistoricoAtivo = "todos";
+
+const bindHistoricoHandlers = () => {
+  document.querySelectorAll("[data-filtro-historico]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      filtroHistoricoAtivo = chip.dataset.filtroHistorico;
+      render();
+    });
+  });
+};
 
 const voltarParaFilaMembro = () => {
   const filtrosSalvos = sessionStorage.getItem("nad-membro-auxiliar-filtros");
@@ -374,18 +383,6 @@ const bindHandlers = (proposicao) => {
     });
   });
 };
-
-const renderAnexoChips = (anexos) =>
-  (anexos || [])
-    .map(
-      (a) => `
-        <li class="pill">
-          <strong>${a.nome}</strong>
-          <span class="muted" style="font-size: 0.8rem;">${a.mimeType || "application/octet-stream"} · ${Math.round((a.tamanhoBytes || 0) / 1024)} KB</span>
-        </li>
-      `,
-    )
-    .join("");
 
 const collectAnexosFromInput = (input) =>
   Array.from(input?.files || []).map((file) => ({
@@ -745,46 +742,13 @@ const buildAcaoPrincipal = (proposicao, persona, available, user) => {
   return "";
 };
 
-const renderDossie = ({ proposicao, historico, historicoNota, providenciasEditable }) => `
-  ${
-    proposicao.diligencias.length > 0
-      ? `
-        <section class="panel detail-section">
-          <h3 class="panel__title">Diligências e comprovações</h3>
-          ${renderDiligenciasCards(proposicao.diligencias)}
-        </section>
-      `
-      : ""
-  }
-  ${
-    proposicao.pendenciasSecretaria.length > 0
-      ? `
-        <section class="panel detail-section">
-          <h3 class="panel__title">Providências da Secretaria</h3>
-          <p class="muted" style="font-size: 0.85rem;">
-            ${
-              providenciasEditable
-                ? "Registre o cumprimento de cada providência. Elas correm em paralelo e não travam o fluxo principal."
-                : "Estas providências são cumpridas pela Secretaria da CN fora do sistema; aqui são apenas acompanhadas."
-            }
-          </p>
-          ${renderPendenciasCards(proposicao.pendenciasSecretaria, {
-            editable: providenciasEditable,
-          }).replaceAll('data-pendencia-form="', `data-pendencia-form="${proposicao.id}:`)}
-        </section>
-      `
-      : ""
-  }
-  <section class="panel detail-section">
-    <h3 class="panel__title">Histórico</h3>
-    ${historicoNota ? `<p class="muted" style="font-size: 0.85rem;">${historicoNota}</p>` : ""}
-    ${
-      historico.length > 0
-        ? renderTimeline(historico)
-        : renderEmptyState("Sem eventos relevantes nesta proposição.")
-    }
-  </section>
-`;
+const renderDossie = ({ proposicao, historico, historicoNota, providenciasEditable }) =>
+  renderHistoricoUnificado(proposicao, {
+    historico,
+    nota: historicoNota,
+    providenciasEditable,
+    filtroAtivo: filtroHistoricoAtivo,
+  });
 
 const renderDetalheContent = ({
   proposicao,
@@ -941,6 +905,7 @@ const render = () => {
       }),
     });
     bindCorreicionadoHandlers(propAtualizada, user);
+    bindHistoricoHandlers();
     return;
   }
 
@@ -962,6 +927,7 @@ const render = () => {
   });
 
   bindHandlers(proposicao);
+  bindHistoricoHandlers();
 };
 
 render();

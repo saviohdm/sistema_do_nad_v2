@@ -117,6 +117,200 @@
   gap: var(--space-2);
 }
 
+/* =========================================================================
+   Dossiê unificado — Histórico único da proposição: faixa "Em aberto",
+   chips de filtro por categoria e ciclos de diligência recolhíveis.
+   A faixa usa acento --warning (pendências) para não competir com a zona
+   de ação (--primary), que segue sendo o convite principal da tela.
+   ========================================================================= */
+
+.historico-unificado__contador {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.historico-abertos {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius-md);
+  background: var(--surface-alt);
+}
+
+.historico-abertos__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-3);
+}
+
+.historico-aberto-item {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.historico-aberto-item p {
+  margin: 0;
+}
+
+.historico-aberto-item__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.historico-ciclos {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.historico-ciclo {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.historico-ciclo__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.historico-ciclo__summary::-webkit-details-marker {
+  display: none;
+}
+
+.historico-ciclo__summary:hover {
+  background: var(--surface-warm);
+}
+
+.historico-ciclo__summary::after {
+  content: "▾";
+  color: var(--muted);
+  font-size: 0.85rem;
+  transform: rotate(-90deg);
+  transition: transform 180ms ease;
+}
+
+.historico-ciclo[open] > .historico-ciclo__summary::after {
+  transform: rotate(0deg);
+}
+
+.historico-ciclo__title {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.historico-ciclo__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.historico-ciclo__contagem {
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.historico-ciclo__eventos {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.historico-evento {
+  --evento-cor: var(--chart-3);
+  position: relative;
+  padding-left: 1.2rem;
+  border-left: 2px solid var(--line);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.historico-evento p {
+  margin: 0;
+}
+
+.historico-evento::before {
+  content: "";
+  position: absolute;
+  left: -0.45rem;
+  top: 0.25rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: var(--evento-cor);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--evento-cor);
+}
+
+.historico-evento--fluxo {
+  --evento-cor: var(--chart-3);
+}
+
+.historico-evento--comunicacao {
+  --evento-cor: var(--chart-2);
+}
+
+.historico-evento--providencia {
+  --evento-cor: var(--success);
+}
+
+.historico-evento--rascunho {
+  --evento-cor: var(--muted);
+}
+
+.historico-evento--decisorio {
+  --evento-cor: var(--primary);
+  border-left: 3px solid var(--primary);
+  background: var(--surface-warm);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: var(--space-3) var(--space-4) var(--space-3) 1.2rem;
+}
+
+.historico-evento__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.historico-evento__title {
+  font-weight: 700;
+}
+
+.historico-evento__meta,
+.historico-evento__linha {
+  font-size: 0.85rem;
+}
+
+.historico-evento__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.historico-evento__anexos {
+  margin-top: var(--space-1);
+}
+
 @media (max-width: 860px) {
   .split-callout {
     grid-template-columns: 1fr;

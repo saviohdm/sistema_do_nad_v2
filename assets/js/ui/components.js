@@ -9,7 +9,13 @@ import {
   getApreciacaoBadgeTone,
   getStatusBadgeTone,
 } from "../domain/proposicoes.js";
-import { summarizeHistoryEvent } from "../domain/historico.js";
+import {
+  CategoriaHistorico,
+  LabelsCategoriaHistorico,
+  agruparHistoricoPorCiclos,
+  categorizarEventoHistorico,
+  summarizeHistoryEvent,
+} from "../domain/historico.js";
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -291,26 +297,266 @@ export const renderProposicaoTable = (proposicoes) => `
   </div>
 `;
 
-export const renderTimeline = (historico) => `
-  <div class="timeline">
-    ${historico
-      .slice()
-      .sort((a, b) => new Date(b.data) - new Date(a.data))
-      .map((event) => {
-        const summary = summarizeHistoryEvent(event);
-        return `
-          <article class="timeline-item">
-            <div class="timeline-item__header">
-              <span class="timeline-item__title">${summary.title}</span>
-            </div>
-            <p class="muted">${summary.subtitle}</p>
-            <p>${summary.body}</p>
-          </article>
+export const renderAnexoChips = (anexos) =>
+  (anexos || [])
+    .map(
+      (a) => `
+        <li class="pill">
+          <strong>${a.nome}</strong>
+          <span class="muted" style="font-size: 0.8rem;">${a.mimeType || "application/octet-stream"} · ${Math.round((a.tamanhoBytes || 0) / 1024)} KB</span>
+        </li>
+      `,
+    )
+    .join("");
+
+const STATUS_DILIGENCIA_BADGE = {
+  aberta: { label: "Diligência aberta", tone: "warning" },
+  comprovada: { label: "Comprovada", tone: "success" },
+  expirada: { label: "Prazo expirado", tone: "danger" },
+};
+
+const renderStatusDiligenciaBadge = (diligencia) => {
+  const meta = diligencia && STATUS_DILIGENCIA_BADGE[diligencia.status];
+  return meta ? renderBadge(meta.label, meta.tone) : "";
+};
+
+/** Extras específicos por tipo de evento (prazo/status vivo, anexos, observações do juízo). */
+const renderEventoExtras = (event, proposicao) => {
+  const extras = [];
+
+  if (event.tipo === "criacao_diligencia") {
+    const diligencia = (proposicao.diligencias || []).find((d) => d.id === event.diligenciaId);
+    const prazo = event.prazoComprovacao || diligencia?.prazo;
+    extras.push(`
+      <p class="historico-evento__linha muted">
+        ${prazo ? `Prazo para comprovação: ${formatDate(prazo)}` : ""}
+      </p>
+      ${diligencia ? `<div class="historico-evento__badges">${renderStatusDiligenciaBadge(diligencia)}</div>` : ""}
+    `);
+  }
+
+  if (event.tipo === "comprovacao") {
+    if (event.observacoes) extras.push(`<p class="historico-evento__linha muted">${event.observacoes}</p>`);
+    if (event.anexos?.length) {
+      extras.push(`<ul class="pill-list historico-evento__anexos">${renderAnexoChips(event.anexos)}</ul>`);
+    }
+  }
+
+  if (event.tipo === "prazo_comprovacao_expirado" && event.prazoOriginal) {
+    extras.push(`<p class="historico-evento__linha muted">Prazo original: ${formatDate(event.prazoOriginal)}</p>`);
+  }
+
+  if (event.apreciacao?.observacoes) {
+    extras.push(`<p class="historico-evento__linha muted">Observações do juízo: ${event.apreciacao.observacoes}</p>`);
+  }
+
+  return extras.join("");
+};
+
+const renderEventoHistorico = (event, proposicao) => {
+  const { categoria, decisorio } = categorizarEventoHistorico(event);
+  const summary = summarizeHistoryEvent(event);
+  return `
+    <article class="historico-evento historico-evento--${categoria}${decisorio ? " historico-evento--decisorio" : ""}">
+      <div class="historico-evento__header">
+        <span class="historico-evento__title">${summary.title}</span>
+        ${decisorio ? renderApreciacaoBadge(event.apreciacao) : ""}
+      </div>
+      <p class="historico-evento__meta muted">${summary.subtitle}</p>
+      <p class="historico-evento__body">${summary.body}</p>
+      ${renderEventoExtras(event, proposicao)}
+    </article>
+  `;
+};
+
+/** Faixa "Em aberto": pendentes vivos do caso (diligência aberta + providências da Secretaria). */
+const renderHistoricoAbertos = (proposicao, { providenciasEditable }) => {
+  const diligenciaAberta = (proposicao.diligencias || []).find((d) => d.status === "aberta");
+  const pendentes = (proposicao.pendenciasSecretaria || []).filter((p) => p.status === "pendente");
+  if (!diligenciaAberta && pendentes.length === 0) return "";
+
+  const inicioHoje = new Date();
+  inicioHoje.setHours(0, 0, 0, 0);
+  const prazoVencido = diligenciaAberta?.prazo && new Date(diligenciaAberta.prazo) < inicioHoje;
+
+  const diligenciaHtml = diligenciaAberta
+    ? `
+      <article class="historico-aberto-item">
+        <div class="historico-aberto-item__badges">
+          ${renderBadge("Diligência aberta", "warning")}
+          ${prazoVencido ? renderBadge("Prazo vencido", "danger") : ""}
+        </div>
+        <p><strong>${diligenciaAberta.descricao}</strong></p>
+        <p class="muted">Prazo: ${formatDate(diligenciaAberta.prazo)} · aguardando comprovação do correicionado.</p>
+      </article>
+    `
+    : "";
+
+  const pendenciasHtml = pendentes
+    .map(
+      (item) => `
+        <article class="historico-aberto-item">
+          <div class="historico-aberto-item__badges">
+            ${renderBadge(Labels.tipoProvidencia[item.tipoProvidencia] || item.descricao, "warning")}
+            ${renderBadge("Pendente", "danger")}
+          </div>
+          <p><strong>${item.descricao}</strong></p>
+          <p class="muted">Criada em ${formatDateTime(item.dataCriacao)} · cumprida fora do sistema; aqui apenas acompanhada.</p>
+          ${
+            providenciasEditable
+              ? `
+                <form class="stack" data-pendencia-form="${proposicao.id}:${item.id}">
+                  <div class="field">
+                    <label for="dataCumprimento-${item.id}">Data de cumprimento</label>
+                    <input id="dataCumprimento-${item.id}" name="dataCumprimento" type="date" required />
+                  </div>
+                  <div class="field">
+                    <label for="observacoes-${item.id}">Observações</label>
+                    <textarea id="observacoes-${item.id}" name="observacoes"></textarea>
+                  </div>
+                  <button class="button" type="submit">Registrar cumprimento</button>
+                </form>
+              `
+              : ""
+          }
+        </article>
+      `,
+    )
+    .join("");
+
+  return `
+    <div class="historico-abertos">
+      <p class="acervo-overline">Em aberto</p>
+      <div class="historico-abertos__grid">
+        ${diligenciaHtml}
+        ${pendenciasHtml}
+      </div>
+    </div>
+  `;
+};
+
+const renderHistoricoFiltros = (eventos, filtroAtivo) => {
+  const contagens = eventos.reduce((acc, event) => {
+    const { categoria } = categorizarEventoHistorico(event);
+    acc[categoria] = (acc[categoria] || 0) + 1;
+    return acc;
+  }, {});
+
+  const chips = [
+    { value: "todos", label: "Todos", count: eventos.length },
+    ...Object.values(CategoriaHistorico).map((categoria) => ({
+      value: categoria,
+      label: LabelsCategoriaHistorico[categoria],
+      count: contagens[categoria] || 0,
+    })),
+  ].filter((chip) => chip.value === "todos" || chip.count > 0);
+
+  if (chips.length <= 2) return "";
+
+  return `
+    <div class="acervo-filter-chips historico-unificado__filtros" aria-label="Filtrar histórico por categoria">
+      ${chips
+        .map(
+          (chip) => `
+            <button
+              type="button"
+              class="acervo-filter-chip${chip.value === filtroAtivo ? " is-active" : ""}"
+              data-filtro-historico="${chip.value}"
+              aria-pressed="${chip.value === filtroAtivo ? "true" : "false"}"
+            >
+              <span class="acervo-filter-chip__label">${chip.label}</span>
+              <span class="acervo-filter-chip__count">${chip.count}</span>
+            </button>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+};
+
+const renderCicloBloco = (bloco, proposicao, { open }) => {
+  const eventosDesc = [...bloco.eventos].sort((a, b) => new Date(b.data) - new Date(a.data));
+  const titulo =
+    bloco.tipo === "origem"
+      ? "Origem da proposição"
+      : `Ciclo ${bloco.numero} · aberto em ${formatDate(bloco.abertoEm)}`;
+  const diligencia =
+    bloco.tipo === "ciclo"
+      ? (proposicao.diligencias || []).find((d) => d.id === bloco.diligenciaId)
+      : null;
+  const contagem = `${eventosDesc.length} evento${eventosDesc.length === 1 ? "" : "s"}`;
+
+  return `
+    <details class="historico-ciclo"${open ? " open" : ""}>
+      <summary class="historico-ciclo__summary">
+        <span class="historico-ciclo__title">${titulo}</span>
+        <span class="historico-ciclo__meta">
+          ${renderStatusDiligenciaBadge(diligencia)}
+          <span class="historico-ciclo__contagem">${contagem}</span>
+        </span>
+      </summary>
+      <div class="historico-ciclo__eventos">
+        ${eventosDesc.map((event) => renderEventoHistorico(event, proposicao)).join("")}
+      </div>
+    </details>
+  `;
+};
+
+/**
+ * Dossiê unificado da proposição: uma única seção de Histórico com a faixa
+ * "Em aberto" (diligência aberta + providências pendentes), chips de filtro
+ * por categoria e a linha do tempo agrupada por ciclos de diligência.
+ * O histórico recebido já deve vir filtrado pela visibilidade da persona.
+ */
+export const renderHistoricoUnificado = (
+  proposicao,
+  { historico = [], nota = "", providenciasEditable = false, filtroAtivo = "todos" } = {},
+) => {
+  const totalLabel = `${historico.length} evento${historico.length === 1 ? "" : "s"}`;
+  const abertosHtml = renderHistoricoAbertos(proposicao, { providenciasEditable });
+
+  let corpoHtml;
+  if (historico.length === 0) {
+    corpoHtml = renderEmptyState("Sem eventos relevantes nesta proposição.");
+  } else {
+    const blocos = agruparHistoricoPorCiclos(historico)
+      .map((bloco) => ({
+        ...bloco,
+        eventos:
+          filtroAtivo === "todos"
+            ? bloco.eventos
+            : bloco.eventos.filter((event) => categorizarEventoHistorico(event).categoria === filtroAtivo),
+      }))
+      .filter((bloco) => bloco.eventos.length > 0)
+      .reverse();
+
+    corpoHtml =
+      blocos.length === 0
+        ? renderEmptyState("Nenhum evento nesta categoria.")
+        : `
+          <div class="historico-ciclos">
+            ${blocos
+              .map((bloco, index) =>
+                renderCicloBloco(bloco, proposicao, { open: filtroAtivo !== "todos" || index === 0 }),
+              )
+              .join("")}
+          </div>
         `;
-      })
-      .join("")}
-  </div>
-`;
+  }
+
+  return `
+    <section class="panel detail-section historico-unificado">
+      <div class="panel__header-row">
+        <h3 class="panel__title">Histórico</h3>
+        <span class="historico-unificado__contador">${totalLabel}</span>
+      </div>
+      ${nota ? `<p class="muted" style="font-size: 0.85rem;">${nota}</p>` : ""}
+      ${abertosHtml}
+      ${renderHistoricoFiltros(historico, filtroAtivo)}
+      ${corpoHtml}
+    </section>
+  `;
+};
 
 export const renderMetaList = (items) => `
   <div class="meta-list">
@@ -326,76 +572,6 @@ export const renderMetaList = (items) => `
       .join("")}
   </div>
 `;
-
-export const renderPendenciasCards = (pendencias, { editable = true } = {}) => {
-  if (!pendencias.length) {
-    return `<div class="empty-state">Nenhuma pendência da Secretaria vinculada a esta proposição.</div>`;
-  }
-
-  return `
-    <div class="cards-grid">
-      ${pendencias
-        .map(
-          (item) => `
-            <article class="panel">
-              <div class="button-row">
-                ${renderBadge(Labels.tipoProvidencia[item.tipoProvidencia] || item.descricao, item.status === "cumprida" ? "success" : "warning")}
-                ${renderBadge(item.status === "cumprida" ? "Cumprida" : "Pendente", item.status === "cumprida" ? "success" : "danger")}
-              </div>
-              <p><strong>${item.descricao}</strong></p>
-              <p class="muted">Criada em ${formatDateTime(item.dataCriacao)}</p>
-              <p>Data de cumprimento: ${formatDate(item.dataCumprimento)}</p>
-              <p>Observações: ${item.observacoes || "—"}</p>
-              ${
-                editable && item.status !== "cumprida"
-                  ? `
-                    <form class="stack" data-pendencia-form="${item.id}">
-                      <div class="field">
-                        <label for="dataCumprimento-${item.id}">Data de cumprimento</label>
-                        <input id="dataCumprimento-${item.id}" name="dataCumprimento" type="date" required />
-                      </div>
-                      <div class="field">
-                        <label for="observacoes-${item.id}">Observações</label>
-                        <textarea id="observacoes-${item.id}" name="observacoes"></textarea>
-                      </div>
-                      <button class="button" type="submit">Registrar cumprimento</button>
-                    </form>
-                  `
-                  : ""
-              }
-            </article>
-          `,
-        )
-        .join("")}
-    </div>
-  `;
-};
-
-export const renderDiligenciasCards = (diligencias) => {
-  if (!diligencias.length) {
-    return `<div class="empty-state">Nenhuma diligência registrada.</div>`;
-  }
-
-  return `
-    <div class="cards-grid">
-      ${diligencias
-        .map(
-          (item) => `
-            <article class="status-card">
-              <div class="button-row">
-                ${renderBadge(item.status === "aberta" ? "Aberta" : "Comprovada", item.status === "aberta" ? "warning" : "success")}
-              </div>
-              <p><strong>${item.descricao}</strong></p>
-              <p class="muted">Prazo: ${formatDate(item.prazo)}</p>
-              <p class="muted">Criada em ${formatDateTime(item.criadaEm)}</p>
-              <p class="muted">Comprovada em ${formatDateTime(item.comprovadaEm)}</p>
-            </article>
-          `,
-        )
-        .join("")}
-    </div>
-  `;
-};
 
 export const renderProposicaoHero = (proposicao) => `
   <section class="hero-card detail-hero">
