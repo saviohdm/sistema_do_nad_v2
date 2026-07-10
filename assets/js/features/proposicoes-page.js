@@ -295,12 +295,6 @@ const buildPresets = (todas) => {
       icon: "✦",
     },
     {
-      label: "Rascunho de decisão",
-      href: `?${BUSCA_FLAG}=1&${STATUS_KEY}=${StatusFluxo.RASCUNHO_DECISAO_CN}`,
-      count: contarPorStatus(todas, StatusFluxo.RASCUNHO_DECISAO_CN),
-      icon: "✎",
-    },
-    {
       label: "Aguardando avaliação",
       href: `?${BUSCA_FLAG}=1&${STATUS_KEY}=${StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO}`,
       count: contarPorStatus(todas, StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO),
@@ -344,7 +338,6 @@ const renderStatusChips = (todas, statusAtivos) => {
     StatusFluxo.AGUARDANDO_COMPROVACAO,
     StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
     StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
-    StatusFluxo.RASCUNHO_DECISAO_CN,
     StatusFluxo.AGUARDANDO_CIENCIA,
     StatusFluxo.BAIXA_DEFINITIVA,
   ];

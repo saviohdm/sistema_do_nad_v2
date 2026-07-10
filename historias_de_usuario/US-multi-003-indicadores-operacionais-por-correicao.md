@@ -14,7 +14,7 @@ Corregedor Nacional, Membro Auxiliar da CN e Secretaria Processual da CN.
 
 ## Regras de negócio
 - A unidade operacional é `(correicaoId × unidadeId)`; registros legados sem `unidadeId` usam temporariamente o nome da unidade.
-- `Proposições aguardando` conta proposições com fluxo principal aberto presentes na bandeja, incluindo rascunhos da persona.
+- `Proposições aguardando` conta proposições com fluxo principal aberto presentes na bandeja, incluindo rascunhos de criação (`rascunho_cn`) no referendo; rascunhos de ação não alteram o status e já estão contidos nas bandejas.
 - `Unidades prontas` conta unidades cujas proposições abertas estão todas na bandeja.
 - `Unidades total` conta unidades da correição com ao menos uma proposição aberta.
 - `BAIXA_DEFINITIVA` sai integralmente do cálculo, ainda que exista providência paralela pendente.

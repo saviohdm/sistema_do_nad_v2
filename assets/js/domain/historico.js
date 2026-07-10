@@ -48,7 +48,10 @@ export const summarizeHistoryEvent = (event) => {
         [TipoHistorico.CUMPRIMENTO_PENDENCIA_SECRETARIA]: "Cumprimento de providência da Secretaria",
         [TipoHistorico.RASCUNHO_DECISAO_CN_SALVO]: "Rascunho de decisão salvo",
         [TipoHistorico.RASCUNHO_DECISAO_CN_DESCARTADO]: "Rascunho de decisão descartado",
+        [TipoHistorico.RASCUNHO_AVALIACAO_SALVO]: "Rascunho de avaliação salvo",
+        [TipoHistorico.RASCUNHO_AVALIACAO_DESCARTADO]: "Rascunho de avaliação descartado",
         [TipoHistorico.RASCUNHO_COMPROVACAO_SALVO]: "Rascunho de comprovação salvo",
+        [TipoHistorico.RASCUNHO_COMPROVACAO_DESCARTADO]: "Rascunho de comprovação descartado",
         [TipoHistorico.PRAZO_COMPROVACAO_EXPIRADO]: "Prazo de comprovação expirado",
         [TipoHistorico.EMAIL_DILIGENCIA_ENVIADO]: "E-mail de diligência enviado",
         [TipoHistorico.EMAIL_CIENCIA_ENVIADO]: "E-mail de ciência enviado",
@@ -95,7 +98,10 @@ const CATEGORIA_POR_TIPO = {
   [TipoHistorico.CUMPRIMENTO_PENDENCIA_SECRETARIA]: CategoriaHistorico.PROVIDENCIA,
   [TipoHistorico.RASCUNHO_DECISAO_CN_SALVO]: CategoriaHistorico.RASCUNHO,
   [TipoHistorico.RASCUNHO_DECISAO_CN_DESCARTADO]: CategoriaHistorico.RASCUNHO,
+  [TipoHistorico.RASCUNHO_AVALIACAO_SALVO]: CategoriaHistorico.RASCUNHO,
+  [TipoHistorico.RASCUNHO_AVALIACAO_DESCARTADO]: CategoriaHistorico.RASCUNHO,
   [TipoHistorico.RASCUNHO_COMPROVACAO_SALVO]: CategoriaHistorico.RASCUNHO,
+  [TipoHistorico.RASCUNHO_COMPROVACAO_DESCARTADO]: CategoriaHistorico.RASCUNHO,
 };
 
 const TIPOS_DECISORIOS = new Set([

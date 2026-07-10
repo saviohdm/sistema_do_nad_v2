@@ -30,11 +30,25 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 - **Orientação a administração superior**: identidade `{ ramoMP, tipo }` (em regra `PGJ`/`CGJ` por ramo). O catálogo e o mapeamento `(ramoMP, tipo) → usuário(s)` são **parametrizados no NAD** (tela `administracao-superior`). A comunicação vai a **todos os usuários mapeados** (uma entrada de `caixaDeSaida` por usuário).
 - **Resolução da pessoa de carne e osso** é por comunicação (snapshot): `resolverUsuariosDestinatarios(state, proposicao)` devolve `{ tipo, sugeridos[], candidatos[], vago }`. A escolha efetiva é gravada na diligência/ciência e na `caixaDeSaida`; a orientação nunca muda. O acesso a essas regras é isolado em `assets/js/domain/destinatario.js`.
 
+## Rascunhos de ação (modelo canônico)
+
+Três atos admitem rascunho: a **avaliação** do membro auxiliar (`rascunhoAvaliacao`), a **decisão** do Corregedor Nacional (`rascunhoDecisaoCN`, cobrindo indeferimento e avaliação com força de decisão) e a **comprovação** do correicionado (`rascunhoComprovacao`). Todos seguem o mesmo modelo:
+
+- **Objeto no estado, nunca status**: o rascunho é um objeto na proposição com envelope comum `{ ...payload, salvoEm, salvoPor, salvoPorId }` (payload = `apreciacao` para avaliação/decisão; `descricao/observacoes/anexos` para comprovação). Salvar rascunho **não altera `statusFluxo`** — o status reflete a fase do processo, e um rascunho não muda a fase.
+- **Um rascunho ativo por proposição por ato**; salvar de novo sobrescreve o payload e atualiza `salvoEm`.
+- **Privado**: rascunho de ação não produz efeito, não bloqueia nem gera aviso a outras personas. A vez de cada persona é serializada pelo `statusFluxo`.
+- **Histórico**: o primeiro salvamento registra `rascunho_<ato>_salvo`; o descarte registra `rascunho_<ato>_descartado`. Ambos ocultos ao correicionado.
+- **Descarte explícito**: botão "Descartar rascunho" com diálogo de confirmação, disponível enquanto o rascunho existir.
+- **Limpeza ao sair da fase**: toda transição de domínio que encerra ou reinicia a fase do rascunho limpa o objeto (a submissão do ato consome o rascunho; decisão e remoção de avaliação limpam os rascunhos de avaliação e de decisão; a expiração da diligência limpa o de comprovação após registrar `rascunhoExistia`; o apagamento da proposição limpa todos). Cada ciclo começa limpo, sem pré-preenchimento de ciclos anteriores.
+- **UI padronizada**: badge "Rascunho salvo" (tom warning) nas filas, CTA "Retomar <ação>", filtro "Somente com rascunho" (`comRascunho=1`), KPI de rascunho no panorama e feedback "Rascunho salvo às HH:MM".
+
+O **rascunho de criação** da proposição é a exceção estrutural: a entidade inteira é o rascunho, representado pelo status `rascunho_cn`. É o único rascunho com efeito estrutural — bloqueia o referendo e o relatório final da correição enquanto existir (ver "Origem da proposição").
+
 ## Comprovação pelo correicionado
 
-- O correicionado pode **salvar rascunho** de comprovação (`rascunhoComprovacao`) com narrativa (`descricao`), `observacoes` adicionais e `anexos: [{nome, tamanhoBytes, mimeType, anexadoEm}]`.
+- O correicionado pode **salvar rascunho** de comprovação (`rascunhoComprovacao`) com narrativa (`descricao`), `observacoes` adicionais e `anexos: [{nome, tamanhoBytes, mimeType, anexadoEm}]` — ver "Rascunhos de ação (modelo canônico)".
 - Apenas um rascunho ativo por proposição. Salvar rascunho não altera `statusFluxo` (permanece em `aguardando_comprovacao`).
-- A primeira vez que um rascunho é salvo, registra-se `rascunho_comprovacao_salvo` no histórico (oculto para o correicionado em sua visão).
+- A primeira vez que um rascunho é salvo, registra-se `rascunho_comprovacao_salvo` no histórico; o descarte registra `rascunho_comprovacao_descartado` (ambos ocultos para o correicionado em sua visão).
 - O ato de `COMPROVAR` consome o rascunho, persiste `anexos` no evento `comprovacao` e transita a proposição para `aguardando_avaliacao_membro`.
 
 ## Expiração de prazo da diligência
@@ -43,7 +57,7 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
   - `diligencia.status` passa a `expirada` (além de `aberta` e `comprovada`).
   - Evento `prazo_comprovacao_expirado` é registrado, com `diligenciaId`, `prazoOriginal` e `rascunhoExistia`.
   - A proposição transita para `aguardando_avaliacao_membro` (mesmo destino do `comprovacao`).
-  - Eventual `rascunhoComprovacao` é **preservado** como prova de auditoria de que o correicionado iniciou (mas não submeteu) a comprovação.
+  - Eventual `rascunhoComprovacao` é **limpo** — o flag `rascunhoExistia` no evento preserva a prova de auditoria de que o correicionado iniciou (mas não submeteu) a comprovação. Um eventual novo ciclo de diligência começa sem pré-preenchimento (ver "Rascunhos de ação").
 - No protótipo, a expiração é avaliada *lazy* a cada carga de state, e pode ser provocada manualmente pelo botão "Avançar tempo do sistema" no shell (visível apenas a Corregedor e Secretaria).
 
 ## E-mail simulado e caixa de saída
@@ -68,7 +82,7 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 ## Visibilidade do histórico para o correicionado
 
 - **Sempre visível**: `criacao`, `edicao`, `referendo_cnmp`, `criacao_diligencia`, `comprovacao`, `prazo_comprovacao_expirado`, `decisao` (incluindo `necessita_mais_informacoes`, com fundamentos completos), `avaliacao_com_forca_de_decisao`, `cientificacao`, `cumprimento_pendencia_secretaria`, `email_diligencia_enviado`, `email_ciencia_enviado`, `apagamento_proposicao`.
-- **Sempre oculto**: `avaliacao_membro_auxiliar`, `avaliacao_removida_pelo_corregedor`, `rascunho_decisao_cn_salvo`, `rascunho_decisao_cn_descartado`, `rascunho_comprovacao_salvo`, `edicao_metadados`.
+- **Sempre oculto**: `avaliacao_membro_auxiliar`, `avaliacao_removida_pelo_corregedor`, `rascunho_decisao_cn_salvo`, `rascunho_decisao_cn_descartado`, `rascunho_avaliacao_salvo`, `rascunho_avaliacao_descartado`, `rascunho_comprovacao_salvo`, `rascunho_comprovacao_descartado`, `edicao_metadados`.
 - Em caso de **deferimento** da avaliação do membro auxiliar, a `DECISAO` deve carregar a apreciação inteira (incluindo `observacoes` — os fundamentos) — implementação via clone JSON no `deferirAvaliacao`, garantindo que o correicionado veja os fundamentos completos via o evento `DECISAO`, mesmo que o evento `AVALIACAO_MEMBRO_AUXILIAR` original esteja oculto.
 
 ## Fluxo principal
@@ -96,7 +110,7 @@ A avaliação do membro auxiliar tem natureza técnica e nunca produz efeitos so
 - Ao entrar numa correição, a lista de destinatários é subdividida em três seções, na ordem de prioridade **Administração Superior › Unidades › Membros** (seções vazias são ocultadas). A seção vem de `getTipoDestinatario`.
 - Para esses indicadores, o fluxo principal está aberto enquanto `statusFluxo !== baixa_definitiva`. Proposições cientificadas ou apagadas não entram no numerador, no denominador nem bloqueiam a prontidão, mesmo se ainda houver providência paralela pendente.
 - A unidade operacional é o **destinatário**, identificado por `(correicaoId × destinatarioRef)` via `getDestinatarioRef`: orientação a membro usa `membro:<membroId>` (acompanha a pessoa, não a unidade de origem); unidade e administração superior usam `id:<unidadeId>`. Deep-links legados com `unidadeRef=id:...` continuam aceitos como alias.
-- `Proposições aguardando` contabiliza as proposições abertas presentes na bandeja. Rascunhos da persona contam como presentes em `aguardando referendo` (`rascunho_cn`) e `decisão` (`rascunho_decisao_cn`).
+- `Proposições aguardando` contabiliza as proposições abertas presentes na bandeja. Rascunhos de criação (`rascunho_cn`) contam como presentes em `aguardando referendo`. Rascunhos de ação (decisão, avaliação, comprovação) não alteram o status e, portanto, já estão naturalmente contidos nas respectivas bandejas.
 - `Destinatários prontos / total` compara: (a) destinatários cujas proposições abertas estão todas na bandeja; e (b) todos os destinatários da correição que possuem ao menos uma proposição com fluxo principal aberto.
 - Os indicadores são informativos. Apenas a ciência exige grupo completo por regra de negócio.
 
@@ -198,6 +212,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - `criacao`
 - `edicao`
 - `edicao_metadados`
+- `rascunho_cn_confirmado`
 - `apagamento_proposicao`
 - `criacao_diligencia`
 - `comprovacao`
@@ -207,7 +222,12 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - `avaliacao_removida_pelo_corregedor`
 - `cientificacao`
 - `cumprimento_pendencia_secretaria`
+- `rascunho_decisao_cn_salvo`
+- `rascunho_decisao_cn_descartado`
+- `rascunho_avaliacao_salvo`
+- `rascunho_avaliacao_descartado`
 - `rascunho_comprovacao_salvo`
+- `rascunho_comprovacao_descartado`
 - `prazo_comprovacao_expirado`
 - `email_diligencia_enviado`
 - `email_ciencia_enviado`
@@ -287,6 +307,10 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
     "existeProvidenciaSecretaria": true
   },
   "avaliacaoVigenteId": "ObjectId|null",
+  // Rascunhos de ação (opcionais; ver "Rascunhos de ação (modelo canônico)"):
+  // "rascunhoAvaliacao":   { "apreciacao": {...}, "salvoEm": "...", "salvoPor": "...", "salvoPorId": null },
+  // "rascunhoDecisaoCN":   { "apreciacao": {...}, "salvoEm": "...", "salvoPor": "...", "salvoPorId": null },
+  // "rascunhoComprovacao": { "descricao": "...", "observacoes": "...", "anexos": [...], "salvoEm": "...", "salvoPor": "...", "salvoPorId": "..." },
    "pendenciasSecretaria": [
     {
       "tipo": "cumprimento_providencia",

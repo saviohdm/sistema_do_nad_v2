@@ -40,16 +40,13 @@ export const listProposicoesRascunhoCN = (state) =>
 
 export const listProposicoesAguardandoDecisao = (state) =>
   listProposicoes(state).filter(
-    (proposicao) =>
-      proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR ||
-      proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN,
+    (proposicao) => proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
   );
 
 const EVENTOS_INGRESSO_MESA = new Set([
   TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR,
   TipoHistorico.AVALIACAO_COM_FORCA_DE_DECISAO,
-  TipoHistorico.RASCUNHO_DECISAO_CN_DESCARTADO,
-  TipoHistorico.RASCUNHO_DECISAO_CN_SALVO,
+  TipoHistorico.AVALIACAO_REMOVIDA,
 ]);
 
 export const getTempoAguardandoDecisao = (proposicao) => {
@@ -148,7 +145,6 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     sensivel,
     tematica,
     uf,
-    idsComRascunho,
     textoBusca,
     statusFluxo,
     situacaoApreciacao,
@@ -179,7 +175,6 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     if (sensivel === "nao" && p.sensivel) return false;
     if (tematica && p.tematica !== tematica) return false;
     if (uf && !(p.uf || []).includes(uf)) return false;
-    if (idsComRascunho && !idsComRascunho.includes(p.id)) return false;
     if (tipo && p.tipo !== tipo) return false;
     if (membro && p.membro !== membro) return false;
     if (tipoDestinatario && getTipoDestinatario(p) !== tipoDestinatario) return false;
@@ -238,12 +233,11 @@ export const getDashboardSummary = (state) => {
 export const getStatusBadgeTone = (status) =>
   ({
     [StatusFluxo.AGUARDANDO_REFERENDO_CNMP]: "neutral",
-    [StatusFluxo.RASCUNHO_CN]: "neutral",
+    [StatusFluxo.RASCUNHO_CN]: "warning",
     [StatusFluxo.AGUARDANDO_SECRETARIA]: "warning",
     [StatusFluxo.AGUARDANDO_COMPROVACAO]: "warning",
     [StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO]: "primary",
     [StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR]: "danger",
-    [StatusFluxo.RASCUNHO_DECISAO_CN]: "warning",
     [StatusFluxo.AGUARDANDO_CIENCIA]: "primary",
     [StatusFluxo.BAIXA_DEFINITIVA]: "success",
   }[status] || "neutral");
@@ -260,9 +254,7 @@ export const getAvailableActions = (proposicao) => {
   const avaliacaoVigente = getAvaliacaoVigente(proposicao);
   const emReferendo = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
   const emRascunhoCN = proposicao.statusFluxo === StatusFluxo.RASCUNHO_CN;
-  const emDecisao =
-    proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR ||
-    proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN;
+  const emDecisao = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
   const temDiligenciaAberta = proposicao.diligencias.some(
     (diligencia) => diligencia.status === "aberta",
   );
@@ -444,9 +436,7 @@ export const countPendentesDoCorregedor = (state) => {
     pendentesDecisao: ativas.filter(
       (p) => p.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
     ).length,
-    pendentesRascunhoDecisao: ativas.filter(
-      (p) => p.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN,
-    ).length,
+    pendentesRascunhoDecisao: ativas.filter((p) => Boolean(p.rascunhoDecisaoCN)).length,
   };
 };
 
@@ -468,7 +458,6 @@ export const countPendentesPorPersona = (state) => {
         StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
         StatusFluxo.RASCUNHO_CN,
         StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
-        StatusFluxo.RASCUNHO_DECISAO_CN,
       ].includes(p.statusFluxo),
     ).length,
     secretaria: ativas.filter(pertenceAFilaSecretaria).length,
@@ -487,6 +476,9 @@ export const markPropositionDeleted = (proposicao) => {
     observacoes: "Proposição apagada pela Corregedoria Nacional.",
   };
   proposicao.avaliacaoVigenteId = null;
+  proposicao.rascunhoDecisaoCN = null;
+  proposicao.rascunhoAvaliacao = null;
+  proposicao.rascunhoComprovacao = null;
   proposicao.historico.push({
     id: crypto.randomUUID(),
     tipo: TipoHistorico.APAGAMENTO_PROPOSICAO,
@@ -719,20 +711,21 @@ export const encaminharParaSecretaria = (proposicao) => {
   return proposicao;
 };
 
-export const salvarRascunhoDecisaoCN = (proposicao, apreciacao) => {
-  if (
-    proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR &&
-    proposicao.statusFluxo !== StatusFluxo.RASCUNHO_DECISAO_CN
-  ) {
+export const salvarRascunhoDecisaoCN = (proposicao, apreciacao, usuario = "Corregedor Nacional") => {
+  if (proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR) {
     throw new Error("Rascunho de decisão só pode ser salvo quando a proposição está aguardando decisão.");
   }
-  const entrando = proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
-  proposicao.rascunhoDecisaoCN = apreciacao;
-  proposicao.statusFluxo = StatusFluxo.RASCUNHO_DECISAO_CN;
+  const entrando = !proposicao.rascunhoDecisaoCN;
+  proposicao.rascunhoDecisaoCN = {
+    apreciacao,
+    salvoEm: new Date().toISOString(),
+    salvoPor: usuario,
+    salvoPorId: null,
+  };
   if (entrando) {
     appendHistory(
       proposicao,
-      buildHistoryEvent(TipoHistorico.RASCUNHO_DECISAO_CN_SALVO, "Corregedor Nacional", {
+      buildHistoryEvent(TipoHistorico.RASCUNHO_DECISAO_CN_SALVO, usuario, {
         descricao: "Rascunho de decisão iniciado pelo Corregedor Nacional.",
       }),
     );
@@ -740,15 +733,14 @@ export const salvarRascunhoDecisaoCN = (proposicao, apreciacao) => {
   return proposicao;
 };
 
-export const descartarRascunhoDecisaoCN = (proposicao) => {
-  if (proposicao.statusFluxo !== StatusFluxo.RASCUNHO_DECISAO_CN) {
+export const descartarRascunhoDecisaoCN = (proposicao, usuario = "Corregedor Nacional") => {
+  if (!proposicao.rascunhoDecisaoCN) {
     throw new Error("Não há rascunho de decisão ativo para descartar.");
   }
   proposicao.rascunhoDecisaoCN = null;
-  proposicao.statusFluxo = StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
   appendHistory(
     proposicao,
-    buildHistoryEvent(TipoHistorico.RASCUNHO_DECISAO_CN_DESCARTADO, "Corregedor Nacional", {
+    buildHistoryEvent(TipoHistorico.RASCUNHO_DECISAO_CN_DESCARTADO, usuario, {
       descricao: "Rascunho de decisão descartado pelo Corregedor Nacional.",
     }),
   );

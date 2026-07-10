@@ -827,6 +827,18 @@ export const seedState = {
       statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
       apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
+      rascunhoAvaliacao: {
+        apreciacao: {
+          situacao: SituacaoApreciacao.CONCLUIDA,
+          tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
+          existeProvidenciaSecretaria: false,
+          tipoProvidencia: null,
+          observacoes: "Trilha implantada, mas ainda sem cobertura das substituições retroativas.",
+        },
+        salvoEm: "2026-04-14T09:30:00Z",
+        salvoPor: "Membro Auxiliar da CN",
+        salvoPorId: null,
+      },
       pendenciasSecretaria: [],
       diligencias: [
         {
@@ -846,6 +858,11 @@ export const seedState = {
         }),
         createEvent("hist-23", TipoHistorico.COMPROVACAO, "Correicionado", {
           descricao: "Comprovação apresentada com logs internos.",
+          data: "2026-04-10T11:30:00Z",
+        }),
+        createEvent("hist-23b", TipoHistorico.RASCUNHO_AVALIACAO_SALVO, "Membro Auxiliar da CN", {
+          descricao: "Rascunho de avaliação iniciado pelo membro auxiliar.",
+          data: "2026-04-14T09:30:00Z",
         }),
       ],
     },
@@ -958,6 +975,34 @@ export const seedState = {
         createEvent("hist-27", TipoHistorico.CRIACAO, "Corregedor Nacional", {
           descricao:
             "Proposição criada a partir do Relatório de Equipe; aguardando referendo em sessão do CNMP.",
+        }),
+      ],
+    },
+    {
+      id: "prop-015",
+      numero: "PROP-2026-0015",
+      tipo: "Recomendação",
+      unidadeId: "und-sp-civel",
+      unidade: "Procuradoria de Justiça Cível",
+      membroId: null,
+      membro: "",
+      destinatario: { tipo: "unidade", unidadeId: "und-sp-civel" },
+      descricao:
+        "Formalizar plano de contingência para acervos com acúmulo atípico de feitos.",
+      prioridade: "normal",
+      sensivel: false,
+      observacoesGerais:
+        "Rascunho de criação ainda não confirmado; bloqueia o referendo da correição até ser confirmado ou apagado.",
+      correicaoId: "corr-REF-2026-SP-01",
+      statusFluxo: StatusFluxo.RASCUNHO_CN,
+      apreciacaoDoCN: null,
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [],
+      diligencias: [],
+      historico: [
+        createEvent("hist-28", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao:
+            "Proposição criada como rascunho pela Corregedoria Nacional (aguardando confirmação).",
         }),
       ],
     },
@@ -1616,15 +1661,20 @@ export const seedState = {
       sensivel: true,
       observacoesGerais: "Rascunho de decisão em elaboração; aguarda ajustes finais.",
       correicaoId: "corr-2026-GO-02",
-      statusFluxo: StatusFluxo.RASCUNHO_DECISAO_CN,
+      statusFluxo: StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
       apreciacaoDoCN: null,
       avaliacaoVigenteId: "hist-307-aval",
       rascunhoDecisaoCN: {
-        situacao: SituacaoApreciacao.CONCLUIDA,
-        tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
-        existeProvidenciaSecretaria: true,
-        tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
-        observacoes: "Indícios sólidos de descumprimento sistemático; cabe apuração local.",
+        apreciacao: {
+          situacao: SituacaoApreciacao.CONCLUIDA,
+          tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
+          existeProvidenciaSecretaria: true,
+          tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
+          observacoes: "Indícios sólidos de descumprimento sistemático; cabe apuração local.",
+        },
+        salvoEm: "2026-05-22T09:45:00Z",
+        salvoPor: "Corregedor Nacional",
+        salvoPorId: null,
       },
       pendenciasSecretaria: [],
       diligencias: [
@@ -1679,14 +1729,19 @@ export const seedState = {
       sensivel: false,
       observacoesGerais: "Rascunho de decisão iniciado ontem; ainda em construção.",
       correicaoId: "corr-2026-SP-02",
-      statusFluxo: StatusFluxo.RASCUNHO_DECISAO_CN,
+      statusFluxo: StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR,
       apreciacaoDoCN: null,
       avaliacaoVigenteId: "hist-308-aval",
       rascunhoDecisaoCN: {
-        situacao: SituacaoApreciacao.CONCLUIDA,
-        tipoConclusao: TipoConclusao.CUMPRIDA,
-        existeProvidenciaSecretaria: false,
-        observacoes: "Implantação atende ao escopo recomendado.",
+        apreciacao: {
+          situacao: SituacaoApreciacao.CONCLUIDA,
+          tipoConclusao: TipoConclusao.CUMPRIDA,
+          existeProvidenciaSecretaria: false,
+          observacoes: "Implantação atende ao escopo recomendado.",
+        },
+        salvoEm: "2026-05-25T15:20:00Z",
+        salvoPor: "Corregedor Nacional",
+        salvoPorId: null,
       },
       pendenciasSecretaria: [],
       diligencias: [

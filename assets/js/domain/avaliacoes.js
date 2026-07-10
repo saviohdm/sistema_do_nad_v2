@@ -18,6 +18,7 @@ const finalizarOuRetornar = (proposicao, eventType, usuario, juizo, descricao, m
 
   appendHistory(proposicao, event);
   proposicao.rascunhoDecisaoCN = null;
+  proposicao.rascunhoAvaliacao = null;
   proposicao.apreciacaoDoCN = cloneJuizo(juizo);
   proposicao.avaliacaoVigenteId = eventType === TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR ? event.id : null;
 
@@ -50,7 +51,51 @@ export const salvarAvaliacaoMembro = (
 
   appendHistory(proposicao, event);
   proposicao.avaliacaoVigenteId = event.id;
+  proposicao.rascunhoAvaliacao = null;
   proposicao.statusFluxo = StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
+  return proposicao;
+};
+
+export const salvarRascunhoAvaliacao = (
+  proposicao,
+  apreciacao,
+  usuario = "Membro Auxiliar da CN",
+) => {
+  if (
+    proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO &&
+    proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_COMPROVACAO
+  ) {
+    throw new Error("Rascunho de avaliação só pode ser salvo enquanto a proposição aguarda avaliação.");
+  }
+  const entrando = !proposicao.rascunhoAvaliacao;
+  proposicao.rascunhoAvaliacao = {
+    apreciacao: cloneJuizo(apreciacao),
+    salvoEm: new Date().toISOString(),
+    salvoPor: usuario,
+    salvoPorId: null,
+  };
+  if (entrando) {
+    appendHistory(
+      proposicao,
+      buildHistoryEvent(TipoHistorico.RASCUNHO_AVALIACAO_SALVO, usuario, {
+        descricao: "Rascunho de avaliação iniciado pelo membro auxiliar.",
+      }),
+    );
+  }
+  return proposicao;
+};
+
+export const descartarRascunhoAvaliacao = (proposicao, usuario = "Membro Auxiliar da CN") => {
+  if (!proposicao.rascunhoAvaliacao) {
+    throw new Error("Não há rascunho de avaliação ativo para descartar.");
+  }
+  proposicao.rascunhoAvaliacao = null;
+  appendHistory(
+    proposicao,
+    buildHistoryEvent(TipoHistorico.RASCUNHO_AVALIACAO_DESCARTADO, usuario, {
+      descricao: "Rascunho de avaliação descartado pelo membro auxiliar.",
+    }),
+  );
   return proposicao;
 };
 
@@ -85,6 +130,7 @@ export const removerAvaliacao = (proposicao, usuario = "Corregedor Nacional") =>
   removeHistoryEvent(proposicao, avaliacaoId);
   proposicao.avaliacaoVigenteId = null;
   proposicao.rascunhoDecisaoCN = null;
+  proposicao.rascunhoAvaliacao = null;
   proposicao.statusFluxo = StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO;
 
   appendHistory(

@@ -116,8 +116,17 @@ export const salvarRascunhoComprovacao = (
   return proposicao;
 };
 
-export const descartarRascunhoComprovacao = (proposicao) => {
+export const descartarRascunhoComprovacao = (proposicao, user) => {
+  if (!proposicao.rascunhoComprovacao) return proposicao;
   proposicao.rascunhoComprovacao = null;
+  appendHistory(
+    proposicao,
+    buildHistoryEvent(
+      TipoHistorico.RASCUNHO_COMPROVACAO_DESCARTADO,
+      user?.nome || "Correicionado",
+      { descricao: "Rascunho de comprovação descartado pelo correicionado." },
+    ),
+  );
   return proposicao;
 };
 
@@ -171,6 +180,9 @@ export const expirarDiligenciasVencidas = (state, hoje = new Date()) => {
     diligencia.status = StatusDiligencia.EXPIRADA;
     diligencia.expiradaEm = new Date().toISOString();
     proposicao.statusFluxo = StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO;
+    // O rascunho pertence ao ciclo em que foi criado: encerrada a fase de
+    // comprovação, ele é limpo (o evento abaixo preserva rascunhoExistia).
+    proposicao.rascunhoComprovacao = null;
 
     appendHistory(
       proposicao,

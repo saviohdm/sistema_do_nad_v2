@@ -8,10 +8,12 @@ import { formatDate, formatDateTime, queryParam } from "../app/utils.js";
 requireAuth();
 import {
   deferirAvaliacao,
+  descartarRascunhoAvaliacao,
   indeferirAvaliacao,
   registrarAvaliacaoComForcaDeDecisao,
   removerAvaliacao,
   salvarAvaliacaoMembro,
+  salvarRascunhoAvaliacao,
 } from "../domain/avaliacoes.js";
 import {
   criarDiligencia,
@@ -46,11 +48,6 @@ import {
   markPropositionDeleted,
   salvarRascunhoDecisaoCN,
 } from "../domain/proposicoes.js";
-import {
-  obterRascunhoAvaliacao,
-  removerRascunhoAvaliacao,
-  salvarRascunhoAvaliacao,
-} from "../domain/rascunhos-avaliacao.js";
 import {
   renderAnexoChips,
   renderApreciacaoResumo,
@@ -192,7 +189,6 @@ const bindHandlers = (proposicao) => {
       salvarAvaliacaoMembro(item, juizo);
       return draft;
     });
-    removerRascunhoAvaliacao(proposicao.id);
     if (origem?.slug === "membro-auxiliar") {
       voltarParaOrigem(proposicao);
       return;
@@ -200,48 +196,51 @@ const bindHandlers = (proposicao) => {
     render();
   });
 
-  document
-    .querySelector("#form-avaliacao-membro [data-action='salvar-rascunho']")
-    ?.addEventListener("click", () => {
-      const form = document.querySelector("#form-avaliacao-membro");
+  // Rascunhos de apreciação (avaliação do membro e decisão do CN) compartilham o
+  // mesmo par salvar/descartar do form; muda apenas a função de domínio.
+  const RASCUNHO_APRECIACAO = {
+    "form-avaliacao-membro": {
+      salvar: salvarRascunhoAvaliacao,
+      descartar: descartarRascunhoAvaliacao,
+    },
+    "form-decisao-corregedor": {
+      salvar: salvarRascunhoDecisaoCN,
+      descartar: descartarRascunhoDecisaoCN,
+    },
+    "form-avaliacao-direta": {
+      salvar: salvarRascunhoDecisaoCN,
+      descartar: descartarRascunhoDecisaoCN,
+    },
+  };
+
+  Object.entries(RASCUNHO_APRECIACAO).forEach(([formId, acoes]) => {
+    const form = document.querySelector(`#${formId}`);
+    if (!form) return;
+
+    form.querySelector("[data-action='salvar-rascunho']")?.addEventListener("click", () => {
       const juizoParcial = lerApreciacaoParcial(form);
-      const payload = salvarRascunhoAvaliacao(proposicao.id, juizoParcial);
+      mutateState((draft) => {
+        const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+        acoes.salvar(item, juizoParcial);
+        return draft;
+      });
       const feedback = form.querySelector("[data-role='rascunho-feedback']");
       if (feedback) {
         feedback.hidden = false;
-        feedback.textContent = `Rascunho salvo às ${formatDateTime(payload.savedAt)}.`;
+        feedback.textContent = `Rascunho salvo às ${formatDateTime(new Date().toISOString())}.`;
       }
     });
 
-  ["form-decisao-corregedor", "form-avaliacao-direta"].forEach((formId) => {
-    document
-      .querySelector(`#${formId} [data-action='salvar-rascunho']`)
-      ?.addEventListener("click", () => {
-        const form = document.querySelector(`#${formId}`);
-        const juizoParcial = lerApreciacaoParcial(form);
-        mutateState((draft) => {
-          const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
-          salvarRascunhoDecisaoCN(item, juizoParcial);
-          return draft;
-        });
-        const feedback = form.querySelector("[data-role='rascunho-feedback']");
-        if (feedback) {
-          feedback.hidden = false;
-          feedback.textContent = `Rascunho de decisão salvo às ${formatDateTime(new Date().toISOString())}.`;
-        }
-      });
-  });
-
-  document
-    .querySelector("[data-action='descartar-rascunho-decisao']")
-    ?.addEventListener("click", () => {
+    form.querySelector("[data-action='descartar-rascunho']")?.addEventListener("click", () => {
+      if (!window.confirm("Descartar o rascunho atual?")) return;
       mutateState((draft) => {
         const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
-        descartarRascunhoDecisaoCN(item);
+        acoes.descartar(item);
         return draft;
       });
       render();
     });
+  });
 
   document.querySelector("[data-action='deferir-avaliacao']")?.addEventListener("click", () => {
     mutateState((draft) => {
@@ -582,7 +581,7 @@ const renderAcaoMembro = (proposicao, available) => {
         formId: "form-avaliacao-membro",
         title: "Avaliação do membro auxiliar",
         submitLabel: "Salvar avaliação",
-        initialApreciacao: obterRascunhoAvaliacao(proposicao.id)?.apreciacao || null,
+        initialApreciacao: proposicao.rascunhoAvaliacao?.apreciacao || null,
         includeRascunho: true,
         variant: "bare",
       })}
@@ -636,7 +635,7 @@ const renderAcaoCorregedor = (proposicao, available) => {
           (ou diretamente à Secretaria, se a correição já estiver referendada).
         </p>
         <div class="button-row">
-          <a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}${origem ? `&from=${origem.slug}` : ""}">Editar rascunho</a>
+          <a class="button button--ghost" href="proposicoes-criar.html?id=${proposicao.id}${origem ? `&from=${origem.slug}` : ""}">Retomar criação</a>
           <button class="button" type="button" data-action="confirmar-rascunho">Confirmar e encaminhar</button>
           <button class="button button--danger" type="button" data-action="apagar-proposicao">Apagar rascunho</button>
         </div>
@@ -670,10 +669,6 @@ const renderAcaoCorregedor = (proposicao, available) => {
 
   if (available.podeDecidir) {
     const avaliacao = getAvaliacaoVigente(proposicao);
-    const descartar =
-      proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN
-        ? `<button class="button button--ghost" type="button" data-action="descartar-rascunho-decisao">Descartar rascunho de decisão</button>`
-        : "";
     return renderDetailActionZone({
       overline: "Sua vez · decisão do Corregedor Nacional",
       title: "Decidir sobre a avaliação",
@@ -687,7 +682,6 @@ const renderAcaoCorregedor = (proposicao, available) => {
         })}
         <p class="inline-note">Deferir adota integralmente as invariantes acima. Indeferir exige redefini-las neste mesmo ato.</p>
         <div class="button-row">
-          ${descartar}
           <button class="button" type="button" data-action="deferir-avaliacao">Deferir avaliação vigente</button>
         </div>
         ${renderApreciacaoForm({
@@ -696,7 +690,7 @@ const renderAcaoCorregedor = (proposicao, available) => {
           submitLabel: "Registrar decisão de indeferimento",
           includeDelete: true,
           includeRascunho: true,
-          initialApreciacao: proposicao.rascunhoDecisaoCN || null,
+          initialApreciacao: proposicao.rascunhoDecisaoCN?.apreciacao || null,
           variant: "bare",
         })}
       `,
@@ -704,23 +698,18 @@ const renderAcaoCorregedor = (proposicao, available) => {
   }
 
   if (available.podeAvaliarDiretamente) {
-    const descartar =
-      proposicao.statusFluxo === StatusFluxo.RASCUNHO_DECISAO_CN
-        ? `<div class="button-row"><button class="button button--ghost" type="button" data-action="descartar-rascunho-decisao">Descartar rascunho de decisão</button></div>`
-        : "";
     return renderDetailActionZone({
       overline: "Sua vez · Corregedor Nacional",
       title: "Avaliar com força de decisão",
       children: `
         ${renderComprovacaoAnchor(proposicao)}
         <p class="inline-note">Sem avaliação do membro auxiliar nesta etapa: sua avaliação tem força de decisão e produz efeitos imediatos.</p>
-        ${descartar}
         ${renderApreciacaoForm({
           formId: "form-avaliacao-direta",
           title: "Avaliação com força de decisão",
           submitLabel: "Avaliar diretamente",
           includeRascunho: true,
-          initialApreciacao: proposicao.rascunhoDecisaoCN || null,
+          initialApreciacao: proposicao.rascunhoDecisaoCN?.apreciacao || null,
           variant: "bare",
         })}
       `,
@@ -827,10 +816,10 @@ const bindCorreicionadoHandlers = (proposicao, user) => {
   document
     .querySelector("[data-action='descartar-rascunho-comprovacao']")
     ?.addEventListener("click", () => {
-      if (!window.confirm("Descartar o rascunho atual de comprovação?")) return;
+      if (!window.confirm("Descartar o rascunho atual?")) return;
       mutateState((draft) => {
         const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
-        descartarRascunhoComprovacao(item);
+        descartarRascunhoComprovacao(item, user);
         return draft;
       });
       window.location.reload();

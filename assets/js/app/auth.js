@@ -38,7 +38,6 @@ const PERMISSIONS = {
   ],
   [PERSONAS.CORREICIONADO]: [
     "registrar_comprovacao",
-    "salvar_rascunho_comprovacao",
     "ver_minhas_comprovacoes",
     "ver_minhas_ciencias",
     "tomar_ciencia",

@@ -11,7 +11,7 @@ Todo evento nasce em `buildHistoryEvent(tipo, usuario, extras)` ([historico.js](
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `id` | string | Identificador único (`hist-<n>` via `uid`) |
-| `tipo` | enum `TipoHistorico` | Um dos 22 tipos catalogados abaixo |
+| `tipo` | enum `TipoHistorico` | Um dos 25 tipos catalogados abaixo |
 | `data` | string ISO datetime | Data **e hora** do ato |
 | `usuario` | string | Responsável pelo ato (nome da persona ou nome próprio); texto livre, sem id |
 | _...extras_ | — | Campos específicos do tipo, espalhados no mesmo nível |
@@ -81,19 +81,22 @@ Eventos **decisórios** (destaque visual no Dossiê): `decisao` e `avaliacao_com
 
 ### Categoria: rascunhos
 
-Registram apenas a **primeira** entrada no estado de rascunho; saves subsequentes não geram novo evento.
+Os eventos `_salvo` registram apenas o **primeiro** salvamento (saves subsequentes só atualizam o objeto de rascunho na proposição); os eventos `_descartado` registram cada descarte explícito. O conteúdo do rascunho **não** vai para o histórico — vive no objeto `rascunhoX` da proposição, com envelope comum `{ ...payload, salvoEm, salvoPor, salvoPorId }` (ver SPECS.md, "Rascunhos de ação (modelo canônico)").
 
 | Tipo | Emissor | Campos além do envelope |
 |---|---|---|
 | `rascunho_decisao_cn_salvo` | `salvarRascunhoDecisaoCN` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` |
 | `rascunho_decisao_cn_descartado` | `descartarRascunhoDecisaoCN` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` |
+| `rascunho_avaliacao_salvo` | `salvarRascunhoAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | `descricao` |
+| `rascunho_avaliacao_descartado` | `descartarRascunhoAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | `descricao` |
 | `rascunho_comprovacao_salvo` | `salvarRascunhoComprovacao` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao` |
+| `rascunho_comprovacao_descartado` | `descartarRascunhoComprovacao` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao` |
 
 ## Visibilidade por persona
 
 O correicionado enxerga somente os atos formais e comunicações dirigidas a ele — 13 tipos, definidos em `VISIBLE_TO_CORREICIONADO` ([correicionados.js](assets/js/domain/correicionados.js)): `criacao`, `edicao`, `referendo_cnmp`, `criacao_diligencia`, `comprovacao`, `prazo_comprovacao_expirado`, `decisao`, `avaliacao_com_forca_de_decisao`, `cientificacao`, `cumprimento_pendencia_secretaria`, `email_diligencia_enviado`, `email_ciencia_enviado`, `apagamento_proposicao`.
 
-Os 9 tipos restantes (avaliação do membro auxiliar, remoção de avaliação, edição de metadados, rascunhos, visualização de ciência, relatório final) são internos à CN. As demais personas veem o histórico completo.
+Os 12 tipos restantes (avaliação do membro auxiliar, remoção de avaliação, edição de metadados, confirmação de rascunho de criação, os seis eventos de rascunho, visualização de ciência, relatório final) são internos à CN. As demais personas veem o histórico completo.
 
 ## Pontos de atenção (estado atual)
 

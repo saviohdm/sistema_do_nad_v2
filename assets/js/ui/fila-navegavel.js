@@ -10,7 +10,7 @@
 //   subtitlePorModo: { overview, correicao, fila }     -> subtítulo por modo
 //   textos                                             -> rótulos/empty-states (ver defaults)
 //   getProposicoes(state)                              -> lista já hidratada (obrigatório)
-//   prepare(state) -> extras                           -> dados por render (ex.: idsComRascunho)
+//   prepare(state) -> extras                           -> dados por render (opcional)
 //   getKpis(proposicoes, ctx)                          -> KPIs do panorama (obrigatório):
 //       [{ label, valor, filtros?, destaque?, title? }]. Com `filtros` e valor > 0 o KPI
 //       é clicável e aplica os filtros na própria fila (incluir filaForcada: true).
@@ -19,10 +19,8 @@
 //   renderOverviewActions(ctx)           (opcional)    -> botões extras no panorama
 //   renderFilaHeaderActions(ctx)         (opcional)    -> botões extras no cabeçalho da fila
 //   filtrosExtras: [{ key, tipo, label, formatar }]    -> filtros e chips ativos próprios
-//   rascunho: { label, detectar(p, ctx), exclusivo } (opcional) -> filtro "Somente com rascunho".
-//       Por padrão é "afunilador": filtro OFF mostra tudo, ON restringe aos detectados.
-//       Com `exclusivo: true` vira "segregado": os detectados ficam fora do panorama e da
-//       fila padrão (filtro OFF), e só aparecem — sozinhos — com o filtro ON.
+//   rascunho: { label, detectar(p, ctx) }  (opcional)  -> filtro "Somente com rascunho"
+//       ("afunilador": filtro OFF mostra tudo, ON restringe aos detectados).
 //   bindExtra(ctx)                       (opcional)    -> handlers próprios da persona
 //
 // ctx = { filtros, proposicoes, filtradas, extras, state, aplicarFiltros, render }
@@ -375,18 +373,9 @@ export function montarFilaNavegavel(config) {
     } else if (filtros.unidade) {
       lista = lista.filter((p) => p.unidade === filtros.unidade);
     }
-    if (temRascunho) {
-      if (config.rascunho.exclusivo) {
-        // Segregado: OFF mostra só os não-detectados; ON mostra só os detectados.
-        lista = lista.filter((p) =>
-          filtros.comRascunho
-            ? config.rascunho.detectar(p, ctx)
-            : !config.rascunho.detectar(p, ctx),
-        );
-      } else if (filtros.comRascunho) {
-        // Afunilador: ON restringe aos detectados.
-        lista = lista.filter((p) => config.rascunho.detectar(p, ctx));
-      }
+    if (temRascunho && filtros.comRascunho) {
+      // Afunilador: ON restringe aos detectados.
+      lista = lista.filter((p) => config.rascunho.detectar(p, ctx));
     }
     if (config.aplicarFiltrosExtras) {
       lista = config.aplicarFiltrosExtras(lista, filtros, ctx);
@@ -399,14 +388,7 @@ export function montarFilaNavegavel(config) {
     const filtradas = filtrarParaFila(proposicoes, filtros, ctx);
     ctx.filtradas = filtradas;
 
-    let totalUniverso = proposicoes.length;
-    if (temRascunho && config.rascunho.exclusivo) {
-      totalUniverso = proposicoes.filter((p) =>
-        filtros.comRascunho
-          ? config.rascunho.detectar(p, ctx)
-          : !config.rascunho.detectar(p, ctx),
-      ).length;
-    }
+    const totalUniverso = proposicoes.length;
 
     const itens = filtradas.length
       ? config.renderItens(filtradas, ctx)
@@ -474,17 +456,10 @@ export function montarFilaNavegavel(config) {
     const extras = config.prepare ? config.prepare(currentState) : {};
     const ctx = { filtros, proposicoes, filtradas: [], extras, state: currentState, aplicarFiltros, render };
 
-    // No modo segregado, os detectados (ex.: rascunhos) ficam fora do panorama e do drill-down
-    // por correição; eles só são alcançados pela fila com o filtro "Somente com rascunho".
-    const panorama =
-      temRascunho && config.rascunho.exclusivo
-        ? proposicoes.filter((p) => !config.rascunho.detectar(p, ctx))
-        : proposicoes;
-
     const modo = determinarModo(filtros);
     let content;
-    if (modo === "overview") content = renderOverview(panorama, ctx);
-    else if (modo === "correicao") content = renderModoCorreicao(panorama, filtros, ctx);
+    if (modo === "overview") content = renderOverview(proposicoes, ctx);
+    else if (modo === "correicao") content = renderModoCorreicao(proposicoes, filtros, ctx);
     else content = renderModoFila(proposicoes, filtros, ctx);
 
     mountPage({

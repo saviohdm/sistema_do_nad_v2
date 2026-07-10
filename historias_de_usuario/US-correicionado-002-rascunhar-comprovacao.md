@@ -5,7 +5,7 @@
 **para que** eu possa montar a documentação em etapas sem perder progresso.
 
 ## Ator
-Correicionado (`PERSONAS.CORREICIONADO`, permissão `salvar_rascunho_comprovacao`).
+Correicionado (`PERSONAS.CORREICIONADO`, ação habilitada por `podeSalvarRascunhoComprovacao` em `getAvailableActions`).
 
 ## Pré-condições
 - Persona logada é Correicionado.
@@ -21,14 +21,15 @@ Correicionado (`PERSONAS.CORREICIONADO`, permissão `salvar_rascunho_comprovacao
 6. Acrescenta mais anexos (somam-se aos do rascunho) ou edita texto e clica em **Confirmar comprovação** ou em **Salvar rascunho** novamente.
 
 ## Fluxos alternativos
-- **Descartar rascunho**: clica em **Descartar rascunho** → confirmação → `descartarRascunhoComprovacao()` limpa `proposicao.rascunhoComprovacao`. O evento `RASCUNHO_COMPROVACAO_SALVO` permanece no histórico (auditoria).
-- **Expiração com rascunho**: se o prazo passa antes da submissão, o sistema preserva o rascunho. O membro auxiliar é informado via `PRAZO_COMPROVACAO_EXPIRADO` com `rascunhoExistia: true`. Ver [US-correicionado-004](US-correicionado-004-prazo-expirado-sem-comprovacao.md).
+- **Descartar rascunho**: clica em **Descartar rascunho** → confirmação → `descartarRascunhoComprovacao()` limpa `proposicao.rascunhoComprovacao` e registra `RASCUNHO_COMPROVACAO_DESCARTADO`. O evento `RASCUNHO_COMPROVACAO_SALVO` permanece no histórico (auditoria).
+- **Expiração com rascunho**: se o prazo passa antes da submissão, o sistema **limpa** o rascunho (regra "limpeza ao sair da fase") e o membro auxiliar é informado via `PRAZO_COMPROVACAO_EXPIRADO` com `rascunhoExistia: true`. Ver [US-correicionado-004](US-correicionado-004-prazo-expirado-sem-comprovacao.md).
 
 ## Regras de negócio
+- Segue o modelo canônico de rascunhos de ação (SPECS.md, "Rascunhos de ação"): objeto no estado, sem alterar status, privado, limpo ao sair da fase.
 - Apenas **um** rascunho ativo por proposição (substituição automática a cada salvamento).
 - Salvar rascunho **não** altera `statusFluxo`, `diligencia.status` nem nenhum outro campo da proposição.
-- O evento `RASCUNHO_COMPROVACAO_SALVO` é registrado uma única vez (na primeira ativação); salvamentos subsequentes atualizam o objeto sem novo evento.
-- Para o **correicionado**, o evento `RASCUNHO_COMPROVACAO_SALVO` fica **oculto** no histórico exibido (na prática, invisível, já que ninguém além dele edita o rascunho).
+- O evento `RASCUNHO_COMPROVACAO_SALVO` é registrado uma única vez (na primeira ativação); salvamentos subsequentes atualizam o objeto sem novo evento. Cada descarte registra `RASCUNHO_COMPROVACAO_DESCARTADO`.
+- Para o **correicionado**, os eventos de rascunho ficam **ocultos** no histórico exibido (na prática, invisíveis, já que ninguém além dele edita o rascunho).
 
 ## Pós-condições
 - `proposicao.rascunhoComprovacao = {descricao, observacoes, anexos, salvoEm, salvoPor, salvoPorId}`.

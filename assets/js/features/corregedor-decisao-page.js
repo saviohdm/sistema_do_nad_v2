@@ -12,7 +12,7 @@ const renderCard = (proposicao, index) => {
   const comAvaliacao = temAvaliacaoVigente(proposicao);
   const rascunho = temRascunhoDecisao(proposicao);
   const statusBadge = rascunho
-    ? renderBadge("Rascunho de decisão", "warning")
+    ? renderBadge("Rascunho salvo", "warning")
     : renderBadge(
         comAvaliacao ? "Decidir avaliação vigente" : "Avaliar diretamente",
         comAvaliacao ? "primary" : "warning",
@@ -96,10 +96,11 @@ montarFilaNavegavel({
         title: "Prontas para deferir ou indeferir a avaliação do membro auxiliar.",
       },
       {
-        label: "Sem avaliação (decisão direta)",
-        valor: proposicoes.length - comAvaliacao,
-        filtros: { avaliacao: "sem", filaForcada: true },
-        title: "Exigem avaliação direta com força de decisão.",
+        label: "Com rascunho a retomar",
+        valor: proposicoes.filter(temRascunhoDecisao).length,
+        filtros: { comRascunho: true },
+        destaque: true,
+        title: "Decisões iniciadas e ainda não concluídas.",
       },
     ];
   },

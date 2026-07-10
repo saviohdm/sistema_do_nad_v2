@@ -4,7 +4,6 @@ import { listProposicoesParaAvaliar } from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
 import { Prioridade } from "../domain/enums.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
-import { listarIdsComRascunho } from "../domain/rascunhos-avaliacao.js";
 import { renderBadge, renderFilaProposicaoEditorial } from "../ui/components.js";
 
 const renderCard = (proposicao, temRascunho, index) =>
@@ -43,12 +42,11 @@ montarFilaNavegavel({
   },
   getProposicoes: (state) =>
     listProposicoesParaAvaliar(state).map((p) => hydrateProposicao(state, p)),
-  prepare: () => ({ idsComRascunho: listarIdsComRascunho() }),
   rascunho: {
     label: "Somente com rascunho",
-    detectar: (proposicao, ctx) => ctx.extras.idsComRascunho.includes(proposicao.id),
+    detectar: (proposicao) => Boolean(proposicao.rascunhoAvaliacao),
   },
-  getKpis: (proposicoes, ctx) => [
+  getKpis: (proposicoes) => [
     {
       label: "Pendentes de avaliação",
       valor: proposicoes.length,
@@ -56,7 +54,7 @@ montarFilaNavegavel({
     },
     {
       label: "Com rascunho a retomar",
-      valor: proposicoes.filter((p) => ctx.extras.idsComRascunho.includes(p.id)).length,
+      valor: proposicoes.filter((p) => Boolean(p.rascunhoAvaliacao)).length,
       filtros: { comRascunho: true },
       destaque: true,
       title: "Avaliações iniciadas e ainda não submetidas.",
@@ -68,8 +66,8 @@ montarFilaNavegavel({
       title: "Proposições com prioridade urgente — avalie primeiro.",
     },
   ],
-  renderItens: (filtradas, ctx) =>
+  renderItens: (filtradas) =>
     filtradas
-      .map((p, index) => renderCard(p, ctx.extras.idsComRascunho.includes(p.id), index))
+      .map((p, index) => renderCard(p, Boolean(p.rascunhoAvaliacao), index))
       .join(""),
 });

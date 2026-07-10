@@ -111,7 +111,7 @@ const buildCorregedorContent = () => {
       {
         valor: pendentesCN.pendentesRascunhoDecisao,
         label: "Em rascunho de decisão",
-        href: "proposicoes-lista.html?buscar=1&status=rascunho_decisao_cn",
+        href: "corregedor-decisao.html?comRascunho=1",
       },
       {
         valor: pendentesCN.pendentesReferendo,

@@ -16,7 +16,7 @@ Sistema (registrado como `"Sistema"` no evento). Corregedor ou Secretaria podem 
    - Marca `diligencia.status = "expirada"` e preenche `diligencia.expiradaEm`.
    - Transita a proposição para `AGUARDANDO_AVALIACAO_MEMBRO`.
    - Registra `PRAZO_COMPROVACAO_EXPIRADO` com `usuario = "Sistema"`, `diligenciaId`, `prazoOriginal` e `rascunhoExistia`.
-   - **Preserva** eventual `rascunhoComprovacao` para auditoria.
+   - **Limpa** eventual `rascunhoComprovacao` (regra "limpeza ao sair da fase"); o flag `rascunhoExistia` no evento preserva a evidência de auditoria.
 3. As mudanças são persistidas em localStorage e propagadas ao membro auxiliar via fila de avaliação.
 
 ## Fluxo principal (botão manual)
@@ -31,7 +31,7 @@ Sistema (registrado como `"Sistema"` no evento). Corregedor ou Secretaria podem 
 
 ## Regras de negócio
 - A transição usa o mesmo `statusFluxo` destino que `registrarComprovacao` (`AGUARDANDO_AVALIACAO_MEMBRO`), tratando expiração como equivalente à omissão.
-- A expiração **não apaga** o rascunho — fica como evidência histórica.
+- A expiração **limpa** o rascunho (novo ciclo de diligência começa sem pré-preenchimento); a evidência histórica fica no flag `rascunhoExistia` do evento.
 - O evento `PRAZO_COMPROVACAO_EXPIRADO` é **visível ao correicionado** (transparência sobre o que aconteceu com sua proposição).
 - O lazy check é idempotente: roda no máximo uma vez por carga de página (flag `expirationDoneThisPageLoad`).
 

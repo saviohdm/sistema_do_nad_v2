@@ -4,6 +4,19 @@ import { normalizarProposicoesDestinatario } from "../domain/destinatario.js";
 
 const STORAGE_KEY = "nad-sistema-state-v4";
 
+// Migração: o rascunho de avaliação deixou de viver em chaves próprias do
+// localStorage e passou a integrar o estado (proposicao.rascunhoAvaliacao).
+const LEGADO_RASCUNHO_AVALIACAO_PREFIX = "nad-rascunho-avaliacao-";
+const limparChavesLegadasRascunhoAvaliacao = () => {
+  const legadas = [];
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(LEGADO_RASCUNHO_AVALIACAO_PREFIX)) legadas.push(key);
+  }
+  legadas.forEach((key) => localStorage.removeItem(key));
+};
+limparChavesLegadasRascunhoAvaliacao();
+
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 let expirationDoneThisPageLoad = false;

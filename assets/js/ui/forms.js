@@ -95,6 +95,11 @@ export const renderApreciacaoForm = ({
             : ""
         }
         ${
+          includeRascunho && initialApreciacao
+            ? `<button class="button button--ghost" type="button" data-action="descartar-rascunho">Descartar rascunho</button>`
+            : ""
+        }
+        ${
           includeDelete
             ? `<button class="button button--danger" type="button" data-action="remover-avaliacao">Apagar avaliação vigente</button>`
             : ""
