@@ -157,6 +157,7 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
     comDiligenciasAbertas,
     comPendenciasSecretaria,
     subStatus,
+    incluirObservacoesInternas = true,
   } = filtros;
 
   const termo = typeof textoBusca === "string" ? textoBusca.trim().toLowerCase() : "";
@@ -187,14 +188,22 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
       }
     }
     if (tipoConclusao && p.apreciacaoDoCN?.tipoConclusao !== tipoConclusao) return false;
-    if (dataInicioDe && (!p.dataInicioCorreicao || p.dataInicioCorreicao < dataInicioDe)) return false;
-    if (dataFimAte && (!p.dataFimCorreicao || p.dataFimCorreicao > dataFimAte)) return false;
+    // Consulta por sobreposição do período da correição: basta que algum trecho
+    // da duração toque o intervalo informado. Os nomes dos filtros são mantidos
+    // para preservar URLs já compartilhadas pela tela de consulta.
+    if (dataInicioDe && (!p.dataFimCorreicao || p.dataFimCorreicao < dataInicioDe)) return false;
+    if (dataFimAte && (!p.dataInicioCorreicao || p.dataInicioCorreicao > dataFimAte)) return false;
     if (comDiligenciasAbertas && !(p.diligencias || []).some((d) => d.status === "aberta")) return false;
     if (comPendenciasSecretaria && !(p.pendenciasSecretaria || []).some((x) => x.status === "pendente")) return false;
     if (subStatus === "nova" && p.apreciacaoDoCN) return false;
     if (subStatus === "retornada" && p.apreciacaoDoCN?.situacao !== SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) return false;
     if (termo) {
-      const haystack = [p.numero, p.numeroElo, p.descricao, p.observacoesGerais]
+      const haystack = [
+        p.numero,
+        p.numeroElo,
+        p.descricao,
+        incluirObservacoesInternas ? p.observacoesGerais : null,
+      ]
         .filter(Boolean)
         .join(" \u0001 ")
         .toLowerCase();

@@ -1,4 +1,10 @@
-import { requireAuth, hasPermission } from "../app/auth.js";
+import {
+  PERSONAS,
+  getCurrentPersona,
+  getCurrentUser,
+  hasPermission,
+  requireAuth,
+} from "../app/auth.js";
 import { mountPage, state } from "../app/bootstrap.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
 import {
@@ -8,18 +14,22 @@ import {
   SituacaoApreciacao,
   TipoConclusao,
   TipoDestinatario,
+  TipoHistorico,
 } from "../domain/enums.js";
 import {
   filtrarProposicoes,
-  isProposicaoAtiva,
   listProposicoes,
 } from "../domain/proposicoes.js";
+import { listProposicoesCorreicionado } from "../domain/correicionados.js";
+import {
+  getDestinatarioDisplay,
+  isFluxoPrincipalAberto,
+} from "../domain/filas-operacionais.js";
 import { formatDatelineEditorial } from "../app/utils.js";
 import {
   renderActiveFilterChip,
   renderAlert,
   renderFilterToggleChip,
-  renderPresetChip,
   renderProposicaoCardGrid,
   renderProposicaoTableEditorial,
 } from "../ui/components.js";
@@ -29,13 +39,15 @@ requireAuth();
 const LIMITE_AVISO = 200;
 const BUSCA_FLAG = "buscar";
 const VIEW_KEY = "nad.acervo.view";
-const SORT_KEY_LS = "nad.acervo.sort";
+const SORT_KEY_INSTITUCIONAL = "nad.consulta.sort.institucional";
+const SORT_KEY_CORREICIONADO = "nad.consulta.sort.correicionado";
 
 const TEXTO_KEY = "q";
 const STATUS_KEY = "status";
 const FILTRO_KEYS = [
   "tipo",
   "prioridade",
+  "sensivel",
   "situacaoApreciacao",
   "tipoConclusao",
   "ramoMP",
@@ -50,14 +62,22 @@ const FILTRO_KEYS = [
 ];
 const BOOL_KEYS = ["comDiligenciasAbertas", "comPendenciasSecretaria"];
 
-const SORT_OPTIONS = [
-  { value: "relevancia", label: "Padrão (urgência + idade)" },
+const SORT_OPTIONS_INSTITUCIONAL = [
+  { value: "relevancia", label: "Sensibilidade, prioridade e movimentação" },
   { value: "numero-asc", label: "Número (crescente)" },
   { value: "numero-desc", label: "Número (decrescente)" },
   { value: "idade-desc", label: "Movimentação mais recente" },
   { value: "idade-asc", label: "Movimentação mais antiga" },
-  { value: "pendencias-desc", label: "Mais pendências" },
-  { value: "unidade-asc", label: "Unidade (A–Z)" },
+  { value: "pendencias-desc", label: "Mais providências pendentes" },
+  { value: "destinatario-asc", label: "Destinatário (A–Z)" },
+];
+
+const SORT_OPTIONS_CORREICIONADO = [
+  { value: "idade-desc", label: "Movimentação mais recente" },
+  { value: "idade-asc", label: "Movimentação mais antiga" },
+  { value: "numero-asc", label: "Número (crescente)" },
+  { value: "numero-desc", label: "Número (decrescente)" },
+  { value: "destinatario-asc", label: "Destinatário (A–Z)" },
 ];
 
 const PRIORIDADE_PESO = {
@@ -87,18 +107,29 @@ const setView = (view) => {
   }
 };
 
-const getSort = () => {
+const getSortOptions = (isCorreicionado) =>
+  isCorreicionado ? SORT_OPTIONS_CORREICIONADO : SORT_OPTIONS_INSTITUCIONAL;
+
+const getSortKey = (isCorreicionado) =>
+  isCorreicionado ? SORT_KEY_CORREICIONADO : SORT_KEY_INSTITUCIONAL;
+
+const getDefaultSort = (isCorreicionado) =>
+  isCorreicionado ? "idade-desc" : "relevancia";
+
+const getSort = (isCorreicionado) => {
   try {
-    const v = localStorage.getItem(SORT_KEY_LS);
-    return SORT_OPTIONS.some((o) => o.value === v) ? v : "relevancia";
+    const v = localStorage.getItem(getSortKey(isCorreicionado));
+    return getSortOptions(isCorreicionado).some((o) => o.value === v)
+      ? v
+      : getDefaultSort(isCorreicionado);
   } catch {
-    return "relevancia";
+    return getDefaultSort(isCorreicionado);
   }
 };
 
-const setSort = (sort) => {
+const setSort = (sort, isCorreicionado) => {
   try {
-    localStorage.setItem(SORT_KEY_LS, sort);
+    localStorage.setItem(getSortKey(isCorreicionado), sort);
   } catch {
     /* ignore */
   }
@@ -126,6 +157,30 @@ const getFiltrosFromUrl = () => {
   if (params.get(BUSCA_FLAG) === "1") filtros.__buscaAtiva = true;
 
   return filtros;
+};
+
+const normalizarFiltros = (filtros, isCorreicionado) => {
+  const normalizados = cloneFiltros(filtros);
+
+  if (isCorreicionado) {
+    delete normalizados.prioridade;
+    delete normalizados.sensivel;
+  }
+
+  if (normalizados.membro) {
+    normalizados.tipoDestinatario = TipoDestinatario.MEMBRO;
+  }
+
+  if (normalizados.tipoConclusao) {
+    normalizados.situacaoApreciacao = SituacaoApreciacao.CONCLUIDA;
+  } else if (
+    normalizados.situacaoApreciacao &&
+    normalizados.situacaoApreciacao !== SituacaoApreciacao.CONCLUIDA
+  ) {
+    delete normalizados.tipoConclusao;
+  }
+
+  return normalizados;
 };
 
 const buildUrl = (filtros) => {
@@ -177,7 +232,12 @@ const extrairOpcoes = (proposicoes) => ({
   unidades: uniq(proposicoes.map((p) => p.unidade)),
   tematicas: uniq(proposicoes.map((p) => p.tematica)),
   membros: uniq(proposicoes.map((p) => p.membro)),
-  correicoes: uniq(proposicoes.map((p) => p.correicaoId)),
+  correicoes: uniq(proposicoes.map((p) => p.correicaoId)).map((id) => {
+    const item = proposicoes.find((p) => p.correicaoId === id);
+    const numero = item?.correicao?.numero || id;
+    const elo = item?.numeroElo ? ` — ELO ${item.numeroElo}` : "";
+    return { value: id, label: `${numero}${elo}` };
+  }),
   tipos: uniq(proposicoes.map((p) => p.tipo)),
 });
 
@@ -220,8 +280,12 @@ const aplicarOrdenacao = (lista, sort) => {
         const pb = (b.pendenciasSecretaria || []).filter((p) => p.status === "pendente").length;
         return pb - pa;
       });
-    case "unidade-asc":
-      return arr.sort((a, b) => (a.unidade || "").localeCompare(b.unidade || ""));
+    case "destinatario-asc":
+      return arr.sort((a, b) =>
+        (getDestinatarioDisplay(a).rotulo || "").localeCompare(
+          getDestinatarioDisplay(b).rotulo || "",
+        ),
+      );
     case "relevancia":
     default:
       return arr.sort((a, b) => {
@@ -248,92 +312,67 @@ const contarComDiligenciasAbertas = (proposicoes) =>
     (p.diligencias || []).some((x) => x.status === "aberta"),
   ).length;
 
-const contarPorPrioridade = (proposicoes, prioridade) =>
-  proposicoes.filter((p) => p.prioridade === prioridade).length;
+const contarCienciasDisponiveis = (proposicoes) =>
+  proposicoes.filter(
+    (p) =>
+      p.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA &&
+      (p.historico || []).some((ev) => ev.tipo === TipoHistorico.EMAIL_CIENCIA_ENVIADO),
+  ).length;
 
-const buildHero = (todas) => {
-  const ativas = todas.filter(isProposicaoAtiva).length;
-  const comPend = contarComPendencias(todas);
-  const aguardando = contarPorStatus(todas, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR);
+const buildHero = (todas, isCorreicionado) => {
+  const fluxoAberto = todas.filter(isFluxoPrincipalAberto).length;
+  const kpis = isCorreicionado
+    ? [
+        { valor: todas.length, label: "Total vinculadas" },
+        { valor: fluxoAberto, label: "Em andamento" },
+        {
+          valor: contarPorStatus(todas, StatusFluxo.AGUARDANDO_COMPROVACAO),
+          label: "Aguardando sua comprovação",
+        },
+        { valor: contarCienciasDisponiveis(todas), label: "Ciências disponíveis" },
+      ]
+    : [
+        { valor: todas.length, label: "No acervo institucional" },
+        { valor: fluxoAberto, label: "Fluxo principal aberto" },
+        {
+          valor: contarPorStatus(todas, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR),
+          label: "Aguardando decisão",
+        },
+        {
+          valor: contarComPendencias(todas),
+          label: "Com providência pendente",
+        },
+      ];
 
   return `
     <section class="acervo-hero">
       <div>
         <div class="acervo-hero__top">
-          <p class="acervo-overline acervo-overline--accent">Acervo · ${formatDatelineEditorial()}</p>
-          <span class="acervo-hero__mark">NAD</span>
+          <p class="acervo-overline acervo-overline--accent">${
+            isCorreicionado ? "Proposições vinculadas a você" : "Acervo institucional do NAD"
+          } · ${formatDatelineEditorial()}</p>
+          <span class="acervo-hero__mark">${isCorreicionado ? "NAD · Você" : "NAD"}</span>
         </div>
       </div>
-      <div class="acervo-hero__kpis" aria-label="Indicadores do acervo">
-        <div class="acervo-hero__kpi">
-          <span class="acervo-hero__kpi-value">${todas.length}</span>
-          <span class="acervo-hero__kpi-label">No acervo</span>
-        </div>
-        <div class="acervo-hero__kpi">
-          <span class="acervo-hero__kpi-value">${ativas}</span>
-          <span class="acervo-hero__kpi-label">Em fluxo</span>
-        </div>
-        <div class="acervo-hero__kpi">
-          <span class="acervo-hero__kpi-value">${aguardando}</span>
-          <span class="acervo-hero__kpi-label">Aguardando decisão</span>
-        </div>
-        <div class="acervo-hero__kpi">
-          <span class="acervo-hero__kpi-value">${comPend}</span>
-          <span class="acervo-hero__kpi-label">Com pendências</span>
-        </div>
+      <div class="acervo-hero__kpis" aria-label="Indicadores das proposições disponíveis">
+        ${kpis
+          .map(
+            (kpi) => `
+              <div class="acervo-hero__kpi">
+                <span class="acervo-hero__kpi-value">${kpi.valor}</span>
+                <span class="acervo-hero__kpi-label">${kpi.label}</span>
+              </div>`,
+          )
+          .join("")}
       </div>
     </section>
   `;
 };
 
-const buildPresets = (todas) => {
-  const presets = [
-    {
-      label: "Aguardando decisão",
-      href: `?${BUSCA_FLAG}=1&${STATUS_KEY}=${StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR}`,
-      count: contarPorStatus(todas, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR),
-      icon: "✦",
-    },
-    {
-      label: "Aguardando avaliação",
-      href: `?${BUSCA_FLAG}=1&${STATUS_KEY}=${StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO}`,
-      count: contarPorStatus(todas, StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO),
-      icon: "◐",
-    },
-    {
-      label: "Aguardando Secretaria",
-      href: `?${BUSCA_FLAG}=1&${STATUS_KEY}=${StatusFluxo.AGUARDANDO_SECRETARIA}`,
-      count: contarPorStatus(todas, StatusFluxo.AGUARDANDO_SECRETARIA),
-      icon: "❒",
-    },
-    {
-      label: "Com pendências da Secretaria",
-      href: `?${BUSCA_FLAG}=1&comPendenciasSecretaria=1`,
-      count: contarComPendencias(todas),
-      icon: "⏳",
-    },
-    {
-      label: "Urgentes",
-      href: `?${BUSCA_FLAG}=1&prioridade=${Prioridade.URGENTE}`,
-      count: contarPorPrioridade(todas, Prioridade.URGENTE),
-      icon: "▲",
-    },
-  ];
-
-  return `
-    <section aria-labelledby="presets-title" class="stack">
-      <h2 class="acervo-overline" id="presets-title">Atalhos · filas mais consultadas</h2>
-      <div class="acervo-presets">
-        ${presets.map(renderPresetChip).join("")}
-      </div>
-    </section>
-  `;
-};
-
-const renderStatusChips = (todas, statusAtivos) => {
+const renderStatusChips = (todas, statusAtivos, isCorreicionado) => {
   const ordem = [
-    StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
     StatusFluxo.RASCUNHO_CN,
+    StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
     StatusFluxo.AGUARDANDO_SECRETARIA,
     StatusFluxo.AGUARDANDO_COMPROVACAO,
     StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
@@ -342,6 +381,7 @@ const renderStatusChips = (todas, statusAtivos) => {
     StatusFluxo.BAIXA_DEFINITIVA,
   ];
   return ordem
+    .filter((status) => !isCorreicionado || contarPorStatus(todas, status) > 0)
     .map((status) =>
       renderFilterToggleChip({
         label: Labels.statusFluxo[status],
@@ -353,7 +393,7 @@ const renderStatusChips = (todas, statusAtivos) => {
     .join("");
 };
 
-const buildFiltersPanel = (opcoes, filtros, todas) => {
+const buildFiltersPanel = (opcoes, filtros, todas, isCorreicionado) => {
   const statusAtivos = filtros.statusFluxo || [];
 
   const situacaoOptions = [
@@ -377,6 +417,24 @@ const buildFiltersPanel = (opcoes, filtros, todas) => {
     option(Prioridade.IMPORTANTE, Labels.prioridade[Prioridade.IMPORTANTE], filtros.prioridade || ""),
     option(Prioridade.NORMAL, Labels.prioridade[Prioridade.NORMAL], filtros.prioridade || ""),
   ].join("");
+
+  const prioridadeESensibilidade = isCorreicionado
+    ? ""
+    : `
+      <div class="field">
+        <label for="filtro-prioridade">Prioridade</label>
+        <select id="filtro-prioridade" name="prioridade">
+          ${prioridadeOptions}
+        </select>
+      </div>
+      <div class="field">
+        <label for="filtro-sensivel">Sensível</label>
+        <select id="filtro-sensivel" name="sensivel">
+          ${option("", "Todas", filtros.sensivel || "")}
+          ${option("sim", "Sim", filtros.sensivel || "")}
+          ${option("nao", "Não", filtros.sensivel || "")}
+        </select>
+      </div>`;
 
   const selectSimples = (id, name, label, lista, valor, { textoValor } = {}) => `
     <div class="field">
@@ -405,7 +463,11 @@ const buildFiltersPanel = (opcoes, filtros, todas) => {
           id="filtro-texto"
           name="textoBusca"
           type="text"
-          placeholder="Buscar por número, ELO, descrição ou observações…"
+          placeholder="${
+            isCorreicionado
+              ? "Buscar por número, ELO ou descrição…"
+              : "Buscar por número, ELO, descrição ou observações…"
+          }"
           value="${escapeAttr(filtros.textoBusca || "")}"
           autocomplete="off"
         />
@@ -414,17 +476,17 @@ const buildFiltersPanel = (opcoes, filtros, todas) => {
       <div class="acervo-filter-section">
         <p class="acervo-filter-section__title">Status do fluxo</p>
         <div class="acervo-filter-chips" role="group" aria-label="Filtrar por status">
-          ${renderStatusChips(todas, statusAtivos)}
+          ${renderStatusChips(todas, statusAtivos, isCorreicionado)}
         </div>
         <input type="hidden" name="statusFluxoHidden" id="statusFluxoHidden" value="${statusAtivos.join(",")}" />
       </div>
 
       <div class="acervo-filter-section">
-        <p class="acervo-filter-section__title">Apreciação &amp; tipo</p>
+        <p class="acervo-filter-section__title">Classificação e apreciação</p>
         <div class="acervo-filter-grid">
           ${selectSimples("filtro-tipo", "tipo", "Tipo", opcoes.tipos, filtros.tipo)}
           <div class="field">
-            <label for="filtro-orientacao">Orientação</label>
+            <label for="filtro-orientacao">Tipo de destinatário</label>
             <select id="filtro-orientacao" name="tipoDestinatario">
               <option value="">Todas</option>
               ${Object.values(TipoDestinatario)
@@ -432,12 +494,7 @@ const buildFiltersPanel = (opcoes, filtros, todas) => {
                 .join("")}
             </select>
           </div>
-          <div class="field">
-            <label for="filtro-prioridade">Prioridade</label>
-            <select id="filtro-prioridade" name="prioridade">
-              ${prioridadeOptions}
-            </select>
-          </div>
+          ${prioridadeESensibilidade}
           <div class="field">
             <label for="filtro-situacao">Situação da apreciação</label>
             <select id="filtro-situacao" name="situacaoApreciacao">
@@ -486,19 +543,30 @@ const buildFiltersPanel = (opcoes, filtros, todas) => {
           ${selectSimples("filtro-uf", "uf", "UF", opcoes.ufs, filtros.uf)}
           ${selectSimples("filtro-unidade", "unidade", "Unidade", opcoes.unidades, filtros.unidade)}
           ${selectSimples("filtro-tematica", "tematica", "Temática", opcoes.tematicas, filtros.tematica)}
-          ${selectSimples("filtro-membro", "membro", "Membro responsável", opcoes.membros, filtros.membro)}
-          ${selectSimples("filtro-correicao", "correicaoId", "Correição", opcoes.correicoes, filtros.correicaoId)}
+          ${selectSimples("filtro-membro", "membro", "Membro destinatário", opcoes.membros, filtros.membro)}
+          <div class="field">
+            <label for="filtro-correicao">Correição</label>
+            <select id="filtro-correicao" name="correicaoId">
+              <option value="">Todas</option>
+              ${opcoes.correicoes
+                .map((correicao) =>
+                  option(correicao.value, correicao.label, filtros.correicaoId || ""),
+                )
+                .join("")}
+            </select>
+          </div>
         </div>
+        <p class="acervo-filter-section__title acervo-filter-section__title--subtle">Período da correição</p>
         <div class="acervo-filter-period">
           <div class="field">
-            <label for="filtro-data-inicio-de">Início da correição (a partir de)</label>
+            <label for="filtro-data-inicio-de">De</label>
             <input id="filtro-data-inicio-de" name="dataInicioDe" type="date" value="${escapeAttr(
               filtros.dataInicioDe || "",
             )}" />
           </div>
           <span class="acervo-filter-period__sep" aria-hidden="true">—</span>
           <div class="field">
-            <label for="filtro-data-fim-ate">Fim da correição (até)</label>
+            <label for="filtro-data-fim-ate">Até</label>
             <input id="filtro-data-fim-ate" name="dataFimAte" type="date" value="${escapeAttr(
               filtros.dataFimAte || "",
             )}" />
@@ -507,9 +575,8 @@ const buildFiltersPanel = (opcoes, filtros, todas) => {
       </div>
 
       <div class="acervo-filter-actions">
-        <button class="button button--primary" type="submit">Buscar acervo</button>
+        <button class="button button--primary" type="submit">Buscar proposições</button>
         <button class="button button--ghost" type="button" data-action="limpar-filtros">Limpar filtros</button>
-        <span class="acervo-filter-actions__hint">A busca opera sobre os dados carregados na sessão atual.</span>
       </div>
     </form>
   `;
@@ -535,13 +602,19 @@ const buildActiveFiltersChips = (filtros, opcoes) => {
       removeHref: removeFilterFromUrl(filtros, { key: "prioridade" }),
     });
   }
+  if (filtros.sensivel) {
+    chips.push({
+      label: `Sensível: ${filtros.sensivel === "sim" ? "Sim" : "Não"}`,
+      removeHref: removeFilterFromUrl(filtros, { key: "sensivel" }),
+    });
+  }
   if (filtros.tipo) {
     chips.push({
       label: `Tipo: ${filtros.tipo}`,
       removeHref: removeFilterFromUrl(filtros, { key: "tipo" }),
     });
   }
-  if (filtros.situacaoApreciacao) {
+  if (filtros.situacaoApreciacao && !filtros.tipoConclusao) {
     const label =
       filtros.situacaoApreciacao === "sem_apreciacao"
         ? "Sem decisão do CN"
@@ -584,31 +657,32 @@ const buildActiveFiltersChips = (filtros, opcoes) => {
   }
   if (filtros.membro) {
     chips.push({
-      label: `Membro: ${filtros.membro}`,
+      label: `Membro destinatário: ${filtros.membro}`,
       removeHref: removeFilterFromUrl(filtros, { key: "membro" }),
     });
   }
-  if (filtros.tipoDestinatario) {
+  if (filtros.tipoDestinatario && !filtros.membro) {
     chips.push({
-      label: `Orientação: ${Labels.tipoDestinatario[filtros.tipoDestinatario] || filtros.tipoDestinatario}`,
+      label: `Tipo de destinatário: ${Labels.tipoDestinatario[filtros.tipoDestinatario] || filtros.tipoDestinatario}`,
       removeHref: removeFilterFromUrl(filtros, { key: "tipoDestinatario" }),
     });
   }
   if (filtros.correicaoId) {
+    const correicao = opcoes.correicoes.find((item) => item.value === filtros.correicaoId);
     chips.push({
-      label: `Correição: ${filtros.correicaoId}`,
+      label: `Correição: ${correicao?.label || filtros.correicaoId}`,
       removeHref: removeFilterFromUrl(filtros, { key: "correicaoId" }),
     });
   }
   if (filtros.dataInicioDe) {
     chips.push({
-      label: `Início ≥ ${filtros.dataInicioDe}`,
+      label: `Período desde ${filtros.dataInicioDe}`,
       removeHref: removeFilterFromUrl(filtros, { key: "dataInicioDe" }),
     });
   }
   if (filtros.dataFimAte) {
     chips.push({
-      label: `Fim ≤ ${filtros.dataFimAte}`,
+      label: `Período até ${filtros.dataFimAte}`,
       removeHref: removeFilterFromUrl(filtros, { key: "dataFimAte" }),
     });
   }
@@ -646,7 +720,7 @@ const buildResultsSummary = (lista) => {
   return partes.join(" · ");
 };
 
-const renderResultsToolbar = (lista, sort, view) => {
+const renderResultsToolbar = (lista, sort, view, isCorreicionado) => {
   const subtitle = lista.length
     ? buildResultsSummary(lista)
     : "Nenhum item corresponde aos filtros aplicados.";
@@ -670,7 +744,7 @@ const renderResultsToolbar = (lista, sort, view) => {
         <div class="acervo-toolbar-group">
           <label class="acervo-toolbar-label" for="acervo-sort">Ordenar por</label>
           <select id="acervo-sort" class="acervo-sort-select" data-action="ordenar">
-            ${SORT_OPTIONS.map((o) =>
+            ${getSortOptions(isCorreicionado).map((o) =>
               option(o.value, o.label, sort),
             ).join("")}
           </select>
@@ -711,14 +785,10 @@ const renderEmptyState = (filtros) => {
   `;
 };
 
-const renderResults = (lista, sort, view, filtros) => {
+const renderResults = (lista, sort, view, filtros, todas, isCorreicionado) => {
   const ordenada = aplicarOrdenacao(lista, sort);
-  const toolbar = renderResultsToolbar(lista, sort, view);
-  const stChips = state();
-  const activeChips = buildActiveFiltersChips(
-    filtros,
-    extrairOpcoes(listProposicoes(stChips).map((p) => hydrateProposicao(stChips, p))),
-  );
+  const toolbar = renderResultsToolbar(lista, sort, view, isCorreicionado);
+  const activeChips = buildActiveFiltersChips(filtros, extrairOpcoes(todas));
   if (!ordenada.length) {
     return `
       <section class="stack" aria-label="Resultados da consulta">
@@ -736,8 +806,12 @@ const renderResults = (lista, sort, view, filtros) => {
       : "";
   const corpo =
     view === "cards"
-      ? renderProposicaoCardGrid(ordenada)
-      : renderProposicaoTableEditorial(ordenada);
+      ? renderProposicaoCardGrid(ordenada, {
+          exibirMetadadosInternos: !isCorreicionado,
+        })
+      : renderProposicaoTableEditorial(ordenada, {
+          exibirMetadadosInternos: !isCorreicionado,
+        });
   return `
     <section class="stack" aria-label="Resultados da consulta">
       ${toolbar}
@@ -748,45 +822,34 @@ const renderResults = (lista, sort, view, filtros) => {
   `;
 };
 
-const renderEstadoInicial = (todas) => {
-  const ativas = todas.filter(isProposicaoAtiva).length;
-  const aguardando = contarPorStatus(todas, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR);
-  const comPend = contarComPendencias(todas);
+const renderEstadoInicial = () => {
   return `
-    <section class="stack" aria-labelledby="acervo-overview-title">
-      <h2 class="acervo-overline" id="acervo-overview-title">Acervo em números</h2>
-      <div class="acervo-overview">
-        <div class="acervo-overview__card">
-          <span class="acervo-overview__value">${todas.length}</span>
-          <span class="acervo-overview__label">Total de proposições</span>
-        </div>
-        <div class="acervo-overview__card">
-          <span class="acervo-overview__value">${ativas}</span>
-          <span class="acervo-overview__label">Em fluxo ativo</span>
-        </div>
-        <div class="acervo-overview__card">
-          <span class="acervo-overview__value">${aguardando}</span>
-          <span class="acervo-overview__label">Aguardando decisão</span>
-        </div>
-        <div class="acervo-overview__card">
-          <span class="acervo-overview__value">${comPend}</span>
-          <span class="acervo-overview__label">Com pendências</span>
-        </div>
-      </div>
-      <p class="muted" style="margin:0;text-align:center;font-size:0.9rem;">
-        Selecione um atalho acima ou refine os critérios abaixo e clique em <strong>Buscar acervo</strong> para listar resultados.
-      </p>
+    <section class="acervo-initial" aria-label="Orientação para iniciar a consulta">
+      <span class="acervo-initial__mark" aria-hidden="true">⌕</span>
+      <p>Defina os critérios desejados e selecione <strong>Buscar proposições</strong> para exibir os resultados.</p>
     </section>
   `;
 };
 
+const renderPeriodoInvalido = () => `
+  <section class="stack" aria-label="Período inválido">
+    ${renderAlert("A data inicial do período não pode ser posterior à data final.", "error")}
+  </section>
+`;
+
 const render = () => {
-  const filtros = getFiltrosFromUrl();
   const currentState = state();
-  const todas = listProposicoes(currentState).map((p) => hydrateProposicao(currentState, p));
+  const persona = getCurrentPersona();
+  const isCorreicionado = persona === PERSONAS.CORREICIONADO;
+  const user = isCorreicionado ? getCurrentUser() : null;
+  const universo = isCorreicionado
+    ? listProposicoesCorreicionado(currentState, user)
+    : listProposicoes(currentState);
+  const todas = universo.map((p) => hydrateProposicao(currentState, p));
+  const filtros = normalizarFiltros(getFiltrosFromUrl(), isCorreicionado);
   const opcoes = extrairOpcoes(todas);
   const view = getView();
-  const sort = getSort();
+  const sort = getSort(isCorreicionado);
 
   const temFiltroAplicavel =
     Boolean(filtros.textoBusca) ||
@@ -795,32 +858,52 @@ const render = () => {
     BOOL_KEYS.some((k) => filtros[k]);
 
   const buscaAtiva = Boolean(filtros.__buscaAtiva);
+  const periodoInvalido = Boolean(
+    filtros.dataInicioDe &&
+      filtros.dataFimAte &&
+      filtros.dataInicioDe > filtros.dataFimAte,
+  );
 
   let resultadoHtml;
   if (!buscaAtiva) {
-    resultadoHtml = renderEstadoInicial(todas);
+    resultadoHtml = renderEstadoInicial();
+  } else if (periodoInvalido) {
+    resultadoHtml = renderPeriodoInvalido();
   } else if (!temFiltroAplicavel) {
-    resultadoHtml = renderResults(todas, sort, view, filtros);
+    resultadoHtml = renderResults(todas, sort, view, filtros, todas, isCorreicionado);
   } else {
-    const lista = filtrarProposicoes(todas, filtros);
-    resultadoHtml = renderResults(lista, sort, view, filtros);
+    const lista = filtrarProposicoes(todas, {
+      ...filtros,
+      incluirObservacoesInternas: !isCorreicionado,
+    });
+    resultadoHtml = renderResults(
+      lista,
+      sort,
+      view,
+      filtros,
+      todas,
+      isCorreicionado,
+    );
   }
 
   const createButton = hasPermission("criar_proposicao")
     ? `<a href="/pages/proposicoes-criar.html" class="button button--primary">+ Criar Proposição</a>`
     : "";
 
+  const pageTitle = isCorreicionado ? "Minhas proposições" : "Consulta de proposições";
+  document.title = `NAD — ${pageTitle}`;
+
   mountPage({
     activePage: "proposicoes-lista",
-    title: "Consulta de proposições",
-    subtitle:
-      "Sumário do acervo de proposições oriundas das correições conduzidas pela Corregedoria Nacional. Use os atalhos para filas comuns ou refine a busca pelos critérios completos.",
+    title: pageTitle,
+    subtitle: isCorreicionado
+      ? "Consulte as proposições vinculadas a você, respeitando seu perfil de acesso no NAD."
+      : "Consulte o acervo institucional de proposições oriundas das correições conduzidas pela Corregedoria Nacional.",
     actions: createButton,
     content: `
       <section class="stack" style="gap: var(--space-6);">
-        ${buildHero(todas)}
-        ${buildPresets(todas)}
-        ${buildFiltersPanel(opcoes, filtros, todas)}
+        ${buildHero(todas, isCorreicionado)}
+        ${buildFiltersPanel(opcoes, filtros, todas, isCorreicionado)}
         ${resultadoHtml}
       </section>
     `,
@@ -856,11 +939,23 @@ const coletarFiltrosDoForm = (form) => {
 };
 
 const bindHandlers = () => {
+  const isCorreicionado = getCurrentPersona() === PERSONAS.CORREICIONADO;
   const form = document.querySelector("#filtros-consulta");
   if (form) {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const filtros = coletarFiltrosDoForm(event.currentTarget);
+      const inicio = event.currentTarget.querySelector("#filtro-data-inicio-de");
+      const fim = event.currentTarget.querySelector("#filtro-data-fim-ate");
+      if (inicio?.value && fim?.value && inicio.value > fim.value) {
+        fim.setCustomValidity("A data final deve ser igual ou posterior à data inicial.");
+        fim.reportValidity();
+        return;
+      }
+      fim?.setCustomValidity("");
+      const filtros = normalizarFiltros(
+        coletarFiltrosDoForm(event.currentTarget),
+        isCorreicionado,
+      );
       setFiltrosInUrl(filtros);
       render();
     });
@@ -901,7 +996,7 @@ const bindHandlers = () => {
   });
 
   document.querySelector("[data-action='ordenar']")?.addEventListener("change", (event) => {
-    setSort(event.currentTarget.value);
+    setSort(event.currentTarget.value, isCorreicionado);
     render();
   });
 
@@ -913,7 +1008,35 @@ const bindHandlers = () => {
       conclusao.disabled = !habilitar;
       if (!habilitar) conclusao.value = "";
     });
+    conclusao.addEventListener("change", () => {
+      if (conclusao.value) {
+        situacao.value = SituacaoApreciacao.CONCLUIDA;
+        conclusao.disabled = false;
+      }
+    });
   }
+
+  const tipoDestinatario = document.querySelector("#filtro-orientacao");
+  const membro = document.querySelector("#filtro-membro");
+  if (tipoDestinatario && membro) {
+    membro.addEventListener("change", () => {
+      if (membro.value) tipoDestinatario.value = TipoDestinatario.MEMBRO;
+    });
+    tipoDestinatario.addEventListener("change", () => {
+      if (
+        tipoDestinatario.value &&
+        tipoDestinatario.value !== TipoDestinatario.MEMBRO
+      ) {
+        membro.value = "";
+      }
+    });
+  }
+
+  const inicio = document.querySelector("#filtro-data-inicio-de");
+  const fim = document.querySelector("#filtro-data-fim-ate");
+  [inicio, fim].filter(Boolean).forEach((campo) => {
+    campo.addEventListener("change", () => fim?.setCustomValidity(""));
+  });
 };
 
 window.addEventListener("popstate", render);

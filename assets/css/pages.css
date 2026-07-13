@@ -542,64 +542,6 @@
   min-width: 220px;
 }
 
-/* --- Presets (atalhos pré-configurados) --------------------------------- */
-
-.acervo-presets {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--space-3);
-}
-
-.acervo-preset-chip {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  color: var(--text);
-  text-decoration: none;
-  transition: 180ms ease;
-  box-shadow: var(--shadow);
-}
-
-.acervo-preset-chip:hover {
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.acervo-preset-chip__mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--surface-warm);
-  color: var(--primary);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1rem;
-  border: 1px solid var(--line);
-}
-
-.acervo-preset-chip__label {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.acervo-preset-chip__count {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--primary);
-  padding-left: var(--space-3);
-  border-left: 1px solid var(--line);
-}
-
 /* --- Painel de filtros refinado ----------------------------------------- */
 
 .acervo-filter-panel {
@@ -682,6 +624,10 @@
   flex: 1;
   height: 1px;
   background: var(--line);
+}
+
+.acervo-filter-section__title--subtle {
+  margin-top: var(--space-2);
 }
 
 .acervo-filter-chips {
@@ -826,12 +772,6 @@
 .acervo-filter-actions .button--primary {
   padding-inline: 1.4rem;
   font-size: 0.95rem;
-}
-
-.acervo-filter-actions .acervo-filter-actions__hint {
-  margin-left: auto;
-  font-size: 0.82rem;
-  color: var(--muted);
 }
 
 /* --- Toolbar de resultados ---------------------------------------------- */
@@ -1052,6 +992,10 @@
   text-align: right;
 }
 
+.acervo-table-editorial thead th.acervo-th-numero {
+  padding-left: 1.4rem;
+}
+
 @keyframes acervo-row-in {
   from {
     opacity: 0;
@@ -1072,29 +1016,6 @@
   transition: background 180ms ease, transform 180ms ease;
 }
 
-.acervo-row::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--chart-inactive);
-  transition: background 180ms ease;
-}
-
-.acervo-row--prio-urgente::before {
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
-}
-
-.acervo-row--prio-importante::before {
-  background: var(--warning);
-}
-
-.acervo-row--prio-normal::before {
-  background: var(--chart-inactive);
-}
-
 .acervo-row:hover {
   background: var(--surface-warm);
 }
@@ -1103,6 +1024,25 @@
   padding: 1.05rem var(--space-4);
   vertical-align: middle;
   font-size: 0.92rem;
+}
+
+/* A faixa vive dentro da primeira célula. Um pseudo-elemento aplicado ao <tr>
+   passa a participar do algoritmo de tabelas em alguns navegadores e cria uma
+   coluna anônima, deslocando todo o corpo em relação ao cabeçalho. */
+.acervo-row td:first-child {
+  box-shadow: inset 3px 0 var(--chart-inactive);
+}
+
+.acervo-row--prio-urgente td:first-child {
+  box-shadow: inset 3px 0 var(--primary);
+}
+
+.acervo-row--prio-importante td:first-child {
+  box-shadow: inset 3px 0 var(--warning);
+}
+
+.acervo-row--sem-prioridade td:first-child {
+  box-shadow: none;
 }
 
 .acervo-row__numero-cell {
@@ -1154,22 +1094,17 @@
   font-size: 0.78rem;
 }
 
-.acervo-row__unidade-name {
+.acervo-row__destinatario-name {
   display: block;
   font-weight: 500;
   color: var(--text);
 }
 
-.acervo-row__unidade-meta {
+.acervo-row__destinatario-meta {
   display: block;
   margin-top: 2px;
   font-size: 0.78rem;
   color: var(--muted);
-}
-
-.acervo-row__membro {
-  color: var(--text-secondary);
-  font-size: 0.88rem;
 }
 
 .acervo-row__pend {
@@ -1255,6 +1190,10 @@
   background: var(--warning);
 }
 
+.acervo-card.acervo-row--sem-prioridade::before {
+  display: none;
+}
+
 .acervo-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
@@ -1304,7 +1243,7 @@
   color: var(--muted);
 }
 
-.acervo-card__unidade {
+.acervo-card__destinatario {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.05rem;
@@ -1428,52 +1367,30 @@
   border-color: var(--primary);
 }
 
-/* --- Estado inicial: Acervo em números ---------------------------------- */
+/* --- Estado inicial ----------------------------------------------------- */
 
-.acervo-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-4);
-}
-
-.acervo-overview__card {
-  padding: var(--space-4);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow);
+.acervo-initial {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  position: relative;
-  overflow: hidden;
-}
-
-.acervo-overview__card::after {
-  content: "";
-  position: absolute;
-  right: -30px;
-  top: -30px;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(166, 26, 26, 0.04), transparent 70%);
-}
-
-.acervo-overview__value {
-  font-family: var(--font-display);
-  font-size: 2.1rem;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1;
-}
-
-.acervo-overview__label {
-  font-size: 0.74rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 92px;
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
   color: var(--muted);
+  text-align: center;
+}
+
+.acervo-initial p {
+  margin: 0;
+}
+
+.acervo-initial__mark {
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
 }
 
 /* --- Responsividade ----------------------------------------------------- */

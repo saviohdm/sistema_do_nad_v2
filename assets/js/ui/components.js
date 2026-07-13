@@ -16,6 +16,7 @@ import {
   categorizarEventoHistorico,
   summarizeHistoryEvent,
 } from "../domain/historico.js";
+import { getDestinatarioDisplay } from "../domain/filas-operacionais.js";
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -907,14 +908,6 @@ export const renderFilterToggleChip = ({ label, value, count, active }) => `
   </button>
 `;
 
-export const renderPresetChip = ({ label, href, count, icon = "›" }) => `
-  <a class="acervo-preset-chip" href="${href}">
-    <span class="acervo-preset-chip__mark" aria-hidden="true">${icon}</span>
-    <span class="acervo-preset-chip__label">${label}</span>
-    ${typeof count === "number" ? `<span class="acervo-preset-chip__count">${count}</span>` : ""}
-  </a>
-`;
-
 export const renderActiveFilterChip = ({ label, removeHref }) => `
   <a class="acervo-active-chip" href="${removeHref}" title="Remover filtro" aria-label="Remover filtro ${label}">
     <span class="acervo-active-chip__label">${label}</span>
@@ -922,21 +915,44 @@ export const renderActiveFilterChip = ({ label, removeHref }) => `
   </a>
 `;
 
-export const renderProposicaoTableEditorial = (proposicoes, { origem = "proposicoes-lista" } = {}) => {
+const renderApreciacaoConsultaBadge = (apreciacao) =>
+  apreciacao
+    ? renderApreciacaoBadge(apreciacao)
+    : renderBadge("Sem decisão do CN", "neutral");
+
+const renderDestinatarioConsulta = (item) => {
+  const display = getDestinatarioDisplay(item);
+  const tipo = Labels.tipoDestinatario[display.tipoDestinatario] || "Destinatário";
+  const contexto = display.rotuloSecundario
+    ? `${tipo} · Unidade de origem: ${display.rotuloSecundario}`
+    : tipo;
+  return { ...display, contexto };
+};
+
+export const renderProposicaoTableEditorial = (
+  proposicoes,
+  { origem = "proposicoes-lista", exibirMetadadosInternos = true } = {},
+) => {
   if (!proposicoes.length) {
     return "";
   }
 
   const rows = proposicoes
     .map((item, idx) => {
-      const prioClass = PRIORIDADE_CLASS[item.prioridade] || "acervo-row--prio-normal";
+      const prioClass = exibirMetadadosInternos
+        ? PRIORIDADE_CLASS[item.prioridade] || "acervo-row--prio-normal"
+        : "acervo-row--sem-prioridade";
       const { capitular, resto } = splitNumeroCapitular(item.numero);
+      const destinatario = renderDestinatarioConsulta(item);
       const ultima = getUltimaMovimentacao(item);
       const idade = formatTempoRelativo(ultima);
       const pendencias = contarPendenciasAbertas(item);
-      const sens = item.sensivel
+      const sens = exibirMetadadosInternos && item.sensivel
         ? `<span class="acervo-row__sensivel" title="Caso sensível" aria-label="Caso sensível">●</span>`
         : "";
+      const contextoProposicao = [item.tipo, item.ramoMP, item.tematica]
+        .filter(Boolean)
+        .join(" · ");
       const delay = Math.min(idx, 24);
       return `
         <tr class="acervo-row ${prioClass}" style="--reveal-delay:${delay * 30}ms;">
@@ -945,15 +961,14 @@ export const renderProposicaoTableEditorial = (proposicoes, { origem = "proposic
               <span class="acervo-row__capitular" aria-hidden="true">${capitular}</span>
               <span class="acervo-row__numero-rest">${resto}</span>
             </a>
-            <span class="acervo-row__tipo">${item.tipo}${sens}</span>
+            <span class="acervo-row__tipo">${contextoProposicao}${sens}</span>
           </td>
-          <td class="acervo-row__unidade">
-            <span class="acervo-row__unidade-name">${item.unidade}</span>
-            <span class="acervo-row__unidade-meta">${item.ramoMP || ""}${item.tematica ? ` · ${item.tematica}` : ""}</span>
+          <td class="acervo-row__destinatario">
+            <span class="acervo-row__destinatario-name">${destinatario.rotulo}</span>
+            <span class="acervo-row__destinatario-meta">${destinatario.contexto}</span>
           </td>
-          <td class="acervo-row__membro">${item.membro || "—"}</td>
           <td class="acervo-row__status">${renderStatusBadge(item.statusFluxo)}</td>
-          <td class="acervo-row__apreciacao">${renderApreciacaoBadge(item.apreciacaoDoCN)}</td>
+          <td class="acervo-row__apreciacao">${renderApreciacaoConsultaBadge(item.apreciacaoDoCN)}</td>
           <td class="acervo-row__pend">
             ${
               pendencias > 0
@@ -973,11 +988,10 @@ export const renderProposicaoTableEditorial = (proposicoes, { origem = "proposic
         <thead>
           <tr>
             <th scope="col" class="acervo-th-numero">Proposição</th>
-            <th scope="col">Unidade</th>
-            <th scope="col">Membro</th>
-            <th scope="col">Status</th>
+            <th scope="col">Destinatário</th>
+            <th scope="col">Status do fluxo</th>
             <th scope="col">Apreciação do CN</th>
-            <th scope="col" class="acervo-th-pend">Pend.</th>
+            <th scope="col" class="acervo-th-pend">Providências pendentes</th>
             <th scope="col" class="acervo-th-idade">Última movimentação</th>
           </tr>
         </thead>
@@ -987,18 +1001,24 @@ export const renderProposicaoTableEditorial = (proposicoes, { origem = "proposic
   `;
 };
 
-export const renderProposicaoCardGrid = (proposicoes, { origem = "proposicoes-lista" } = {}) => {
+export const renderProposicaoCardGrid = (
+  proposicoes,
+  { origem = "proposicoes-lista", exibirMetadadosInternos = true } = {},
+) => {
   if (!proposicoes.length) {
     return "";
   }
   const cards = proposicoes
     .map((item, idx) => {
       const { capitular, resto } = splitNumeroCapitular(item.numero);
-      const prioClass = PRIORIDADE_CLASS[item.prioridade] || "acervo-row--prio-normal";
+      const prioClass = exibirMetadadosInternos
+        ? PRIORIDADE_CLASS[item.prioridade] || "acervo-row--prio-normal"
+        : "acervo-row--sem-prioridade";
+      const destinatario = renderDestinatarioConsulta(item);
       const ultima = getUltimaMovimentacao(item);
       const idade = formatTempoRelativo(ultima);
       const pendencias = contarPendenciasAbertas(item);
-      const sens = item.sensivel
+      const sens = exibirMetadadosInternos && item.sensivel
         ? `<span class="acervo-card__sensivel" title="Caso sensível">● Sensível</span>`
         : "";
       const delay = Math.min(idx, 24);
@@ -1011,15 +1031,15 @@ export const renderProposicaoCardGrid = (proposicoes, { origem = "proposicoes-li
             </div>
             <div class="acervo-card__badges">
               ${renderStatusBadge(item.statusFluxo)}
-              ${renderApreciacaoBadge(item.apreciacaoDoCN)}
+              ${renderApreciacaoConsultaBadge(item.apreciacaoDoCN)}
             </div>
           </header>
-          <p class="acervo-card__tipo">${item.tipo}${item.prioridade && item.prioridade !== "normal" ? ` · ${Labels.prioridade[item.prioridade]}` : ""}</p>
-          <p class="acervo-card__unidade">${item.unidade}</p>
+          <p class="acervo-card__tipo">${[item.tipo, item.ramoMP, item.tematica].filter(Boolean).join(" · ")}${exibirMetadadosInternos && item.prioridade && item.prioridade !== "normal" ? ` · ${Labels.prioridade[item.prioridade]}` : ""}</p>
+          <p class="acervo-card__destinatario">${destinatario.rotulo}</p>
           <dl class="acervo-card__meta">
-            <div><dt>Ramo</dt><dd>${item.ramoMP || "—"}</dd></div>
-            <div><dt>Temática</dt><dd>${item.tematica || "—"}</dd></div>
-            <div><dt>Membro</dt><dd>${item.membro || "—"}</dd></div>
+            <div><dt>Tipo de destinatário</dt><dd>${Labels.tipoDestinatario[destinatario.tipoDestinatario] || "—"}</dd></div>
+            <div><dt>Unidade de origem</dt><dd>${destinatario.rotuloSecundario || "—"}</dd></div>
+            <div><dt>Correição</dt><dd>${item.correicao?.numero || item.correicaoId || "—"}</dd></div>
             <div><dt>Última mov.</dt><dd>${idade}</dd></div>
           </dl>
           <footer class="acervo-card__foot">

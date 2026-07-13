@@ -83,7 +83,7 @@ const PERSONA_MENU_OVERRIDES = {
       label: "Minhas ciências",
       badgeKey: "minhasCienciasNaoVisualizadas",
     },
-    { href: "proposicoes-lista.html", label: "Consulta de proposições" },
+    { href: "proposicoes-lista.html", label: "Minhas proposições" },
   ],
 };
 
