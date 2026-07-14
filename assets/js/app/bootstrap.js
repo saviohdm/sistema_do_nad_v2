@@ -1,9 +1,9 @@
 import { renderAppShell } from "../ui/layout.js";
 import { loadState, resetState } from "./store.js";
 
-export const mountPage = ({ activePage, title, subtitle, content, actions, breadcrumb }) => {
+export const mountPage = ({ activePage, title, content, actions, breadcrumb }) => {
   const app = document.querySelector("#app");
-  app.innerHTML = renderAppShell({ activePage, title, subtitle, content, actions, breadcrumb });
+  app.innerHTML = renderAppShell({ activePage, title, content, actions, breadcrumb });
 
   const resetButton = document.querySelector("[data-reset-state]");
   if (resetButton) {

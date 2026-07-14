@@ -106,8 +106,6 @@ const render = () => {
   mountPage({
     activePage: "correicoes-lista",
     title: "Correições",
-    subtitle:
-      "Registre e edite correições do NAD. A proposição vincula-se a uma correição, que é a fonte única dos seus dados (ramo, temática, ELO, UF e período). A migração do SCI continua sendo o caminho prioritário; esta tela cobre contingência de migração e correições de legado.",
     actions: `<a class="button" href="correicoes-criar.html">Nova correição</a> ${baseActions}`,
     content: corpo,
   });

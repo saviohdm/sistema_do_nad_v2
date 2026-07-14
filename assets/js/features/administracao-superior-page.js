@@ -60,8 +60,6 @@ const render = () => {
   mountPage({
     activePage: "administracao-superior",
     title: "Administração Superior",
-    subtitle:
-      "Parametrize quais usuários do diretório CNMP respondem por cada Administração Superior (em regra PGJ e CGJ por ramo). Esses usuários são notificados quando uma proposição está orientada à administração superior.",
     actions: baseActions,
     content: `
       <section class="stack">

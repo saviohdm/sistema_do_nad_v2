@@ -20,20 +20,10 @@ montarFilaNavegavel({
   activePage: "membro-auxiliar",
   title: "Minha fila de avaliação",
   storageKey: "nad-membro-auxiliar-filtros",
-  subtitlePorModo: {
-    overview:
-      "Panorama das proposições que dependem da sua avaliação. Escolha uma correição ou siga direto para a fila completa.",
-    correicao:
-      "Escolha um destinatário dentro da correição para entrar na fila ou use o atalho para ver todas desta correição.",
-    fila: "Avalie cada proposição uma a uma. Use os filtros da direita para refinar a seleção.",
-  },
   textos: {
     panoramaTitulo: "Panorama da avaliação",
     contagemLabel: "Pendentes",
-    porCorreicaoHint: "Clique em uma correição para avaliar as proposições daquela correição.",
-    unidadesHint: "Clique em um destinatário para entrar na fila de avaliação.",
     filaTitulo: "Fila de avaliação",
-    filaIntroVazia: "Todas as proposições pendentes de avaliação.",
     emptyCorreicoes: "Nenhuma correição com avaliações pendentes.",
     emptyUnidades: "Nenhum destinatário com avaliações pendentes nesta correição.",
     emptyFila: "Nenhuma proposição corresponde aos filtros selecionados.",

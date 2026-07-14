@@ -14,9 +14,6 @@ const renderMembroSelect = (membros) => `
         )
         .join("")}
     </select>
-    <p class="form-help" style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 0.25rem;">
-      Em produção, o login do correicionado seria via SSO do CNMP.
-    </p>
   </div>
 `;
 
@@ -44,7 +41,6 @@ const render = () => {
     <div style="max-width: 460px; margin: 80px auto; padding: 2rem;">
       <div class="panel stack">
         <h1 class="panel__title">Sistema NAD</h1>
-        <p>Selecione o perfil de acesso:</p>
         <form id="login-form" class="stack">
           <div class="field">
             <label for="persona">Persona</label>

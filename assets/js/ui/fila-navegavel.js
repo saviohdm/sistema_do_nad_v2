@@ -7,7 +7,6 @@
 // Hooks de config:
 //   activePage, title, storageKey, persona            -> identidade/guard
 //   statusFila                                        -> status contabilizados no panorama
-//   subtitlePorModo: { overview, correicao, fila }     -> subtítulo por modo
 //   textos                                             -> rótulos/empty-states (ver defaults)
 //   getProposicoes(state)                              -> lista já hidratada (obrigatório)
 //   prepare(state) -> extras                           -> dados por render (opcional)
@@ -159,7 +158,6 @@ export function montarFilaNavegavel(config) {
       <section class="stack">
         <div class="panel">
           <h3 class="panel__title">${textos.panoramaTitulo || "Panorama"}</h3>
-          ${textos.panoramaIntro ? `<p class="muted">${textos.panoramaIntro}</p>` : ""}
           ${renderPanoramaKpis(config.getKpis(proposicoes, ctx))}
           <div class="button-row" style="margin-top: 1rem;">
             <button class="button" type="button" data-action="ver-todas">Ver todas em uma fila</button>
@@ -169,7 +167,6 @@ export function montarFilaNavegavel(config) {
 
         <div class="panel">
           <h3 class="panel__title">Por correição</h3>
-          <p class="muted">${textos.porCorreicaoHint || "Clique em uma correição para ver seus destinatários."}</p>
           <div class="table-wrap">
             <table class="table table--hover">
               <thead>
@@ -256,7 +253,6 @@ export function montarFilaNavegavel(config) {
 
         <div class="panel">
           <h3 class="panel__title">Destinatários</h3>
-          <p class="muted">${textos.unidadesHint || "Clique em um destinatário para entrar na fila."}</p>
           ${
             destinatarios.length
               ? `<p class="muted"><strong>${totalProntos}</strong> de ${destinatarios.length} destinatário(s) pronto(s) para esta etapa.</p>`
@@ -291,9 +287,7 @@ export function montarFilaNavegavel(config) {
     return `
       <form class="fila-operacional-filtros" id="painel-filtros">
         <header class="fila-operacional-filtros__head">
-          <p class="fila-operacional-overline">Refinamento</p>
           <h3 class="fila-operacional-filtros__title">Filtros da fila</h3>
-          <p class="fila-operacional-filtros__intro">Refine a seleção sem perder o contexto operacional atual.</p>
         </header>
         <div class="fila-operacional-filtros__fields">
           <div class="field">
@@ -424,7 +418,6 @@ export function montarFilaNavegavel(config) {
       <section class="stack">
         ${renderFilaOperacionalHeader({
           title: textos.filaTitulo || "Fila",
-          intro: textos.filaIntroVazia || "Todas as proposições desta fila.",
           contexto,
           visiveis: filtradas.length,
           total: totalUniverso,
@@ -465,7 +458,6 @@ export function montarFilaNavegavel(config) {
     mountPage({
       activePage: config.activePage,
       title: config.title,
-      subtitle: (config.subtitlePorModo && config.subtitlePorModo[modo]) || "",
       actions: baseActions,
       content,
     });

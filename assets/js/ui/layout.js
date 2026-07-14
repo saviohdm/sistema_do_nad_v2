@@ -222,7 +222,7 @@ const renderAvancarTempoButton = () => {
   `;
 };
 
-export const renderAppShell = ({ activePage, title, subtitle, content, actions = "", breadcrumb = "" }) => {
+export const renderAppShell = ({ activePage, title, content, actions = "", breadcrumb = "" }) => {
   const navItems = getNavItemsForCurrentPersona();
   const avancarTempo = renderAvancarTempoButton();
   const actionsAumentadas = [avancarTempo, actions].filter(Boolean).join(" ");
@@ -232,7 +232,6 @@ export const renderAppShell = ({ activePage, title, subtitle, content, actions =
       <aside class="sidebar">
         ${renderPersonaBadge()}
         <p class="sidebar__title"><a href="${getHomeForPersona()}" title="Ir para a página inicial">NAD</a></p>
-        <p class="sidebar__subtitle">Gestão de proposições, diligências, decisões e pendências da Secretaria Processual.</p>
         <nav>
           ${navItems
             .map((item) => {
@@ -252,7 +251,6 @@ export const renderAppShell = ({ activePage, title, subtitle, content, actions =
           <div class="page-header__content">
             ${breadcrumb ? `<nav class="breadcrumb" aria-label="Trilha de contexto">${breadcrumb}</nav>` : ""}
             <h1 class="page-title">${title}</h1>
-            ${subtitle ? `<p class="page-subtitle">${subtitle}</p>` : ""}
           </div>
           ${actionsAumentadas ? `<div class="toolbar page-actions">${actionsAumentadas}</div>` : ""}
         </header>

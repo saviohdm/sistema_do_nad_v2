@@ -192,7 +192,6 @@ const render = () => {
     mountPage({
       activePage: "proposicoes-criar",
       title: "Criar proposição",
-      subtitle: "É preciso ter ao menos uma correição cadastrada para vincular a proposição.",
       actions: baseActions,
       content: `
         <div class="panel stack">
@@ -210,16 +209,10 @@ const render = () => {
   const title = isEdicao
     ? `Editar proposição ${proposicaoParaEditar.numero}`
     : "Criar proposição";
-  const subtitle = editandoRascunho
-    ? "Atualize o rascunho desta proposição. Você pode salvá-lo como rascunho (sem confirmar) ou confirmar e encaminhá-lo ao referendo do CNMP. Histórico e demais campos são preservados."
-    : isEdicao
-      ? "Atualize os dados da proposição enquanto ela aguarda referendo do CNMP. Campos sensíveis (histórico, apreciação, diligências) são preservados."
-      : "Preencha os dados da proposição e os metadados da correição de origem. Você pode salvar como rascunho ou criar e encaminhar ao referendo do CNMP (ou diretamente à Secretaria, se a correição já estiver referendada).";
 
   mountPage({
     activePage: "proposicoes-criar",
     title,
-    subtitle,
     actions: baseActions,
     content: `
       <form id="form-criar-proposicao" class="panel stack">

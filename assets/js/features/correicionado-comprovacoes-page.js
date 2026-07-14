@@ -125,9 +125,7 @@ const buildFiltrosAtivos = (filtros) => {
 const renderPainelFiltros = (filtros) => `
   <form class="fila-operacional-filtros" id="painel-filtros">
     <header class="fila-operacional-filtros__head">
-      <p class="fila-operacional-overline">Refinamento</p>
       <h3 class="fila-operacional-filtros__title">Filtros da fila</h3>
-      <p class="fila-operacional-filtros__intro">Refine a seleção das suas comprovações pendentes.</p>
     </header>
     <div class="fila-operacional-filtros__fields">
       <div class="field">
@@ -228,7 +226,6 @@ const render = () => {
           </div>
           ${renderFilaOperacionalHeader({
             title: "Fila de comprovação",
-            intro: "Todas as suas comprovações pendentes.",
             visiveis: filtradas.length,
             total: proposicoes.length,
             itemSingular: "comprovação",
@@ -255,7 +252,6 @@ const render = () => {
   mountPage({
     activePage: "correicionado-comprovacoes",
     title: "Minhas comprovações",
-    subtitle: `Proposições com diligência aberta vinculadas a ${user.nome} ou às unidades em que você atua como chefe.`,
     content,
   });
 

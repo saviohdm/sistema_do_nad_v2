@@ -138,23 +138,10 @@ montarFilaNavegavel({
   activePage: "corregedor-referendo",
   title: "Aguardando referendo do CNMP",
   storageKey: "nad-corregedor-referendo-filtros",
-  subtitlePorModo: {
-    overview:
-      "Proposições que ainda aguardam referendo do CNMP. Agrupe por correição, resolva eventuais rascunhos, gere o relatório final e registre o referendo em bloco.",
-    correicao:
-      "Escolha um destinatário dentro da correição para entrar na fila de proposições aguardando referendo.",
-    fila: "Revise, edite ou apague cada proposição antes do referendo. A ação de referendar sempre opera em bloco pela correição — os botões de relatório e referendo aparecem na visão da correição inteira (\"Ver todas desta correição\"). Rascunhos só são confirmados/encaminhados individualmente.",
-  },
   textos: {
     panoramaTitulo: "Panorama do referendo",
-    panoramaIntro:
-      "Proposições ainda não referendadas pelo Conselho Nacional do Ministério Público (CNMP). Só após o referendo — normalmente realizado em bloco por correição — é que o ciclo de vida de cada proposição se inicia na Secretaria Processual.",
     contagemLabel: "Proposições",
-    porCorreicaoHint:
-      "Clique em uma correição para ver seus destinatários, ou use os botões de ação para gerar o relatório final e registrar o referendo do CNMP.",
-    unidadesHint: "Clique em um destinatário para entrar na fila de proposições aguardando referendo.",
     filaTitulo: "Fila de referendo",
-    filaIntroVazia: "Todas as proposições aguardando referendo do CNMP.",
     emptyCorreicoes: "Nenhuma correição aguardando referendo.",
     emptyUnidades: "Nenhum destinatário nesta correição com proposições aguardando referendo.",
     emptyFila: "Nenhuma proposição corresponde aos filtros selecionados.",

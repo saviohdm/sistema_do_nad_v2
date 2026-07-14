@@ -346,14 +346,10 @@ const render = () => {
   const counts = contarPorTipo(itensFiltrados);
 
   const titulo = filtros.atrasadas ? "Providências pendentes atrasadas" : "Providências pendentes";
-  const subtitulo = filtros.atrasadas
-    ? `Apenas providências em aberto há mais de ${LIMITE_ATRASADAS} dias. Cumprimento ocorre fora do sistema; aqui apenas se registra data e observações.`
-    : "Providências derivadas de decisões parcialmente/não cumpridas. Cumprimento ocorre fora do sistema; aqui apenas se registra data e observações.";
 
   mountPage({
     activePage: "secretaria-providencia",
     title: titulo,
-    subtitle: subtitulo,
     actions: baseActions,
     content: `
       <section class="stack">

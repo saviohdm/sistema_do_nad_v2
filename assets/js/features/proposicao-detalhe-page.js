@@ -834,7 +834,6 @@ const render = () => {
     mountPage({
       activePage: activePageParaPersona("proposicoes-lista"),
       title: "Proposição não encontrada",
-      subtitle: "O identificador informado não existe na base carregada.",
       actions: baseActions,
       content: `<div class="empty-state">Abra uma proposição válida pela página de lista.</div>`,
     });
@@ -854,7 +853,6 @@ const render = () => {
       mountPage({
         activePage: "correicionado-comprovacoes",
         title: "Proposição não vinculada a você",
-        subtitle: "Você só pode visualizar proposições orientadas a você, à unidade que chefia atualmente ou à administração superior que responde — ou que já lhe foram comunicadas.",
         actions: `<a class="button button--ghost" href="correicionado-comprovacoes.html">Voltar</a>`,
         content: `<div class="empty-state">Esta proposição não pertence a você.</div>`,
       });
@@ -877,7 +875,6 @@ const render = () => {
           ? "correicionado-ciencias"
           : "correicionado-comprovacoes",
       title: "Detalhe da proposição",
-      subtitle: "Visão do correicionado: acompanhe diligências, comprove ou tome ciência da apreciação final.",
       breadcrumb: renderTrilha(propAtualizada),
       actions: `<a class="button button--ghost" href="correicionado-comprovacoes.html">Comprovações</a><a class="button button--ghost" href="correicionado-ciencias.html">Ciências</a>`,
       content: renderDetalheContent({
@@ -900,8 +897,6 @@ const render = () => {
   mountPage({
     activePage: activePageParaPersona(origem?.activePage || "proposicoes-lista"),
     title: "Detalhe da proposição",
-    subtitle:
-      "Painel completo do caso: a ação da sua persona em destaque e o dossiê (diligências, providências e histórico) logo abaixo.",
     breadcrumb: renderTrilha(proposicao),
     actions: `${baseActions}${botaoVoltar(proposicao)}`,
     content: renderDetalheContent({

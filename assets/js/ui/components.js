@@ -128,7 +128,7 @@ export const renderPanoramaKpi = ({ label, valor, filtros, destaque, title }) =>
 export const renderPanoramaKpis = (kpis) =>
   `<div class="panorama-kpis">${kpis.map(renderPanoramaKpi).join("")}</div>`;
 
-export const renderChartCard = (title, slices, { subtitle, showPercent = true, highlight = false, actions = [] } = {}) => {
+export const renderChartCard = (title, slices, { showPercent = true, highlight = false, actions = [] } = {}) => {
   const total = slices.reduce((s, d) => s + d.value, 0);
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
@@ -190,7 +190,6 @@ export const renderChartCard = (title, slices, { subtitle, showPercent = true, h
     <article class="chart-card${highlight ? " chart-card--highlight" : ""}">
       <header class="chart-card__header">
         <h3 class="chart-card__title">${title}</h3>
-        ${subtitle ? `<p class="chart-card__subtitle">${subtitle}</p>` : ""}
       </header>
       <div class="chart-card__body">
         <div class="chart-card__viz">
@@ -209,7 +208,7 @@ export const renderChartCard = (title, slices, { subtitle, showPercent = true, h
   `;
 };
 
-export const renderSoloChartCard = (title, value, { caption, subtitle, actions = [] } = {}) => {
+export const renderSoloChartCard = (title, value, { caption, actions = [] } = {}) => {
   const footerHtml = actions.length
     ? `<footer class="chart-card__footer">
         ${actions.map((a) => `<a class="chart-card__action-link" href="${a.href}">${a.label} →</a>`).join("")}
@@ -219,7 +218,6 @@ export const renderSoloChartCard = (title, value, { caption, subtitle, actions =
     <article class="chart-card chart-card--solo">
       <header class="chart-card__header">
         <h3 class="chart-card__title">${title}</h3>
-        ${subtitle ? `<p class="chart-card__subtitle">${subtitle}</p>` : ""}
       </header>
       <div class="chart-card__solo">
         <span class="chart-card__solo-value">${value}</span>
@@ -644,12 +642,8 @@ export const renderContextoSection = (proposicao, { aberto = false } = {}) => {
     <details class="panel contexto-panel" data-contexto-panel${aberto ? " open" : ""}>
       <summary class="contexto-panel__summary">
         <span class="panel__title">Contexto</span>
-        <span class="contexto-panel__hint">Origem na correição · clique para expandir</span>
       </summary>
       <div class="contexto-panel__body">
-        <p class="contexto-panel__nota muted">
-          Conteúdo enviado pelo SCI na migração da correição; estrutura livre, exibida como texto.
-        </p>
         ${renderContextoLivre(proposicao.contexto)}
       </div>
     </details>
@@ -837,7 +831,6 @@ export const renderFilaProposicaoEditorial = (
 
 export const renderFilaOperacionalHeader = ({
   title,
-  intro,
   contexto = "",
   visiveis,
   total,
@@ -851,9 +844,8 @@ export const renderFilaOperacionalHeader = ({
   return `
     <header class="fila-operacional-header">
       <div class="fila-operacional-header__content">
-        <p class="fila-operacional-overline">Fila operacional</p>
         <h2 class="fila-operacional-header__title">${title}</h2>
-        <p class="fila-operacional-header__intro">${contexto || intro || ""}</p>
+        ${contexto ? `<p class="fila-operacional-header__context">${contexto}</p>` : ""}
       </div>
       <div class="fila-operacional-header__summary" aria-label="Resumo da fila">
         <div class="fila-operacional-header__metric">

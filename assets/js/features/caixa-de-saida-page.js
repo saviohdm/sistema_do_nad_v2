@@ -109,7 +109,6 @@ const render = () => {
   mountPage({
     activePage: "caixa-de-saida",
     title: "Caixa de saída (demo)",
-    subtitle: "Registro dos e-mails que o sistema simulou enviar ao correicionado. Em produção, equivaleria à integração SMTP.",
     content: `${filtersHtml}<div style="height: 1rem;"></div>${listHtml}`,
   });
 

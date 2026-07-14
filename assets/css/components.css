@@ -83,6 +83,7 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   padding: var(--space-5);
+  min-width: 0;
 }
 
 .panel__title {
@@ -287,14 +288,6 @@ button.panorama-kpi {
   font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.25;
-}
-
-.chart-card__subtitle {
-  margin: 0;
-  font-size: 0.88rem;
-  color: var(--muted);
-  max-width: 48ch;
-  line-height: 1.45;
 }
 
 .chart-card__body {
@@ -550,6 +543,8 @@ button.panorama-kpi {
 
 .table-wrap {
   overflow: auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .table {
@@ -1078,6 +1073,7 @@ button.panorama-kpi {
   display: grid;
   gap: var(--space-1);
   padding-left: var(--space-2);
+  padding-block: var(--space-2);
 }
 
 .fila-operacional-header__title {
@@ -1087,7 +1083,7 @@ button.panorama-kpi {
   line-height: 1.15;
 }
 
-.fila-operacional-header__intro {
+.fila-operacional-header__context {
   margin: 0;
   max-width: 72ch;
   color: var(--muted);
@@ -1486,12 +1482,6 @@ button.panorama-kpi {
   font-size: 1.35rem;
 }
 
-.fila-operacional-filtros__intro {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
 .fila-operacional-filtros__fields {
   display: grid;
   grid-template-columns: 1fr;
@@ -1727,8 +1717,13 @@ button.panorama-kpi {
 
 /* Dashboard da Secretaria Processual */
 
+.dashboard-overview {
+  padding-top: var(--space-4);
+}
+
 .secretaria-dashboard {
   gap: var(--space-6);
+  padding-top: var(--space-4);
 }
 
 .secretaria-dashboard__section-header {
@@ -2568,13 +2563,6 @@ button.panorama-kpi {
   color: var(--text);
 }
 
-.cn-section__subtitle {
-  margin: 0;
-  font-size: 0.92rem;
-  color: var(--muted);
-  max-width: 70ch;
-}
-
 /* ─── Painel "Panorama" (gráficos donut existentes) ─────────────────── */
 .cn-panorama-grid {
   display: grid;
@@ -2632,6 +2620,10 @@ button.panorama-kpi {
 }
 
 @media (max-width: 520px) {
+  .panorama-kpis {
+    grid-template-columns: 1fr;
+  }
+
   .cn-hero__kpis {
     grid-template-columns: 1fr 1fr;
   }

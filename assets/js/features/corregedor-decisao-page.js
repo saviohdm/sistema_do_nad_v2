@@ -31,21 +31,10 @@ montarFilaNavegavel({
   activePage: "corregedor-decisao",
   title: "Aguardando decisão",
   storageKey: "nad-corregedor-decisao-filtros",
-  subtitlePorModo: {
-    overview:
-      "Proposições que retornaram com avaliação do membro auxiliar ou que aguardam sua avaliação direta com força de decisão.",
-    correicao: "Escolha um destinatário dentro da correição para entrar na fila de decisão.",
-    fila: "Decida cada proposição. Badges indicam se há avaliação submetida (deferir/indeferir), rascunho de decisão em andamento, ou se cabe avaliação direta.",
-  },
   textos: {
     panoramaTitulo: "Panorama da decisão",
-    panoramaIntro:
-      "Proposições que aguardam sua decisão. Quando há avaliação do membro auxiliar submetida, você pode deferir (homologa as invariantes) ou indeferir (redefine as invariantes na mesma decisão). Sem avaliação vigente, pode avaliar diretamente com força de decisão.",
     contagemLabel: "Aguardando decisão",
-    porCorreicaoHint: "Clique em uma correição para ver seus destinatários.",
-    unidadesHint: "Clique em um destinatário para entrar na fila de decisão.",
     filaTitulo: "Fila de decisão",
-    filaIntroVazia: "Todas as proposições aguardando sua decisão.",
     emptyCorreicoes: "Nenhuma correição com proposições aguardando decisão.",
     emptyUnidades: "Nenhum destinatário nesta correição com proposições aguardando decisão.",
     emptyFila: "Nenhuma proposição corresponde aos filtros selecionados.",

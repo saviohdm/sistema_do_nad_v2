@@ -25,7 +25,6 @@ import {
   getDestinatarioDisplay,
   isFluxoPrincipalAberto,
 } from "../domain/filas-operacionais.js";
-import { formatDatelineEditorial } from "../app/utils.js";
 import {
   renderActiveFilterChip,
   renderAlert,
@@ -346,14 +345,7 @@ const buildHero = (todas, isCorreicionado) => {
 
   return `
     <section class="acervo-hero">
-      <div>
-        <div class="acervo-hero__top">
-          <p class="acervo-overline acervo-overline--accent">${
-            isCorreicionado ? "Proposições vinculadas a você" : "Acervo institucional do NAD"
-          } · ${formatDatelineEditorial()}</p>
-          <span class="acervo-hero__mark">${isCorreicionado ? "NAD · Você" : "NAD"}</span>
-        </div>
-      </div>
+      <div class="acervo-hero__breathing-space" aria-hidden="true"></div>
       <div class="acervo-hero__kpis" aria-label="Indicadores das proposições disponíveis">
         ${kpis
           .map(
@@ -449,13 +441,7 @@ const buildFiltersPanel = (opcoes, filtros, todas, isCorreicionado) => {
   return `
     <form class="acervo-filter-panel" id="filtros-consulta" aria-label="Filtros de consulta">
       <header class="acervo-filter-panel__head">
-        <div>
-          <p class="acervo-overline">Refinamento</p>
-          <h2 class="acervo-filter-panel__title">Critérios de busca</h2>
-        </div>
-        <p class="muted" style="margin:0;font-size:0.85rem;max-width:36ch;">
-          Combine status, localização e período. Os filtros ficam refletidos na URL.
-        </p>
+        <h2 class="acervo-filter-panel__title">Critérios de busca</h2>
       </header>
 
       <div class="acervo-filter-search">
@@ -707,31 +693,13 @@ const buildActiveFiltersChips = (filtros, opcoes) => {
   `;
 };
 
-const buildResultsSummary = (lista) => {
-  if (!lista.length) return "";
-  const buckets = lista.reduce((acc, p) => {
-    acc[p.statusFluxo] = (acc[p.statusFluxo] || 0) + 1;
-    return acc;
-  }, {});
-  const partes = Object.entries(buckets)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
-    .map(([status, n]) => `<strong>${n}</strong> ${Labels.statusFluxo[status] || status}`);
-  return partes.join(" · ");
-};
-
 const renderResultsToolbar = (lista, sort, view, isCorreicionado) => {
-  const subtitle = lista.length
-    ? buildResultsSummary(lista)
-    : "Nenhum item corresponde aos filtros aplicados.";
   const total = lista.length;
 
   return `
     <div class="acervo-results-head">
       <div class="acervo-results-head__title-block">
-        <p class="acervo-overline">Sumário</p>
         <h2 class="acervo-results-head__title">${total} ${total === 1 ? "proposição encontrada" : "proposições encontradas"}</h2>
-        <p class="acervo-results-head__subtitle">${subtitle}</p>
       </div>
       <div class="acervo-results-toolbar" role="group" aria-label="Apresentação dos resultados">
         <div class="acervo-toolbar-group">
@@ -822,14 +790,7 @@ const renderResults = (lista, sort, view, filtros, todas, isCorreicionado) => {
   `;
 };
 
-const renderEstadoInicial = () => {
-  return `
-    <section class="acervo-initial" aria-label="Orientação para iniciar a consulta">
-      <span class="acervo-initial__mark" aria-hidden="true">⌕</span>
-      <p>Defina os critérios desejados e selecione <strong>Buscar proposições</strong> para exibir os resultados.</p>
-    </section>
-  `;
-};
+const renderEstadoInicial = () => `<div class="acervo-initial-space" aria-hidden="true"></div>`;
 
 const renderPeriodoInvalido = () => `
   <section class="stack" aria-label="Período inválido">
@@ -896,9 +857,6 @@ const render = () => {
   mountPage({
     activePage: "proposicoes-lista",
     title: pageTitle,
-    subtitle: isCorreicionado
-      ? "Consulte as proposições vinculadas a você, respeitando seu perfil de acesso no NAD."
-      : "Consulte o acervo institucional de proposições oriundas das correições conduzidas pela Corregedoria Nacional.",
     actions: createButton,
     content: `
       <section class="stack" style="gap: var(--space-6);">

@@ -274,21 +274,10 @@ montarFilaNavegavel({
   activePage: "secretaria-diligencia",
   title: "Aguardando diligência",
   storageKey: "nad-secretaria-diligencia-filtros",
-  subtitlePorModo: {
-    overview:
-      'Proposições recém-referendadas ou que retornaram com apreciação "necessita mais informações".',
-    correicao: "Escolha um destinatário dentro da correição para entrar na fila.",
-    fila: "Selecione múltiplas proposições e crie diligências em lote com um único prazo e descrição.",
-  },
   textos: {
     panoramaTitulo: "Panorama da diligência",
-    panoramaIntro:
-      'Proposições que aguardam criação de diligência pela Secretaria — recém-referendadas (novas) ou que retornaram após decisão "necessita mais informações".',
     contagemLabel: "Aguardando diligência",
-    porCorreicaoHint: "Clique em uma correição para ver seus destinatários.",
-    unidadesHint: "Clique em um destinatário para entrar na fila.",
     filaTitulo: "Fila de diligência",
-    filaIntroVazia: "Todas as proposições aguardando diligência.",
     emptyCorreicoes: "Nenhuma correição com proposições aguardando diligência.",
     emptyUnidades: "Nenhum destinatário nesta correição com proposições aguardando diligência.",
     emptyFila: "Nenhuma proposição corresponde aos filtros selecionados.",

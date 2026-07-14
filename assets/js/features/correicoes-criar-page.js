@@ -76,9 +76,6 @@ const render = () => {
   const title = isEdicao
     ? `Editar correição ${correicaoParaEditar.numero}`
     : "Nova correição";
-  const subtitle = isEdicao
-    ? "Edite os dados descritivos da correição. As alterações se propagam automaticamente às proposições vinculadas (fonte única). Número e status não são editáveis aqui — o referendo ocorre na fila de referendo."
-    : "Cadastre uma correição (contingência de migração ou legado). O número COR é gerado automaticamente e o referendo ocorre depois, na fila de referendo.";
 
   const painelEdicao = isEdicao
     ? `
@@ -99,7 +96,6 @@ const render = () => {
   mountPage({
     activePage: "correicoes-lista",
     title,
-    subtitle,
     actions: baseActions,
     content: `
       <form id="form-correicao" class="panel stack">

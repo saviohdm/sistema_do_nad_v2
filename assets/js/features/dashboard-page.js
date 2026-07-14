@@ -159,7 +159,6 @@ const buildCorregedorContent = () => {
     providenciasAbertas,
     {
       caption: providenciasAbertas === 1 ? "proposição com providência em aberto" : "proposições com providência em aberto",
-      subtitle: "Pendências administrativas da Secretaria em andamento, sob sua supervisão.",
       actions: [{ href: "secretaria-providencia.html", label: "Acompanhar providências" }],
     },
   );
@@ -167,7 +166,6 @@ const buildCorregedorContent = () => {
   const panoramaSection = `
     <section class="cn-section">
       <h2 class="cn-section__title">Panorama</h2>
-      <p class="cn-section__subtitle">Acervo ativo e inativo, carga por persona responsável e supervisão de providências.</p>
       <div class="cn-panorama-grid">
         ${proposicoesCard}
         ${correicoesCard}
@@ -180,7 +178,6 @@ const buildCorregedorContent = () => {
   const ramoSection = `
     <section class="cn-section">
       <h2 class="cn-section__title">Distribuição por ramo do MP</h2>
-      <p class="cn-section__subtitle">Proposições ativas e inativas em cada ramo do Ministério Público.</p>
       ${renderRamoMPTable(porRamo)}
     </section>
   `;
@@ -197,15 +194,7 @@ const buildCorregedorContent = () => {
 const buildDefaultContent = () => {
   const summary = getDashboardSummary(currentState);
   return `
-    <section class="stack">
-      <article class="hero-card">
-        <h2>Fluxo de proposições do NAD</h2>
-        <p>
-          Painel consolidado das proposições originadas da correição, com tramitação por diligência,
-          avaliação técnica, decisão do Corregedor e controle paralelo de providências da Secretaria.
-        </p>
-      </article>
-
+    <section class="stack dashboard-overview">
       <section class="stats-grid">
         ${renderStatCard("Proposições totais", summary.total)}
         ${renderStatCard("Aguardando referendo", summary.aguardandoReferendo)}
@@ -273,15 +262,12 @@ const labelProvidenciaCurta = (tipo) => {
 const renderEmptyMessage = (mensagem) =>
   `<p class="muted secretaria-dashboard__empty">${mensagem}</p>`;
 
-const renderSectionHeader = (titulo, contador, subtitulo) => `
+const renderSectionHeader = (titulo, contador) => `
   <header class="secretaria-dashboard__section-header">
-    <div>
-      <h2 class="secretaria-dashboard__section-title">
-        ${titulo}
-        ${contador !== null && contador !== undefined ? `<span class="secretaria-dashboard__section-count">${contador}</span>` : ""}
-      </h2>
-      ${subtitulo ? `<p class="muted">${subtitulo}</p>` : ""}
-    </div>
+    <h2 class="secretaria-dashboard__section-title">
+      ${titulo}
+      ${contador !== null && contador !== undefined ? `<span class="secretaria-dashboard__section-count">${contador}</span>` : ""}
+    </h2>
   </header>
 `;
 
@@ -483,29 +469,13 @@ const buildSecretariaContent = () => {
 
   return `
     <section class="stack secretaria-dashboard">
-      <article class="hero-card">
-        <h2>Painel da Secretaria Processual</h2>
-        <p>
-          Visão operacional do que está pronto para impulso da Secretaria e do que se
-          aproxima de aterrissar. Use as listas para abrir o lote já pré-selecionado.
-        </p>
-      </article>
-
       <section class="stack">
-        ${renderSectionHeader(
-          "Hoje",
-          totalHoje,
-          "Grupos completos e providências atrasadas que precisam de ação imediata.",
-        )}
+        ${renderSectionHeader("Hoje", totalHoje)}
         ${hojeContent}
       </section>
 
       <section class="stack">
-        ${renderSectionHeader(
-          "Acompanhar",
-          parciais.length,
-          "Grupos com proposições aguardando impulso, mas que ainda dependem de outras decisões para virarem prontos.",
-        )}
+        ${renderSectionHeader("Acompanhar", parciais.length)}
         <div class="panel secretaria-dashboard__panel">
           ${renderBlockHeader("Grupos parciais", parciais.length)}
           ${renderParciais(parciais)}
@@ -552,26 +522,18 @@ const isCorregedor = persona === PERSONAS.CORREGEDOR;
 const isSecretaria = persona === PERSONAS.SECRETARIA;
 
 let content;
-let subtitle;
 
 if (isCorregedor) {
   content = buildCorregedorContent();
-  subtitle =
-    "Pulso da Corregedoria Nacional: pendências em aberto, acervo e supervisão de providências.";
 } else if (isSecretaria) {
   content = buildSecretariaContent();
-  subtitle =
-    "Briefing operacional da Secretaria: ação imediata em \"Hoje\", carga futura em \"Acompanhar\".";
 } else {
   content = buildDefaultContent();
-  subtitle =
-    "Visão geral das proposições, do núcleo decisório do Corregedor Nacional e das pendências paralelas da Secretaria Processual.";
 }
 
 mountPage({
   activePage: "dashboard",
   title: "Dashboard",
-  subtitle,
   actions: baseActions,
   content,
 });

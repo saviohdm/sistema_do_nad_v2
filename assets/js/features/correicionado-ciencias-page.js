@@ -133,7 +133,6 @@ const render = () => {
   mountPage({
     activePage: "correicionado-ciencias",
     title: "Minhas ciências",
-    subtitle: `Proposições encerradas com baixa definitiva cuja ciência foi disponibilizada a ${user.nome}.`,
     content,
   });
 };

@@ -199,10 +199,6 @@ const renderOverview = (grupos, currentState) => {
     <section class="stack">
       <div class="panel">
         <h3 class="panel__title">Panorama da ciência</h3>
-        <p class="muted">
-          Grupos (correição × destinatário) cujas proposições aguardam ciência ao correicionado.
-          A ciência só pode ser efetuada em bloco quando todas as proposições do grupo estão prontas.
-        </p>
         ${renderPanoramaKpis(kpis)}
         <div class="button-row" style="margin-top: 1rem;">
           <button class="button" type="button" data-action="ver-todos">Ver todos em uma fila</button>
@@ -211,7 +207,6 @@ const renderOverview = (grupos, currentState) => {
 
       <div class="panel">
         <h3 class="panel__title">Por correição</h3>
-        <p class="muted">Clique em uma correição para abrir seus destinatários (grupos) aguardando ciência.</p>
         <div class="table-wrap">
           <table class="table table--hover">
             <thead>
@@ -243,9 +238,7 @@ const renderPainelFiltros = (grupos, filtros) => {
   return `
     <form class="fila-operacional-filtros" id="painel-filtros">
       <header class="fila-operacional-filtros__head">
-        <p class="fila-operacional-overline">Refinamento</p>
         <h3 class="fila-operacional-filtros__title">Filtros da fila</h3>
-        <p class="fila-operacional-filtros__intro">Priorize grupos completos ou recém-prontos para ciência.</p>
       </header>
       <div class="fila-operacional-filtros__fields">
         <div class="field">
@@ -428,7 +421,6 @@ const renderModoGrupo = (grupos, filtros) => {
     <section class="stack">
       ${renderFilaOperacionalHeader({
         title: "Fila de ciência",
-        intro: "Todos os grupos aguardando ciência.",
         contexto: contextoSelecao,
         visiveis: filtrados.length,
         total: grupos.length,
@@ -638,21 +630,15 @@ const render = () => {
   const modo = determinarModo(filtros);
 
   let content;
-  let subtitle;
   if (modo === "overview") {
     content = renderOverview(grupos, currentState);
-    subtitle =
-      "Grupos (correição × destinatário) com proposições aguardando ciência. A ciência só pode ser efetuada quando o grupo está completo.";
   } else {
     content = renderModoGrupo(grupos, filtros);
-    subtitle =
-      "Selecione múltiplos grupos completos e cientifique todas as proposições em uma só ação.";
   }
 
   mountPage({
     activePage: "secretaria-ciencia",
     title: "Aguardando ciência",
-    subtitle,
     actions: baseActions,
     content,
   });
