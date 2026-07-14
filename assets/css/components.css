@@ -501,29 +501,39 @@ button.panorama-kpi {
   letter-spacing: 0.04em;
 }
 
+/* Chips de status como "selos" opacos e autossuficientes: fundo claro sólido +
+   texto escuro de alto contraste + borda sutil. Assim o contraste é determinístico
+   e o chip lê bem em qualquer superfície — inclusive sobre o gradiente vermelho do
+   hero (`.hero-card`), onde tintas com alpha some(riam). Todos os pares texto/fundo
+   validados ≥ 4.5:1 (WCAG AA para texto pequeno bold). */
 .badge--primary {
-  background: rgba(166, 26, 26, 0.1);
+  background: #f4dede;
   color: var(--primary-dark);
+  border: 1px solid #e0b9b9;
 }
 
 .badge--success {
-  background: rgba(45, 106, 79, 0.1);
-  color: var(--success);
+  background: #dcede5;
+  color: #1b5e42;
+  border: 1px solid #a9cebb;
 }
 
 .badge--warning {
-  background: rgba(217, 119, 6, 0.1);
-  color: var(--warning);
+  background: #fbe8cc;
+  color: #7a4a00;
+  border: 1px solid #e6c489;
 }
 
 .badge--danger {
-  background: rgba(166, 26, 26, 0.1);
-  color: var(--danger);
+  background: #f6d5d5;
+  color: #8f1414;
+  border: 1px solid #e3aaaa;
 }
 
 .badge--neutral {
-  background: var(--surface-alt);
+  background: #eef0f2;
   color: var(--text-secondary);
+  border: 1px solid var(--line);
 }
 
 .badge--sensivel {
@@ -536,9 +546,9 @@ button.panorama-kpi {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: rgba(217, 119, 6, 0.18);
-  color: #7c5200;
-  border: 1px solid rgba(217, 119, 6, 0.35);
+  background: #f7e2c4;
+  color: #6f4900;
+  border: 1px solid #e0ba7d;
 }
 
 .table-wrap {
