@@ -60,13 +60,12 @@ O **rascunho de criação** da proposição é a exceção estrutural: a entidad
   - Eventual `rascunhoComprovacao` é **limpo** — o flag `rascunhoExistia` no evento preserva a prova de auditoria de que o correicionado iniciou (mas não submeteu) a comprovação. Um eventual novo ciclo de diligência começa sem pré-preenchimento (ver "Rascunhos de ação").
 - No protótipo, a expiração é avaliada *lazy* a cada carga de state, e pode ser provocada manualmente pelo botão "Avançar tempo do sistema" no shell (visível apenas a Corregedor e Secretaria).
 
-## E-mail simulado e caixa de saída
+## E-mail simulado
 
 - Ações da Secretaria que comunicam o correicionado disparam um e-mail simulado:
   - `criar diligência` → evento `email_diligencia_enviado` + entrada em `state.caixaDeSaida[]` do tipo `diligencia`. Vale tanto na **fila de diligência** (em lote) quanto na **criação unitária pelo detalhe da proposição** — ambas resolvem o destinatário e disparam o e-mail.
   - `cientificar` → evento `email_ciencia_enviado` em cada proposição cientificada + entrada em `state.caixaDeSaida[]` do tipo `ciencia` (agregada por destinatário).
-- Estrutura da caixa de saída: `{id, tipo, usuarioNotificadoId, usuarioNotificadoNome, usuarioNotificadoEmail, override, proposicaoIds[], assunto, corpoResumo, linkAcesso, enviadoEm, enviadoPor}`. O termo **`usuarioNotificado`** designa o **recebedor concreto** (pessoa de carne e osso) da comunicação — distinto do agregado `destinatario` da proposição (a orientação). `override = true` quando a Secretaria definiu o destinatário manualmente.
-- A página "Caixa de saída (demo)" é acessível apenas a Secretaria e Corregedor.
+- Cada envio mantém um registro técnico em `state.caixaDeSaida[]`, sem uma página dedicada na interface: `{id, tipo, usuarioNotificadoId, usuarioNotificadoNome, usuarioNotificadoEmail, override, proposicaoIds[], assunto, corpoResumo, linkAcesso, enviadoEm, enviadoPor}`. O termo **`usuarioNotificado`** designa o **recebedor concreto** (pessoa de carne e osso) da comunicação — distinto do agregado `destinatario` da proposição (a orientação). `override = true` quando a Secretaria definiu o destinatário manualmente.
 - O recebedor de cada e-mail é **resolvido por comunicação** a partir da orientação (`resolverUsuariosDestinatarios`): membro → o próprio membro; unidade → responsável atual da unidade (a Secretaria confirma/troca); administração superior → **todos** os usuários parametrizados (uma entrada por usuário). Unidade/adm superior **vaga** bloqueia o envio até definição manual.
 - O controle **confirmar/trocar destinatário** (com bloqueio quando vago) é o mesmo componente compartilhado (`assets/js/ui/destinatario-control.js`) nas três superfícies de comunicação da Secretaria: **fila de diligência** (lote), **detalhe da proposição** (diligência unitária) e **fila de ciência** (lote por grupo — override por grupo membro/unidade). Trocar o destinatário marca `override` no e-mail e no histórico, mas **nunca** altera o agregado `destinatario` da proposição.
 

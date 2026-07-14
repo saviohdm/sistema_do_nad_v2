@@ -137,24 +137,3 @@ export const adicionarEmailCiencia = (
   });
   return entry;
 };
-
-export const listarCaixaSaida = (state, filtros = {}) => {
-  const items = [...(state.caixaDeSaida || [])];
-  const filtered = items.filter((entry) => {
-    if (filtros.tipo && entry.tipo !== filtros.tipo) return false;
-    if (filtros.usuarioNotificadoId && entry.usuarioNotificadoId !== filtros.usuarioNotificadoId)
-      return false;
-    if (filtros.q) {
-      const termo = filtros.q.toLowerCase();
-      const hay = `${entry.assunto} ${entry.corpoResumo} ${entry.usuarioNotificadoNome} ${entry.usuarioNotificadoEmail}`.toLowerCase();
-      if (!hay.includes(termo)) return false;
-    }
-    return true;
-  });
-  return filtered.sort(
-    (a, b) => new Date(b.enviadoEm).getTime() - new Date(a.enviadoEm).getTime(),
-  );
-};
-
-export const findCaixaSaidaById = (state, id) =>
-  (state.caixaDeSaida || []).find((entry) => entry.id === id) || null;

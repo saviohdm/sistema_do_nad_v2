@@ -76,11 +76,6 @@ export const ORIGENS_DETALHE = {
     voltarLabel: "Voltar às providências",
     href: () => "/pages/secretaria-providencia.html",
   },
-  "caixa-de-saida": {
-    activePage: "caixa-de-saida",
-    voltarLabel: "Voltar à caixa de saída",
-    href: () => "/pages/caixa-de-saida.html",
-  },
   "correicoes-criar": {
     activePage: "correicoes-lista",
     voltarLabel: "Voltar à correição",

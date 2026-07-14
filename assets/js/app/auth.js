@@ -21,7 +21,6 @@ const PERMISSIONS = {
     "remover_avaliacao",
     "avaliacao_com_forca_decisao",
     "editar_metadados",
-    "ver_caixa_de_saida",
   ],
   [PERSONAS.MEMBRO]: [
     "avaliar_como_membro",
@@ -33,7 +32,6 @@ const PERMISSIONS = {
     "registrar_cientificacao",
     "cumprir_pendencia_secretaria",
     "editar_metadados",
-    "ver_caixa_de_saida",
     "avancar_tempo_sistema",
   ],
   [PERSONAS.CORREICIONADO]: [
@@ -57,7 +55,6 @@ const PERSONA_MENU_OVERRIDES = {
     { href: "proposicoes-lista.html", label: "Consulta de proposições" },
     { href: "proposicoes-criar.html", label: "Criar proposição" },
     { href: "administracao-superior.html", label: "Administração Superior" },
-    { href: "caixa-de-saida.html", label: "Caixa de saída (demo)" },
   ],
   [PERSONAS.SECRETARIA]: [
     { href: "dashboard.html", label: "Dashboard" },
@@ -70,7 +67,6 @@ const PERSONA_MENU_OVERRIDES = {
     { href: "secretaria-providencia.html", label: "Providências pendentes" },
     { href: "proposicoes-lista.html", label: "Consulta de proposições" },
     { href: "administracao-superior.html", label: "Administração Superior" },
-    { href: "caixa-de-saida.html", label: "Caixa de saída (demo)" },
   ],
   [PERSONAS.CORREICIONADO]: [
     {
