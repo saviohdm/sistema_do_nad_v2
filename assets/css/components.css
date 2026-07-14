@@ -727,6 +727,70 @@ button.panorama-kpi {
   resize: vertical;
 }
 
+.prazo-diligencia {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-warm);
+}
+
+.prazo-diligencia legend {
+  padding: 0 var(--space-2);
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.prazo-diligencia__campos {
+  display: grid;
+  grid-template-columns: minmax(145px, 1fr) auto minmax(180px, 1fr);
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.prazo-diligencia__ou {
+  align-self: end;
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.prazo-diligencia__ajuda,
+.prazo-diligencia__erro {
+  margin: var(--space-2) 0 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.prazo-diligencia__ajuda {
+  color: var(--muted);
+}
+
+.prazo-diligencia__erro {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.prazo-diligencia:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+@media (max-width: 640px) {
+  .prazo-diligencia__campos {
+    grid-template-columns: 1fr;
+  }
+
+  .prazo-diligencia__ou {
+    align-self: auto;
+    margin: 0;
+  }
+}
+
 .meta-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1607,12 +1671,12 @@ button.panorama-kpi {
 
 .batch-bar__form {
   display: grid;
-  grid-template-columns: minmax(180px, 220px) 1fr auto;
+  grid-template-columns: minmax(390px, 1.15fr) minmax(240px, 1fr) auto;
   gap: var(--space-3);
   align-items: end;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 960px) {
   .batch-bar__form {
     grid-template-columns: 1fr;
   }

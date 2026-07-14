@@ -1,13 +1,13 @@
 import { TipoCaixaSaida, TipoHistorico } from "./enums.js";
 import { appendHistory, buildHistoryEvent } from "./historico.js";
-import { uid } from "../app/utils.js";
+import { formatDate, uid } from "../app/utils.js";
 
 const buildAssuntoDiligencia = (proposicao) =>
   `Diligência aberta: ${proposicao.numero}`;
 
 const buildCorpoDiligencia = (proposicao, diligencia) => {
   const prazo = diligencia?.prazo
-    ? new Date(diligencia.prazo).toLocaleDateString("pt-BR")
+    ? formatDate(diligencia.prazo)
     : "(prazo a definir)";
   return [
     `Foi aberta diligência referente à proposição ${proposicao.numero}.`,

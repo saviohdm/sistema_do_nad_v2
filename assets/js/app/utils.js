@@ -1,16 +1,25 @@
+export const parseDateValue = (value) => {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+  if (dateOnly) {
+    const [, ano, mes, dia] = dateOnly;
+    return new Date(Number(ano), Number(mes) - 1, Number(dia));
+  }
+  return new Date(value);
+};
+
 export const formatDateTime = (value) => {
   if (!value) return "—";
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(parseDateValue(value));
 };
 
 export const formatDate = (value) => {
   if (!value) return "—";
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
-  }).format(new Date(value));
+  }).format(parseDateValue(value));
 };
 
 export const uid = (prefix = "id") =>

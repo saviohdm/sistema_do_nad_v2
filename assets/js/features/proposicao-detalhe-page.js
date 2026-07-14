@@ -71,6 +71,10 @@ import {
   lerOverridesDestinatario,
   temAdmSuperiorVago,
 } from "../ui/destinatario-control.js";
+import {
+  bindPrazoDiligenciaControls,
+  renderPrazoDiligenciaControl,
+} from "../ui/prazo-diligencia-control.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
 const origem = resolverOrigemDetalhe({
@@ -123,6 +127,8 @@ const renderTrilha = (proposicao) =>
   ]);
 
 const bindHandlers = (proposicao) => {
+  bindPrazoDiligenciaControls();
+
   document.querySelector("#form-comprovacao")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -610,10 +616,7 @@ const renderAcaoSecretaria = (proposicao, available) => {
           <label for="descricao-diligencia">Descrição</label>
           <textarea id="descricao-diligencia" name="descricao" required></textarea>
         </div>
-        <div class="field">
-          <label for="prazo-diligencia">Prazo</label>
-          <input id="prazo-diligencia" name="prazo" type="date" required />
-        </div>
+        ${renderPrazoDiligenciaControl({ idPrefix: "prazo-diligencia" })}
         <div class="field">
           ${renderDestinatarioControl(state(), proposicao)}
         </div>

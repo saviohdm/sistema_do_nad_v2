@@ -117,6 +117,7 @@ O **rascunho de criação** da proposição é a exceção estrutural: a entidad
 ### 2. Diligência e comprovação
 
 - A `Secretaria Processual da CN` pratica `CRIAR DILIGÊNCIA`.
+- O prazo da diligência pode ser informado pela data final ou por uma quantidade inteira e não negativa de dias corridos. Os campos são sincronizados, a contagem exclui o dia inicial (`0` = hoje) e somente a data final é persistida em `prazo`.
 - O `Correicionado` pratica `RASCUNHAR comprovação` e depois `COMPROVAR`.
 - A comprovação reabre o fluxo interno da Corregedoria Nacional para emissão de apreciação de valor.
 

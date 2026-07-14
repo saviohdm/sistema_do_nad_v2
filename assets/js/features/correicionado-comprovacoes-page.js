@@ -3,7 +3,7 @@ import { mountPage } from "../app/bootstrap.js";
 import { loadState } from "../app/store.js";
 import { listProposicoesCorreicionadoPendentes } from "../domain/correicionados.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
-import { formatDate } from "../app/utils.js";
+import { formatDate, parseDateValue } from "../app/utils.js";
 import {
   renderBadge,
   renderEmptyState,
@@ -37,7 +37,7 @@ const calcularDiasParaPrazo = (prazo) => {
   if (!prazo) return null;
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  const data = new Date(prazo);
+  const data = parseDateValue(prazo);
   data.setHours(0, 0, 0, 0);
   return Math.round((data - hoje) / 86400000);
 };
@@ -204,8 +204,12 @@ const render = () => {
   const proposicoes = listProposicoesCorreicionadoPendentes(state, user)
     .map((p) => hydrateProposicao(state, p))
     .sort((a, b) => {
-      const pa = diligenciaAbertaDe(a)?.prazo ? new Date(diligenciaAbertaDe(a).prazo).getTime() : Infinity;
-      const pb = diligenciaAbertaDe(b)?.prazo ? new Date(diligenciaAbertaDe(b).prazo).getTime() : Infinity;
+      const pa = diligenciaAbertaDe(a)?.prazo
+        ? parseDateValue(diligenciaAbertaDe(a).prazo).getTime()
+        : Infinity;
+      const pb = diligenciaAbertaDe(b)?.prazo
+        ? parseDateValue(diligenciaAbertaDe(b).prazo).getTime()
+        : Infinity;
       return pa - pb;
     });
 

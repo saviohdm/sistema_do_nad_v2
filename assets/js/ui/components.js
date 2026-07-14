@@ -3,6 +3,7 @@ import {
   formatDate,
   formatDateTime,
   formatTempoRelativo,
+  parseDateValue,
 } from "../app/utils.js";
 import {
   getHumanSummary,
@@ -392,7 +393,7 @@ const renderHistoricoAbertos = (proposicao, { providenciasEditable }) => {
 
   const inicioHoje = new Date();
   inicioHoje.setHours(0, 0, 0, 0);
-  const prazoVencido = diligenciaAberta?.prazo && new Date(diligenciaAberta.prazo) < inicioHoje;
+  const prazoVencido = diligenciaAberta?.prazo && parseDateValue(diligenciaAberta.prazo) < inicioHoje;
 
   const diligenciaHtml = diligenciaAberta
     ? `

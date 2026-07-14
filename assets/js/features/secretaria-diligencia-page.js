@@ -25,6 +25,10 @@ import {
   temAdmSuperiorVago,
   labelOrientacao,
 } from "../ui/destinatario-control.js";
+import {
+  bindPrazoDiligenciaControls,
+  renderPrazoDiligenciaControl,
+} from "../ui/prazo-diligencia-control.js";
 
 const SELECAO_KEY = "nad-secretaria-diligencia-selecao";
 const MODAL_ROOT_ID = "nad-modal-root";
@@ -101,7 +105,6 @@ const renderSelectAllRow = (filtradas) => {
 
 const renderStickyBar = (totalSelecionados, ocultas) => {
   if (totalSelecionados === 0) return "";
-  const hoje = new Date().toISOString().slice(0, 10);
   const hint =
     ocultas > 0 ? `<span class="batch-bar__hint">${ocultas} oculta(s) pelo filtro atual</span>` : "";
 
@@ -112,10 +115,7 @@ const renderStickyBar = (totalSelecionados, ocultas) => {
         ${hint}
       </div>
       <form class="batch-bar__form" id="batch-form">
-        <div class="field">
-          <label for="batch-prazo">Prazo da diligência</label>
-          <input id="batch-prazo" name="prazo" type="date" min="${hoje}" required />
-        </div>
+        ${renderPrazoDiligenciaControl({ idPrefix: "batch-prazo" })}
         <div class="field">
           <label for="batch-descricao">Descrição (aplicada a todas)</label>
           <textarea id="batch-descricao" name="descricao" required rows="2"></textarea>
@@ -153,6 +153,9 @@ const formatBR = (iso) => {
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
 };
+
+const formatPrazoDias = (dias) =>
+  Number(dias) === 1 ? "1 dia corrido" : `${dias} dias corridos`;
 
 const ensureModalRoot = () => {
   let root = document.getElementById(MODAL_ROOT_ID);
@@ -221,7 +224,7 @@ const confirmarCriacaoEmLote = (prazo, descricao, render) => {
   render();
 };
 
-const abrirModalConfirmacao = (proposicoesSelecionadas, prazo, descricao, render) => {
+const abrirModalConfirmacao = (proposicoesSelecionadas, prazo, prazoDias, descricao, render) => {
   const root = ensureModalRoot();
   const currentState = state();
   const itens = proposicoesSelecionadas
@@ -235,7 +238,7 @@ const abrirModalConfirmacao = (proposicoesSelecionadas, prazo, descricao, render
 
   const body = `
     <p>Você está prestes a criar <strong>${proposicoesSelecionadas.length}</strong> diligência(s) com os seguintes dados:</p>
-    <p><strong>Prazo:</strong> ${formatBR(prazo)}</p>
+    <p><strong>Prazo:</strong> ${formatBR(prazo)} — ${formatPrazoDias(prazoDias)}</p>
     <p><strong>Descrição:</strong></p>
     <blockquote class="muted" style="border-left: 3px solid var(--line); padding-left: var(--space-3); margin: var(--space-2) 0;">${descricao.replace(/\n/g, "<br>")}</blockquote>
     <p><strong>Destinatário de cada proposição</strong> (resolvido no momento da diligência; a Secretaria pode confirmar ou trocar):</p>
@@ -381,6 +384,8 @@ montarFilaNavegavel({
     return renderStickyBar(selecaoIds.size, ocultas);
   },
   bindExtra: (ctx) => {
+    bindPrazoDiligenciaControls();
+
     // Toggle "somente grupos completos" — aplica imediatamente.
     document
       .querySelector("[data-action='toggle-grupos-completos']")
@@ -423,13 +428,12 @@ montarFilaNavegavel({
       event.preventDefault();
       const data = new FormData(event.currentTarget);
       const prazo = (data.get("prazo") || "").toString();
+      const prazoDias = (data.get("prazoDias") || "").toString();
       const descricao = (data.get("descricao") || "").toString().trim();
-      if (!prazo || !descricao) return;
-      const hoje = new Date().toISOString().slice(0, 10);
-      if (prazo < hoje) return;
+      if (!prazo || !prazoDias || !descricao) return;
       const selecionadas = ctx.proposicoes.filter((p) => selecaoIds.has(p.id));
       if (selecionadas.length === 0) return;
-      abrirModalConfirmacao(selecionadas, prazo, descricao, ctx.render);
+      abrirModalConfirmacao(selecionadas, prazo, prazoDias, descricao, ctx.render);
     });
   },
 });

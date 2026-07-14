@@ -1,6 +1,6 @@
 import { StatusDiligencia, StatusFluxo, TipoHistorico } from "./enums.js";
 import { appendHistory, buildHistoryEvent } from "./historico.js";
-import { uid } from "../app/utils.js";
+import { parseDateValue, uid } from "../app/utils.js";
 
 export const criarDiligencia = (
   proposicao,
@@ -62,7 +62,7 @@ export const countDiligenciasPorSituacao = (state, hoje = new Date()) => {
       }
       if (dil.status !== StatusDiligencia.ABERTA) continue;
       acc.abertas++;
-      const prazo = dil.prazo ? new Date(dil.prazo) : null;
+      const prazo = dil.prazo ? parseDateValue(dil.prazo) : null;
       if (!prazo) continue;
       if (prazo < inicioHoje) acc.vencidas++;
       else if (prazo <= limiteProximas) acc.proximas++;
@@ -173,7 +173,7 @@ export const expirarDiligenciasVencidas = (state, hoje = new Date()) => {
     if (proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_COMPROVACAO) return;
     const diligencia = findDiligenciaAberta(proposicao);
     if (!diligencia) return;
-    const prazo = diligencia.prazo ? new Date(diligencia.prazo) : null;
+    const prazo = diligencia.prazo ? parseDateValue(diligencia.prazo) : null;
     if (!prazo || prazo >= inicioHoje) return;
 
     const rascunhoExistia = Boolean(proposicao.rascunhoComprovacao);
