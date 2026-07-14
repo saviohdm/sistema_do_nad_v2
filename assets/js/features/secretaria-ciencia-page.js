@@ -14,6 +14,7 @@ import {
   renderPanoramaKpis,
 } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
+import { showToast } from "../ui/toast.js";
 import {
   renderDestinatarioControl,
   lerOverridesDestinatario,
@@ -42,7 +43,6 @@ if (getCurrentPersona() !== PERSONAS.SECRETARIA) {
 const FILTROS_KEY = "nad-secretaria-ciencia-filtros";
 const SELECAO_KEY = "nad-secretaria-ciencia-selecao";
 const MODAL_ROOT_ID = "nad-modal-root";
-const TOAST_ROOT_ID = "nad-toast-root";
 
 const FILTRO_KEYS_URL = ["correicaoId", "estado", "prontoEm"];
 
@@ -446,7 +446,7 @@ const renderModoGrupo = (grupos, filtros) => {
 };
 
 // ---------------------------------------------------------------------------
-// Modal de confirmação e toast
+// Modal de confirmação
 // ---------------------------------------------------------------------------
 
 const ensureModalRoot = () => {
@@ -457,29 +457,6 @@ const ensureModalRoot = () => {
     document.body.appendChild(root);
   }
   return root;
-};
-
-const ensureToastRoot = () => {
-  let root = document.getElementById(TOAST_ROOT_ID);
-  if (!root) {
-    root = document.createElement("div");
-    root.id = TOAST_ROOT_ID;
-    root.className = "toast-root";
-    document.body.appendChild(root);
-  }
-  return root;
-};
-
-const showToast = (mensagem) => {
-  const root = ensureToastRoot();
-  const toast = document.createElement("div");
-  toast.className = "toast toast--success";
-  toast.textContent = mensagem;
-  root.appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add("toast--leaving");
-    setTimeout(() => toast.remove(), 350);
-  }, 3500);
 };
 
 // Uma proposição representativa (pronta) do grupo, para resolver os candidatos do
