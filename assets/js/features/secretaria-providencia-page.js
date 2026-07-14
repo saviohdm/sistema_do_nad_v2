@@ -1,11 +1,18 @@
 import { requireAuth } from "../app/auth.js";
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { mutateState } from "../app/store.js";
-import { formatDate, formatDateTime } from "../app/utils.js";
-import { Labels, TipoProvidencia, getPrioridadeBadgeTone } from "../domain/enums.js";
+import { formatDateTime } from "../app/utils.js";
+import { Labels, Prioridade, TipoProvidencia } from "../domain/enums.js";
 import { listFilaPendenciasProvidencia } from "../domain/secretaria-filas.js";
 import { registrarCumprimentoPendencia } from "../domain/pendencias-secretaria.js";
-import { renderBadge, renderPrioridadeBadge, renderSensivelBadge } from "../ui/components.js";
+import {
+  renderBadge,
+  renderFilaFiltrosAtivos,
+  renderFilterToggleChip,
+  renderPanoramaKpis,
+  renderPrioridadeBadge,
+  renderSensivelBadge,
+} from "../ui/components.js";
 
 requireAuth();
 
@@ -16,6 +23,17 @@ const TIPOS_PROVIDENCIA_ORDEM = [
   TipoProvidencia.COCI,
   TipoProvidencia.OUTRA,
 ];
+
+const LABELS_CURTOS_TIPO = {
+  [TipoProvidencia.CORREGEDORIA_LOCAL]: "Corregedoria local",
+  [TipoProvidencia.COCI]: "COCI",
+  [TipoProvidencia.OUTRA]: "Outra providência",
+};
+
+// Estado de UI efêmero: sobrevive aos re-renders, some no F5 (filtros ficam na URL).
+let painelFiltrosAberto = false;
+const formulariosAbertos = new Set();
+let focoBuscaPendente = false;
 
 const escapeAttr = (value) =>
   String(value ?? "")
@@ -42,6 +60,14 @@ const isAtrasada = (pendencia, hoje) =>
   pendencia.status === "pendente" &&
   (diasDesde(pendencia.dataCriacao, hoje) ?? 0) > LIMITE_ATRASADAS;
 
+// Data local (não usar toISOString: é UTC e vira "amanhã" à noite em BRT).
+const hojeInputDate = () => {
+  const agora = new Date();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${agora.getFullYear()}-${mes}-${dia}`;
+};
+
 const getFiltrosFromUrl = () => {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -52,7 +78,7 @@ const getFiltrosFromUrl = () => {
   };
 };
 
-const setFiltrosInUrl = (filtros) => {
+const setFiltrosInUrl = (filtros, { replace = false } = {}) => {
   const params = new URLSearchParams();
   if (filtros.atrasadas) params.set("atrasadas", "1");
   filtros.tipos.forEach((tipo) => params.append("tipo", tipo));
@@ -60,13 +86,27 @@ const setFiltrosInUrl = (filtros) => {
   if (filtros.busca) params.set("q", filtros.busca);
   const query = params.toString();
   const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
-  window.history.pushState({}, "", newUrl);
+  const urlAtual = `${window.location.pathname}${window.location.search}`;
+  // Digitação usa replace (não polui o histórico); ações discretas usam push,
+  // exceto quando nada mudou.
+  if (replace || newUrl === urlAtual) {
+    window.history.replaceState({}, "", newUrl);
+  } else {
+    window.history.pushState({}, "", newUrl);
+  }
 };
 
-const aplicarFiltros = (novos) => {
-  setFiltrosInUrl(novos);
+const aplicarFiltros = (novos, { replace = false, manterFocoBusca = false } = {}) => {
+  focoBuscaPendente = manterFocoBusca;
+  setFiltrosInUrl(novos, { replace });
   render();
 };
+
+const temFiltroAtivo = (filtros) =>
+  filtros.atrasadas ||
+  filtros.tipos.length > 0 ||
+  Boolean(filtros.correicaoId) ||
+  Boolean(filtros.busca);
 
 // Achata uma proposição em N entradas (uma por pendência pendente),
 // com referência cruzada à proposição-mãe para enriquecimento de contexto.
@@ -168,10 +208,47 @@ const renderFundamentos = (juizo, pendenciaId) => {
   `;
 };
 
+const renderPanorama = (todosItens, hoje) => {
+  const atrasadas = todosItens.filter(({ pendencia }) => isAtrasada(pendencia, hoje)).length;
+  return `
+    <div class="panel">
+      <h3 class="panel__title">Panorama das providências</h3>
+      ${renderPanoramaKpis([
+        {
+          label: "Providências pendentes",
+          valor: todosItens.length,
+          filtros: { atrasadas: false },
+          title: "Ver todas as providências pendentes",
+        },
+        {
+          label: `Atrasadas (mais de ${LIMITE_ATRASADAS} dias)`,
+          valor: atrasadas,
+          filtros: { atrasadas: true },
+          destaque: true,
+          title: "Ver apenas as providências atrasadas",
+        },
+      ])}
+    </div>
+  `;
+};
+
 const renderHeaderProposicao = (proposicao) => {
-  const ufs = Array.isArray(proposicao.uf)
-    ? proposicao.uf.filter(Boolean).join(" · ")
-    : proposicao.uf || "";
+  const badges = [
+    renderSensivelBadge(proposicao.sensivel),
+    proposicao.prioridade && proposicao.prioridade !== Prioridade.NORMAL
+      ? renderPrioridadeBadge(proposicao.prioridade)
+      : "",
+    renderConclusaoBadge(proposicao.apreciacaoDoCN),
+  ]
+    .filter(Boolean)
+    .join("");
+
+  const metadados = [
+    proposicao.correicaoId ? `Correição ${escapeAttr(proposicao.correicaoId)}` : "",
+    proposicao.membro ? `Membro: ${escapeAttr(proposicao.membro)}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return `
     <header class="providencia-group__header">
@@ -182,56 +259,57 @@ const renderHeaderProposicao = (proposicao) => {
             ? ` — ${escapeAttr(proposicao.descricao).slice(0, 160)}${proposicao.descricao.length > 160 ? "…" : ""}`
             : ""
         }</p>
+        ${metadados ? `<p class="muted providencia-group__meta">${metadados}</p>` : ""}
       </div>
       <a class="button button--ghost button--small" href="proposicao-detalhe.html?id=${escapeAttr(proposicao.id)}&from=secretaria-providencia">Abrir proposição</a>
     </header>
-    <div class="pill-list">
-      ${renderSensivelBadge(proposicao.sensivel)}
-      ${proposicao.correicaoId ? renderBadge(`Correição ${proposicao.correicaoId}`, "primary") : ""}
-      ${proposicao.ramoMP ? renderBadge(proposicao.ramoMP, "neutral") : ""}
-      ${proposicao.tematica ? renderBadge(proposicao.tematica, "neutral") : ""}
-      ${ufs ? renderBadge(ufs, "neutral") : ""}
-      ${renderPrioridadeBadge(proposicao.prioridade)}
-      ${proposicao.membro ? renderBadge(`Membro: ${proposicao.membro}`, "neutral") : ""}
-      ${renderConclusaoBadge(proposicao.apreciacaoDoCN)}
-    </div>
+    ${badges ? `<div class="pill-list">${badges}</div>` : ""}
   `;
 };
+
+const renderFormCumprimento = (chave) => `
+  <form class="providencia-item__form" data-pendencia-form="${chave}">
+    <div class="field">
+      <label>Data de cumprimento</label>
+      <input type="date" name="dataCumprimento" value="${hojeInputDate()}" required />
+    </div>
+    <div class="field">
+      <label>Observações</label>
+      <textarea name="observacoes" placeholder="Resumo do despacho externo (ofício, número, destinatário, data efetiva)."></textarea>
+    </div>
+    <div class="button-row">
+      <button class="button button--small" type="submit">Registrar cumprimento</button>
+      <button class="button button--ghost button--small" type="button" data-cancel-form="${chave}">Cancelar</button>
+    </div>
+  </form>
+`;
 
 const renderCardPendencia = (proposicao, pendencia, hoje) => {
   const dias = diasDesde(pendencia.dataCriacao, hoje);
   const atrasada = isAtrasada(pendencia, hoje);
   const labelTipo = Labels.tipoProvidencia[pendencia.tipoProvidencia] || pendencia.tipoProvidencia;
+  const chave = `${escapeAttr(proposicao.id)}:${escapeAttr(pendencia.id)}`;
+  const aberto = formulariosAbertos.has(`${proposicao.id}:${pendencia.id}`);
+  const labelDias = dias === 1 ? "Há 1 dia em aberto" : `Há ${dias} dias em aberto`;
+  // Evita texto duplicado quando a descrição repete o rótulo do tipo (overline).
+  const mostraDescricao = normalize(pendencia.descricao) !== normalize(labelTipo);
 
   return `
-    <article class="providencia-item">
-      <div class="providencia-item__summary">
-        <div class="pill-list">
-          ${renderBadge("Pendente", "warning")}
-          ${renderBadge(labelTipo, "neutral")}
-          ${
-            atrasada
-              ? renderBadge(`Há ${dias} dias em aberto`, "danger")
-              : dias !== null
-                ? renderBadge(`Há ${dias} dias em aberto`, "neutral")
-                : ""
-          }
-        </div>
-        <h4 class="providencia-item__title">${escapeAttr(pendencia.descricao)}</h4>
-        <p class="muted providencia-item__meta">Criada em ${formatDateTime(pendencia.dataCriacao)}</p>
-        ${renderFundamentos(proposicao.apreciacaoDoCN, pendencia.id)}
+    <article class="providencia-item${atrasada ? " providencia-item--atrasada" : ""}">
+      <div class="providencia-item__topline">
+        <p class="acervo-overline">${labelTipo}</p>
+        ${dias !== null ? renderBadge(labelDias, atrasada ? "danger" : "neutral") : ""}
       </div>
-      <form class="providencia-item__form" data-pendencia-form="${escapeAttr(proposicao.id)}:${escapeAttr(pendencia.id)}">
-        <div class="field">
-          <label>Data de cumprimento</label>
-          <input type="date" name="dataCumprimento" required />
-        </div>
-        <div class="field">
-          <label>Observações</label>
-          <textarea name="observacoes" placeholder="Resumo do despacho externo (ofício, número, destinatário, data efetiva)."></textarea>
-        </div>
-        <button class="button" type="submit">Registrar cumprimento</button>
-      </form>
+      ${mostraDescricao ? `<h4 class="providencia-item__title">${escapeAttr(pendencia.descricao)}</h4>` : ""}
+      <p class="muted providencia-item__meta">Criada em ${formatDateTime(pendencia.dataCriacao)}</p>
+      ${renderFundamentos(proposicao.apreciacaoDoCN, pendencia.id)}
+      <div class="providencia-item__actions">
+        ${
+          aberto
+            ? renderFormCumprimento(chave)
+            : `<button class="button button--small" type="button" data-toggle-form="${chave}">Registrar cumprimento</button>`
+        }
+      </div>
     </article>
   `;
 };
@@ -264,29 +342,18 @@ const renderFila = (grupos, hoje, totalCarregadoSemFiltro) => {
   `;
 };
 
-const renderTotalizadores = (counts) => {
-  const labels = {
-    [TipoProvidencia.CORREGEDORIA_LOCAL]: "Corregedoria Local",
-    [TipoProvidencia.COCI]: "COCI",
-    [TipoProvidencia.OUTRA]: "Outra",
-  };
-  return TIPOS_PROVIDENCIA_ORDEM
-    .map((tipo) => `<span class="muted"><strong>${counts[tipo]}</strong> ${labels[tipo]}</span>`)
-    .join(" · ");
-};
-
-const renderToolbar = (filtros, counts, totalItens, correicoes) => {
+const renderToolbar = (filtros, countsTipo, correicoes) => {
   const tiposAtivos = new Set(filtros.tipos);
-  const tipoCheckboxes = TIPOS_PROVIDENCIA_ORDEM
-    .map(
-      (tipo) => `
-        <label class="filter-chip">
-          <input type="checkbox" data-filtro-tipo value="${escapeAttr(tipo)}" ${tiposAtivos.has(tipo) ? "checked" : ""} />
-          <span>${Labels.tipoProvidencia[tipo]}</span>
-        </label>
-      `,
-    )
-    .join("");
+  const filtrosAvancados = filtros.tipos.length + (filtros.correicaoId ? 1 : 0);
+
+  const chipsTipo = TIPOS_PROVIDENCIA_ORDEM.map((tipo) =>
+    renderFilterToggleChip({
+      label: LABELS_CURTOS_TIPO[tipo],
+      value: tipo,
+      count: countsTipo[tipo],
+      active: tiposAtivos.has(tipo),
+    }),
+  ).join("");
 
   const correicaoOptions = [`<option value="">Todas as correições</option>`]
     .concat(
@@ -298,95 +365,155 @@ const renderToolbar = (filtros, counts, totalItens, correicoes) => {
     .join("");
 
   return `
-    <form class="filter-panel" data-toolbar>
-      <div class="form-grid form-grid--two">
-        <div class="field">
-          <label for="filtro-correicao">Correição-mãe</label>
-          <select id="filtro-correicao" name="correicao">
-            ${correicaoOptions}
-          </select>
-        </div>
-        <div class="field">
-          <label for="filtro-busca">Busca textual</label>
+    <div class="providencia-toolbar" data-toolbar>
+      <div class="providencia-toolbar__row">
+        <form class="acervo-filter-search providencia-toolbar__search" data-busca-form role="search">
           <input id="filtro-busca" name="busca" type="search"
             placeholder="Número da proposição ou descrição"
+            aria-label="Buscar por número da proposição ou descrição"
             value="${escapeAttr(filtros.busca)}" />
+        </form>
+        ${
+          temFiltroAtivo(filtros)
+            ? `<button class="button button--ghost button--small" type="button" data-action="limpar">Limpar filtros</button>`
+            : ""
+        }
+      </div>
+      <details class="providencia-filtros" data-filtros-disclosure${painelFiltrosAberto ? " open" : ""}>
+        <summary>Filtros${filtrosAvancados ? `<span class="providencia-filtros__count">${filtrosAvancados}</span>` : ""}</summary>
+        <div class="providencia-filtros__body">
+          <div class="field providencia-filtros__correicao">
+            <label for="filtro-correicao">Correição-mãe</label>
+            <select id="filtro-correicao" name="correicao">
+              ${correicaoOptions}
+            </select>
+          </div>
+          <div class="field">
+            <label id="filtro-tipo-label">Tipo de providência</label>
+            <div class="acervo-filter-chips" role="group" aria-labelledby="filtro-tipo-label">${chipsTipo}</div>
+          </div>
         </div>
-      </div>
-      <div class="filter-panel__checks">
-        ${tipoCheckboxes}
-        <label class="filter-chip">
-          <input type="checkbox" data-filtro-atrasadas ${filtros.atrasadas ? "checked" : ""} />
-          <span>Somente atrasadas (mais de ${LIMITE_ATRASADAS} dias em aberto)</span>
-        </label>
-      </div>
-      <div class="filter-summary">
-        <span><strong>${totalItens}</strong> providência(s) ${filtros.atrasadas ? "atrasada(s)" : "pendente(s)"}</span>
-        <span>·</span>
-        <span>${renderTotalizadores(counts)}</span>
-      </div>
-      <div class="button-row">
-        <button class="button button--small" type="submit">Aplicar filtros</button>
-        <button class="button button--ghost button--small" type="button" data-action="limpar">Limpar filtros</button>
-      </div>
-    </form>
+      </details>
+    </div>
   `;
 };
 
-const render = () => {
-  const filtros = getFiltrosFromUrl();
-  const currentState = state();
-  const hoje = new Date();
-  const proposicoesComPendencias = listFilaPendenciasProvidencia(currentState);
-  const correicoes = correicoesDistintas(proposicoesComPendencias);
+const buildChipsFiltrosAtivos = (filtros) => {
+  const chips = [];
+  if (filtros.atrasadas) chips.push({ key: "atrasadas", label: "Somente atrasadas" });
+  filtros.tipos.forEach((tipo) =>
+    chips.push({ key: `tipo:${tipo}`, label: LABELS_CURTOS_TIPO[tipo] || tipo }),
+  );
+  if (filtros.correicaoId) chips.push({ key: "correicao", label: `Correição ${filtros.correicaoId}` });
+  if (filtros.busca) chips.push({ key: "q", label: `Busca: “${filtros.busca}”` });
+  return chips;
+};
 
-  const todosItens = flattenPendencias(proposicoesComPendencias);
-  const itensFiltrados = aplicarFiltrosNasPendencias(todosItens, filtros, hoje);
-  const grupos = agruparPorProposicao(itensFiltrados, hoje);
-  const counts = contarPorTipo(itensFiltrados);
-
-  const titulo = filtros.atrasadas ? "Providências pendentes atrasadas" : "Providências pendentes";
-
-  mountPage({
-    activePage: "secretaria-providencia",
-    title: titulo,
-    actions: baseActions,
-    content: `
-      <section class="stack">
-        <div class="panel">
-          <h2 class="panel__title">${titulo} ${renderBadge(`${itensFiltrados.length}`, itensFiltrados.length ? "warning" : "neutral")}</h2>
-          ${renderToolbar(filtros, counts, itensFiltrados.length, correicoes)}
-        </div>
-        ${renderFila(grupos, hoje, todosItens.length)}
-      </section>
-    `,
+const bindPanorama = () => {
+  document.querySelectorAll("[data-kpi-filtros]").forEach((kpi) => {
+    kpi.addEventListener("click", () =>
+      aplicarFiltros({ ...getFiltrosFromUrl(), ...JSON.parse(kpi.dataset.kpiFiltros) }),
+    );
   });
+};
 
+const bindToolbar = () => {
   const toolbar = document.querySelector("[data-toolbar]");
-  if (toolbar) {
-    toolbar.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const formData = new FormData(toolbar);
-      const tipos = Array.from(toolbar.querySelectorAll("[data-filtro-tipo]:checked")).map(
-        (el) => el.value,
-      );
-      aplicarFiltros({
-        atrasadas: !!toolbar.querySelector("[data-filtro-atrasadas]")?.checked,
-        tipos,
-        correicaoId: formData.get("correicao") || "",
-        busca: formData.get("busca") || "",
-      });
-    });
+  if (!toolbar) return;
 
-    toolbar.querySelector("[data-action='limpar']")?.addEventListener("click", () => {
-      aplicarFiltros({ atrasadas: false, tipos: [], correicaoId: "", busca: "" });
+  const buscaInput = toolbar.querySelector("#filtro-busca");
+  const buscaForm = toolbar.querySelector("[data-busca-form]");
+  if (buscaInput && buscaForm) {
+    let debounce = null;
+    const aplicarBusca = (opcoes) =>
+      aplicarFiltros({ ...getFiltrosFromUrl(), busca: buscaInput.value }, opcoes);
+
+    buscaInput.addEventListener("input", () => {
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(
+        () => aplicarBusca({ replace: true, manterFocoBusca: true }),
+        300,
+      );
+    });
+    buscaForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      window.clearTimeout(debounce);
+      aplicarBusca({ manterFocoBusca: true });
     });
   }
+
+  toolbar.querySelector("#filtro-correicao")?.addEventListener("change", (event) => {
+    aplicarFiltros({ ...getFiltrosFromUrl(), correicaoId: event.target.value || "" });
+  });
+
+  toolbar.querySelectorAll("[data-toggle-status]").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const atuais = getFiltrosFromUrl();
+      const tipo = chip.dataset.toggleStatus;
+      const tipos = atuais.tipos.includes(tipo)
+        ? atuais.tipos.filter((item) => item !== tipo)
+        : [...atuais.tipos, tipo];
+      aplicarFiltros({ ...atuais, tipos });
+    });
+  });
+
+  toolbar.querySelector("[data-action='limpar']")?.addEventListener("click", () => {
+    aplicarFiltros({ atrasadas: false, tipos: [], correicaoId: "", busca: "" });
+  });
+
+  // Abrir/fechar o painel só alterna a linha de chips ativos — sem re-render,
+  // para não perder o foco do summary.
+  const disclosure = toolbar.querySelector("[data-filtros-disclosure]");
+  disclosure?.addEventListener("toggle", () => {
+    painelFiltrosAberto = disclosure.open;
+    const chipsRow = document.querySelector("[data-chips-ativos]");
+    if (chipsRow) chipsRow.hidden = painelFiltrosAberto;
+  });
+};
+
+const bindFiltrosAtivos = () => {
+  document.querySelectorAll("[data-remove-filtro]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      const atuais = getFiltrosFromUrl();
+      const chave = botao.dataset.removeFiltro;
+      if (chave === "q") {
+        aplicarFiltros({ ...atuais, busca: "" });
+      } else if (chave === "correicao") {
+        aplicarFiltros({ ...atuais, correicaoId: "" });
+      } else if (chave === "atrasadas") {
+        aplicarFiltros({ ...atuais, atrasadas: false });
+      } else if (chave.startsWith("tipo:")) {
+        const tipo = chave.slice("tipo:".length);
+        aplicarFiltros({ ...atuais, tipos: atuais.tipos.filter((item) => item !== tipo) });
+      }
+    });
+  });
+};
+
+const bindCards = () => {
+  document.querySelectorAll("[data-toggle-form]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      const chave = botao.dataset.toggleForm;
+      formulariosAbertos.add(chave);
+      render();
+      document
+        .querySelector(`[data-pendencia-form="${chave}"] input[name="dataCumprimento"]`)
+        ?.focus();
+    });
+  });
+
+  document.querySelectorAll("[data-cancel-form]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      formulariosAbertos.delete(botao.dataset.cancelForm);
+      render();
+    });
+  });
 
   document.querySelectorAll("[data-pendencia-form]").forEach((form) => {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const [proposicaoId, pendenciaId] = event.currentTarget.dataset.pendenciaForm.split(":");
+      const chave = event.currentTarget.dataset.pendenciaForm;
+      const [proposicaoId, pendenciaId] = chave.split(":");
       const data = new FormData(event.currentTarget);
 
       mutateState((draft) => {
@@ -401,9 +528,67 @@ const render = () => {
         return draft;
       });
 
+      formulariosAbertos.delete(chave);
       render();
     });
   });
+};
+
+const restaurarFocoBusca = () => {
+  if (!focoBuscaPendente) return;
+  focoBuscaPendente = false;
+  const input = document.querySelector("#filtro-busca");
+  if (!input) return;
+  const fim = input.value.length;
+  input.focus();
+  input.setSelectionRange(fim, fim);
+};
+
+const render = () => {
+  const filtros = getFiltrosFromUrl();
+  const currentState = state();
+  const hoje = new Date();
+  const proposicoesComPendencias = listFilaPendenciasProvidencia(currentState);
+  const correicoes = correicoesDistintas(proposicoesComPendencias);
+
+  const todosItens = flattenPendencias(proposicoesComPendencias);
+  const itensFiltrados = aplicarFiltrosNasPendencias(todosItens, filtros, hoje);
+  const grupos = agruparPorProposicao(itensFiltrados, hoje);
+  // Contagem dos chips de tipo: todos os filtros aplicados, exceto o próprio tipo
+  // (cada chip mostra o que aquele toggle traria; sem tipo ativo ≡ totalizadores).
+  const countsTipo = contarPorTipo(
+    aplicarFiltrosNasPendencias(todosItens, { ...filtros, tipos: [] }, hoje),
+  );
+
+  const titulo = filtros.atrasadas ? "Providências pendentes atrasadas" : "Providências pendentes";
+  const chipsAtivos = buildChipsFiltrosAtivos(filtros);
+
+  mountPage({
+    activePage: "secretaria-providencia",
+    title: titulo,
+    actions: baseActions,
+    content: `
+      <section class="stack">
+        ${renderPanorama(todosItens, hoje)}
+        <div class="panel">
+          <h2 class="panel__title">${titulo} ${renderBadge(`${itensFiltrados.length}`, itensFiltrados.length ? "warning" : "neutral")}</h2>
+          ${renderToolbar(filtros, countsTipo, correicoes)}
+          ${
+            chipsAtivos.length
+              ? `<div data-chips-ativos${painelFiltrosAberto ? " hidden" : ""}>${renderFilaFiltrosAtivos(chipsAtivos)}</div>`
+              : ""
+          }
+        </div>
+        ${renderFila(grupos, hoje, todosItens.length)}
+      </section>
+    `,
+  });
+
+  bindPanorama();
+  bindToolbar();
+  bindFiltrosAtivos();
+  bindCards();
+  restaurarFocoBusca();
 };
 
 window.addEventListener("popstate", render);

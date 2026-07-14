@@ -8,7 +8,7 @@ import {
   listProposicoesCorreicionadoCiencias,
 } from "../domain/correicionados.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
-import { Labels } from "../domain/enums.js";
+import { Labels, TipoProvidencia } from "../domain/enums.js";
 import { formatDateTime } from "../app/utils.js";
 import {
   renderApreciacaoBadge,
@@ -18,6 +18,14 @@ import {
 } from "../ui/components.js";
 
 requireAuth();
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 if (getCurrentPersona() !== PERSONAS.CORREICIONADO) {
   window.location.href = "/pages/dashboard.html";
@@ -36,15 +44,21 @@ const renderProvidencias = (proposicao) => {
   return `
     <ul style="margin: 0; padding-left: 1rem;">
       ${pendencias
-        .map(
-          (p) => `
+        .map((p) => {
+          const tipoLabel = Labels.tipoProvidencia[p.tipoProvidencia] || p.descricao;
+          const mostraDescricao =
+            p.tipoProvidencia === TipoProvidencia.OUTRA &&
+            p.descricao &&
+            p.descricao !== tipoLabel;
+          return `
             <li>
-              <strong>${Labels.tipoProvidencia[p.tipoProvidencia] || p.descricao}</strong>
+              <strong>${escapeHtml(tipoLabel)}</strong>
               · ${p.status === "cumprida" ? "Cumprida" : "Em curso pela Secretaria"}
-              ${p.observacoes ? `<br><span class="muted">${p.observacoes}</span>` : ""}
+              ${mostraDescricao ? `<br><span>${escapeHtml(p.descricao)}</span>` : ""}
+              ${p.observacoes ? `<br><span class="muted">${escapeHtml(p.observacoes)}</span>` : ""}
             </li>
-          `,
-        )
+          `;
+        })
         .join("")}
     </ul>
   `;

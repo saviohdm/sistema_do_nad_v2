@@ -31,8 +31,9 @@ apreciacao: {
   situacao,                    // "necessita_mais_informacoes" | "concluida"
   tipoConclusao,               // só quando concluída: cumprida | parcialmente_cumprida |
                                // nao_cumprida | prejudicada | encerrada
-  existeProvidenciaSecretaria, // só válido em parcialmente_cumprida / nao_cumprida
+  existeProvidenciaSecretaria, // válido para qualquer tipoConclusao
   tipoProvidencia,             // corregedoria_local | coci | outra
+  descricaoProvidencia,        // obrigatória quando tipoProvidencia = outra; null nos demais
   observacoes,                 // texto livre do juízo
 }
 ```

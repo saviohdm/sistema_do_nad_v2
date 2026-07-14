@@ -75,12 +75,22 @@ export const renderApreciacaoResumo = (apreciacao, { autor, data } = {}) => {
     ? Labels.tipoConclusao[apreciacao.tipoConclusao]
     : Labels.situacaoApreciacao[apreciacao.situacao];
   const linhaMeta = [autor, data ? formatDateTime(data) : null].filter(Boolean).join(" · ");
+  const tipoProvidenciaLabel = apreciacao.tipoProvidencia
+    ? Labels.tipoProvidencia[apreciacao.tipoProvidencia] || apreciacao.tipoProvidencia
+    : null;
+  const descricaoProvidencia =
+    apreciacao.descricaoProvidencia || tipoProvidenciaLabel;
   return `
     <div class="judging-anchor__header">
       <strong>${tipoLabel}</strong>
       ${renderApreciacaoBadge(apreciacao)}
     </div>
     ${linhaMeta ? `<p class="muted" style="font-size: 0.85rem;">${linhaMeta}</p>` : ""}
+    ${
+      apreciacao.existeProvidenciaSecretaria && descricaoProvidencia
+        ? `<p><strong>Providência da Secretaria:</strong> ${escapeHtml(descricaoProvidencia)}</p>`
+        : ""
+    }
     ${apreciacao.observacoes ? `<p>${apreciacao.observacoes}</p>` : ""}
   `;
 };
@@ -413,10 +423,10 @@ const renderHistoricoAbertos = (proposicao, { providenciasEditable }) => {
       (item) => `
         <article class="historico-aberto-item">
           <div class="historico-aberto-item__badges">
-            ${renderBadge(Labels.tipoProvidencia[item.tipoProvidencia] || item.descricao, "warning")}
+            ${renderBadge(escapeHtml(Labels.tipoProvidencia[item.tipoProvidencia] || item.descricao), "warning")}
             ${renderBadge("Pendente", "danger")}
           </div>
-          <p><strong>${item.descricao}</strong></p>
+          <p><strong>${escapeHtml(item.descricao)}</strong></p>
           <p class="muted">Criada em ${formatDateTime(item.dataCriacao)} · cumprida fora do sistema; aqui apenas acompanhada.</p>
           ${
             providenciasEditable

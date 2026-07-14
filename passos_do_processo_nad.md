@@ -38,10 +38,10 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
     `não cumprida`,
     `prejudicada (perda de objeto)` ou
     `encerrada (sem análise de mérito)`.
-17. Nos casos de `parcialmente cumprida` e `não cumprida`, a CN também informa se existe providência a ser cumprida pela Secretaria Processual.
+17. Para qualquer resultado conclusivo, a CN também informa se existe providência a ser cumprida pela Secretaria Processual; quando selecionar `outra providência`, descreve obrigatoriamente qual é a providência.
 18. Se a decisão for `necessita mais informações`, a proposição retorna para a Secretaria Processual para nova diligência.
 19. Se a decisão for `concluída`, a proposição segue para `CIENTIFICAR`.
-20. Nos casos de `parcialmente cumprida` e `não cumprida`, se houver providência adicional, o sistema cria em paralelo uma pendência para a Secretaria Processual informar o seu cumprimento.
+20. Para qualquer resultado conclusivo, se houver providência adicional, o sistema cria em paralelo uma pendência para a Secretaria Processual informar o seu cumprimento.
 
 ### Secretaria Processual da CN
 
@@ -51,9 +51,8 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
   decisão já concluída.
   4. Quando a decisão da CN indicar `necessita mais informações`, a Secretaria cria
   nova diligência para reabrir a instrução.
-  5. Quando houver providência adicional vinculada a decisão de `não cumprida` ou
-  `parcialmente cumprida`, a Secretaria recebe uma pendência paralela de
-  providência.
+  5. Quando houver providência adicional vinculada a qualquer decisão concluída,
+  a Secretaria recebe uma pendência paralela de providência.
   6. Essa pendência funciona como mecanismo de controle interno da Secretaria
   Processual e da Corregedoria Nacional.
   7. O cumprimento da providência ocorre integralmente fora do sistema.
@@ -92,7 +91,7 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
    `não cumprida`,
    `prejudicada (perda de objeto)` ou
    `encerrada (sem análise de mérito)`.
-4. Nos casos de `parcialmente cumprida` e `não cumprida`, a avaliação também registra se existe providência a ser cumprida pela Secretaria Processual.
+4. Para qualquer resultado conclusivo, a avaliação também registra se existe providência a ser cumprida pela Secretaria Processual e descreve obrigatoriamente a opção `outra providência`.
 5. A avaliação do membro auxiliar nunca produz efeito concreto por si só.
 6. Toda avaliação do membro auxiliar é encaminhada ao Corregedor Nacional para decisão.
 
@@ -107,7 +106,7 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
    `não cumprida`,
    `prejudicada (perda de objeto)` ou
    `encerrada (sem análise de mérito)`.
-5. Apenas os tipos `parcialmente cumprida` e `não cumprida` admitem providências adicionais a serem cumpridas pela Secretaria Processual.
+5. Todos os cinco tipos conclusivos admitem providências adicionais a serem cumpridas pela Secretaria Processual.
 6. A apreciação é o objeto-juízo que descreve essas invariantes; tanto a avaliação do membro auxiliar quanto a decisão do Corregedor Nacional carregam uma apreciação. Apenas a apreciação registrada pelo Corregedor Nacional (em decisão ou em avaliação com força de decisão) produz efeitos vinculantes — e é essa que fica armazenada como `apreciacaoDoCN` na proposição.
 
 ## Regras sobre decisão e avaliação
@@ -134,4 +133,4 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
 
 1. Toda decisão `concluída` leva à `CIENTIFICAR`.
 2. A cientificação encerra o fluxo principal da proposição.
-3. Se houver providência adicional nos casos de `não cumprida` ou `parcialmente cumprida`, a pendência da Secretaria Processual segue em paralelo até seu cumprimento.
+3. Se houver providência adicional em qualquer resultado conclusivo, a pendência da Secretaria Processual segue em paralelo até seu cumprimento.

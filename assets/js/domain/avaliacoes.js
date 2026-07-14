@@ -3,6 +3,7 @@ import {
   SituacaoApreciacao,
   StatusFluxo,
   TipoHistorico,
+  TipoProvidencia,
 } from "./enums.js";
 import { appendHistory, buildHistoryEvent, removeHistoryEvent } from "./historico.js";
 import { criarPendenciaSecretaria } from "./pendencias-secretaria.js";
@@ -30,9 +31,13 @@ const finalizarOuRetornar = (proposicao, eventType, usuario, juizo, descricao, m
   proposicao.statusFluxo = StatusFluxo.AGUARDANDO_CIENCIA;
 
   if (juizo.existeProvidenciaSecretaria && juizo.tipoProvidencia) {
+    const descricaoProvidencia =
+      juizo.tipoProvidencia === TipoProvidencia.OUTRA
+        ? juizo.descricaoProvidencia?.trim() || Labels.tipoProvidencia[TipoProvidencia.OUTRA]
+        : Labels.tipoProvidencia[juizo.tipoProvidencia] || "Outra providência";
     criarPendenciaSecretaria(proposicao, {
       tipoProvidencia: juizo.tipoProvidencia,
-      descricao: Labels.tipoProvidencia[juizo.tipoProvidencia] || "Outra providência",
+      descricao: descricaoProvidencia,
     });
   }
 

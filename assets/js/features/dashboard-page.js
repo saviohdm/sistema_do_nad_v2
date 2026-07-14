@@ -226,7 +226,13 @@ const TOP_LIMIT = 5;
 const SELECAO_DILIGENCIA_KEY = "nad-secretaria-diligencia-selecao";
 const SELECAO_CIENCIA_KEY = "nad-secretaria-ciencia-selecao";
 
-const escapeAttr = (value) => String(value || "").replace(/"/g, "&quot;");
+const escapeAttr = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
 const diasDesde = (iso) => {
   if (!iso) return null;
@@ -329,15 +335,14 @@ const renderGrupoCienciaRow = (grupo) => {
 const renderProvidenciaRow = (item) => {
   const tom = tomBadgeDias(item.diasAberto);
   const descricaoTruncada = (item.descricao || "")
-    .substring(0, 80)
-    .replace(/</g, "&lt;");
+    .substring(0, 80);
   const reticencias = (item.descricao || "").length > 80 ? "…" : "";
   return `
     <a class="secretaria-dashboard__row secretaria-dashboard__row--action secretaria-dashboard__row--providencia" href="proposicao-detalhe.html?id=${escapeAttr(item.proposicaoId)}&from=dashboard">
       <div class="secretaria-dashboard__row-main">
         <strong>${item.numero}</strong>
         <span class="muted">${item.unidade || "—"} · Correição ${item.correicaoId || "—"}</span>
-        <span class="muted secretaria-dashboard__row-desc">${descricaoTruncada}${reticencias}</span>
+        <span class="muted secretaria-dashboard__row-desc">${escapeAttr(descricaoTruncada)}${reticencias}</span>
       </div>
       <div class="secretaria-dashboard__row-meta">
         <span class="badge badge--neutral">${labelProvidenciaCurta(item.tipoProvidencia)}</span>

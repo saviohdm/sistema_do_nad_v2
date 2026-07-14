@@ -158,8 +158,9 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 
 ### Providências adicionais
 
-- Apenas `parcialmente cumprida` e `não cumprida` admitem providências adicionais.
-- Nesses dois casos, o sistema deve perguntar se existe providência a ser cumprida pela `Secretaria Processual da CN`.
+- Todos os cinco resultados conclusivos (`cumprida`, `parcialmente cumprida`, `não cumprida`, `prejudicada - perda de objeto` e `encerrada - sem análise de mérito`) admitem providências adicionais.
+- Para qualquer resultado conclusivo, o sistema deve perguntar se existe providência a ser cumprida pela `Secretaria Processual da CN`.
+- Quando o tipo selecionado for `outra_providencia`, `descricaoProvidencia` é obrigatória no envio definitivo. Rascunhos podem preservar a apreciação ainda incompleta.
 - Essa informação integra as invariantes da avaliação do membro auxiliar, da decisão e da avaliação com força de decisão.
 
 ## Regra de deferimento e indeferimento
@@ -180,7 +181,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - Toda decisão do tipo `concluída` transita a proposição para `aguardando_ciencia` e leva a `CIENTIFICAR`.
 - O ato de ciência (evento `CIENTIFICACAO`) transita o `statusFluxo` para `baixa_definitiva` e encerra o fluxo principal da proposição.
 - A ciência ocorre em bloco por `(correição × destinatário)`: só é liberada quando todas as proposições daquele destinatário naquela correição estão em `aguardando_ciencia`. Pendências em `pendenciasSecretaria[]` são ortogonais e **não bloqueiam** a transição para `baixa_definitiva`.
-- Se o resultado for `parcialmente cumprida` ou `não cumprida` e houver providência adicional:
+- Se qualquer resultado conclusivo indicar providência adicional:
   - a proposição segue para `CIENTIFICAR`; e
   - em paralelo, o sistema cria uma pendência para a `Secretaria Processual da CN` informar o cumprimento da providência
 
@@ -246,7 +247,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 
 ## Glossário
 
-- **Apreciação**: objeto-juízo que descreve as invariantes de mérito sobre uma proposição (`situacao` + `tipoConclusao` + `existeProvidenciaSecretaria` + `tipoProvidencia` + `observacoes`). É produzido tanto pelo membro auxiliar (no ato de **avaliação**, com natureza de sugestão) quanto pelo Corregedor Nacional (nos atos de **decisão** ou **avaliação com força de decisão**, com natureza vinculante). Apenas as apreciações do Corregedor Nacional ficam registradas no campo `apreciacaoDoCN` da proposição.
+- **Apreciação**: objeto-juízo que descreve as invariantes de mérito sobre uma proposição (`situacao` + `tipoConclusao` + `existeProvidenciaSecretaria` + `tipoProvidencia` + `descricaoProvidencia` + `observacoes`). `descricaoProvidencia` só é preenchida quando `tipoProvidencia = outra_providencia`. É produzido tanto pelo membro auxiliar (no ato de **avaliação**, com natureza de sugestão) quanto pelo Corregedor Nacional (nos atos de **decisão** ou **avaliação com força de decisão**, com natureza vinculante). Apenas as apreciações do Corregedor Nacional ficam registradas no campo `apreciacaoDoCN` da proposição.
 - **Avaliação**: ato do membro auxiliar que produz uma apreciação. Não gera efeitos por si só; segue para a baia do Corregedor Nacional.
 - **Decisão**: ato do Corregedor Nacional que aprecia uma avaliação do membro auxiliar (deferindo ou indeferindo). Vinculante.
 - **Avaliação com força de decisão**: ato do Corregedor Nacional que produz apreciação vinculante sem necessidade de avaliação prévia do membro auxiliar.
@@ -305,7 +306,9 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   "apreciacaoDoCN": {
     "situacao": "concluida",
     "tipoConclusao": "parcialmente_cumprida",
-    "existeProvidenciaSecretaria": true
+    "existeProvidenciaSecretaria": true,
+    "tipoProvidencia": "encaminhamento_corregedoria_local",
+    "descricaoProvidencia": null
   },
   "avaliacaoVigenteId": "ObjectId|null",
   // Rascunhos de ação (opcionais; ver "Rascunhos de ação (modelo canônico)"):
@@ -346,7 +349,9 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
       "apreciacao": {
         "situacao": "concluida",
         "tipoConclusao": "parcialmente_cumprida",
-        "existeProvidenciaSecretaria": true
+        "existeProvidenciaSecretaria": true,
+        "tipoProvidencia": "encaminhamento_corregedoria_local",
+        "descricaoProvidencia": null
       }
     },
     {
@@ -357,7 +362,9 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
       "apreciacao": {
         "situacao": "concluida",
         "tipoConclusao": "parcialmente_cumprida",
-        "existeProvidenciaSecretaria": true
+        "existeProvidenciaSecretaria": true,
+        "tipoProvidencia": "encaminhamento_corregedoria_local",
+        "descricaoProvidencia": null
       }
     },
     {
@@ -383,7 +390,8 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   - `concluida`
 - `apreciacaoDoCN.situacao = concluida` (camada de apreciação) é independente de `statusFluxo = baixa_definitiva` (camada de fluxo). A homonímia foi evitada renomeando o status terminal.
 - `apreciacaoDoCN.tipoConclusao` só pode existir quando `situacao = concluida`.
-- `apreciacaoDoCN.existeProvidenciaSecretaria` só pode existir quando `tipoConclusao` for `parcialmente_cumprida` ou `nao_cumprida`.
+- `apreciacaoDoCN.existeProvidenciaSecretaria` pode existir para qualquer `tipoConclusao`, desde que `situacao = concluida`.
+- `apreciacaoDoCN.descricaoProvidencia` é obrigatória e não vazia quando `tipoProvidencia = outra_providencia`; nos demais tipos, deve ser `null`.
 - A avaliação do membro auxiliar deve carregar o mesmo formato de invariantes da decisão final.
 - O sistema não deve manter simultaneamente uma avaliação vigente e um evento de remoção dessa mesma avaliação como conteúdo ativo.
 - `prioridade` admite apenas: `urgente`, `importante`, `normal` (padrão `normal`).
@@ -398,4 +406,4 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - Remover avaliação do membro auxiliar e registrar `avaliacao_removida_pelo_corregedor`.
 - Praticar `avaliação com força de decisão` sem avaliação vigente.
 - Concluir proposição como `não cumprida` com criação de pendência paralela para a Secretaria Processual.
-- Concluir proposição como `cumprida` sem criação de providência paralela.
+- Concluir proposição como `cumprida` com criação de providência paralela personalizada.

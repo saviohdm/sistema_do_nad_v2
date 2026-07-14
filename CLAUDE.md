@@ -41,7 +41,8 @@ The system is **persona-oriented** with strict hierarchical authority:
 - Rejection requires the National Prosecutor to provide new invariants in the same act
 
 **Provision Control** (`providências`):
-- Only `parcialmente cumprida` and `não cumprida` allow additional provisions
+- All five conclusive results allow additional provisions
+- `outra_providencia` requires a non-empty `descricaoProvidencia` on final submission
 - Provisions are **administrative control mechanisms only**
 - Provisions are fulfilled **entirely outside the system**
 - The system only records: `dataCumprimento` (fulfillment date) and `observações` (observations)
@@ -63,10 +64,11 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 ## Architecture Principles
 
 ### State Management
-- **Apreciação (object)**: Author-agnostic judgment object (`situacao`, `tipoConclusao`, `existeProvidenciaSecretaria`, `tipoProvidencia`, `observacoes`). Both the auxiliary member's evaluation and the National Prosecutor's decision carry an apreciação. Only the National Prosecutor's apreciação is binding.
+- **Apreciação (object)**: Author-agnostic judgment object (`situacao`, `tipoConclusao`, `existeProvidenciaSecretaria`, `tipoProvidencia`, `descricaoProvidencia`, `observacoes`). Both the auxiliary member's evaluation and the National Prosecutor's decision carry an apreciação. Only the National Prosecutor's apreciação is binding.
 - `statusFluxo`: Reflects current process phase, NOT the conclusive result
 - `apreciacaoDoCN`: Holds the binding/conclusive apreciação produced by the National Prosecutor (via decision or evaluation-with-decision-force). Empty until the CN acts; the auxiliary member's evaluation does NOT populate this field.
-- `apreciacaoDoCN.existeProvidenciaSecretaria`: Only valid when `tipoConclusao` is `parcialmente_cumprida` or `nao_cumprida`
+- `apreciacaoDoCN.existeProvidenciaSecretaria`: Valid for any `tipoConclusao` when `situacao` is `concluida`
+- `apreciacaoDoCN.descricaoProvidencia`: Required only when `tipoProvidencia` is `outra_providencia`; otherwise `null`
 
 ### Audit Trail (`historico`)
 - All relevant events must be recorded with full audit trail

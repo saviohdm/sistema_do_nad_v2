@@ -2197,55 +2197,88 @@ button.panorama-kpi {
 }
 
 /* Secretaria: filtros e providências */
-.filter-panel {
+.providencia-toolbar {
   display: grid;
   gap: var(--space-3);
 }
 
-.filter-panel__checks {
+.providencia-toolbar__row {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.filter-chip {
+.providencia-toolbar__search {
+  flex: 1;
+  min-width: 0;
+}
+
+.providencia-toolbar__search input {
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  font-size: 0.95rem;
+}
+
+.providencia-filtros {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-3);
+}
+
+.providencia-filtros summary {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: 2.25rem;
-  padding: 0.45rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-secondary);
-  font-weight: 700;
-  font-size: 0.85rem;
-  line-height: 1.2;
   cursor: pointer;
+  list-style: none;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  transition: color 160ms ease;
 }
 
-.filter-chip input[type="checkbox"] {
-  width: 1rem;
-  height: 1rem;
-  margin: 0;
-  accent-color: var(--primary);
+.providencia-filtros summary::-webkit-details-marker {
+  display: none;
 }
 
-.filter-chip:has(input:checked) {
-  border-color: rgba(166, 26, 26, 0.35);
-  background: rgba(166, 26, 26, 0.08);
+.providencia-filtros summary::before {
+  content: "▸";
+  font-size: 0.85em;
+  transition: transform 160ms ease;
+}
+
+.providencia-filtros[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.providencia-filtros summary:hover,
+.providencia-filtros summary:focus-visible {
   color: var(--primary-dark);
 }
 
-.filter-summary {
-  display: flex;
-  flex-wrap: wrap;
+.providencia-filtros__count {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--surface-alt);
-  color: var(--text-secondary);
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(166, 26, 26, 0.1);
+  color: var(--primary-dark);
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
+.providencia-filtros__body {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+}
+
+.providencia-filtros__correicao {
+  max-width: 320px;
 }
 
 .providencia-list {
@@ -2283,21 +2316,30 @@ button.panorama-kpi {
   margin: var(--space-1) 0 0;
 }
 
+.providencia-group__meta {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85rem;
+}
+
 .providencia-item {
   display: grid;
-  grid-template-columns: minmax(220px, 0.85fr) minmax(260px, 1.15fr);
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface-alt);
 }
 
-.providencia-item__summary {
+.providencia-item--atrasada {
+  border-left: 3px solid var(--danger);
+}
+
+.providencia-item__topline {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
 }
 
 .providencia-item__title {
@@ -2310,14 +2352,19 @@ button.panorama-kpi {
   margin: 0;
 }
 
-.providencia-item__form {
+.providencia-item__actions {
   display: grid;
-  gap: var(--space-3);
-  align-content: start;
+  justify-items: start;
 }
 
-.providencia-item__form .button {
-  justify-self: start;
+.providencia-item__form {
+  width: 100%;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
 }
 
 .fundamentos {
@@ -2334,9 +2381,12 @@ button.panorama-kpi {
 }
 
 @media (max-width: 820px) {
-  .form-grid--two,
-  .providencia-item {
+  .form-grid--two {
     grid-template-columns: 1fr;
+  }
+
+  .providencia-toolbar__row {
+    flex-wrap: wrap;
   }
 
   .queue-header,
@@ -2427,17 +2477,14 @@ button.panorama-kpi {
   }
 
   .badge,
-  .badge--sensivel,
-  .filter-chip {
+  .badge--sensivel {
     font-size: 0.76rem;
   }
 
-  .filter-panel__checks,
   .button-row {
     align-items: stretch;
   }
 
-  .filter-chip,
   .button-row .button {
     max-width: 100%;
   }

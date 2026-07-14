@@ -13,8 +13,17 @@ const renderOptions = (entries, selectedValue) =>
     )
     .join("");
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 const conclusaoEntries = Object.entries(Labels.tipoConclusao);
 const providenciaEntries = Object.entries(Labels.tipoProvidencia);
+const tiposConclusaoValidos = new Set(Object.values(TipoConclusao));
 
 export const renderApreciacaoForm = ({
   formId,
@@ -30,6 +39,7 @@ export const renderApreciacaoForm = ({
   const tipoConclusaoValue = j.tipoConclusao || "";
   const existeProvidenciaValue = j.existeProvidenciaSecretaria ? "true" : "false";
   const tipoProvidenciaValue = j.tipoProvidencia || "";
+  const descricaoProvidenciaValue = j.descricaoProvidencia || "";
   const observacoesValue = j.observacoes || "";
 
   const situacaoOpts = renderOptions(
@@ -78,10 +88,14 @@ export const renderApreciacaoForm = ({
         </div>
         <div class="field">
           <label for="${formId}-tipoProvidencia">Tipo de providência</label>
-          <select id="${formId}-tipoProvidencia" name="tipoProvidencia">
+          <select id="${formId}-tipoProvidencia" name="tipoProvidencia" aria-controls="${formId}-descricaoProvidencia-field">
             ${providenciaOpts}
           </select>
         </div>
+      </div>
+      <div class="field hidden" id="${formId}-descricaoProvidencia-field" data-role="descricao-providencia-field" hidden>
+        <label for="${formId}-descricaoProvidencia">Descrição da providência</label>
+        <textarea id="${formId}-descricaoProvidencia" name="descricaoProvidencia" placeholder="Descreva objetivamente a providência a ser cumprida.">${escapeHtml(descricaoProvidenciaValue)}</textarea>
       </div>
       <div class="field">
         <label for="${formId}-observacoes">Avaliação</label>
@@ -115,22 +129,43 @@ export const aplicarRegrasApreciacaoForm = (form) => {
   const tipoConclusaoSel = form.querySelector('[name="tipoConclusao"]');
   const existeProvSel = form.querySelector('[name="existeProvidenciaSecretaria"]');
   const tipoProvSel = form.querySelector('[name="tipoProvidencia"]');
-  if (!situacaoSel || !tipoConclusaoSel || !existeProvSel || !tipoProvSel) return;
+  const descricaoProvField = form.querySelector('[data-role="descricao-providencia-field"]');
+  const descricaoProvInput = form.querySelector('[name="descricaoProvidencia"]');
+  if (
+    !situacaoSel ||
+    !tipoConclusaoSel ||
+    !existeProvSel ||
+    !tipoProvSel ||
+    !descricaoProvField ||
+    !descricaoProvInput
+  ) return;
 
   const conclusaoAtiva = situacaoSel.value === SituacaoApreciacao.CONCLUIDA;
   tipoConclusaoSel.disabled = !conclusaoAtiva;
   if (!conclusaoAtiva) tipoConclusaoSel.value = "";
 
   const cabeProvidencia =
-    conclusaoAtiva &&
-    (tipoConclusaoSel.value === TipoConclusao.PARCIALMENTE_CUMPRIDA ||
-      tipoConclusaoSel.value === TipoConclusao.NAO_CUMPRIDA);
+    conclusaoAtiva && tiposConclusaoValidos.has(tipoConclusaoSel.value);
   existeProvSel.disabled = !cabeProvidencia;
   if (!cabeProvidencia) existeProvSel.value = "false";
 
   const providenciaAtiva = cabeProvidencia && existeProvSel.value === "true";
   tipoProvSel.disabled = !providenciaAtiva;
+  tipoProvSel.required = providenciaAtiva;
   if (!providenciaAtiva) tipoProvSel.value = "";
+
+  const outraProvidenciaAtiva =
+    providenciaAtiva && tipoProvSel.value === TipoProvidencia.OUTRA;
+  descricaoProvField.hidden = !outraProvidenciaAtiva;
+  descricaoProvField.classList.toggle("hidden", !outraProvidenciaAtiva);
+  descricaoProvInput.disabled = !outraProvidenciaAtiva;
+  descricaoProvInput.required = outraProvidenciaAtiva;
+  descricaoProvInput.setCustomValidity(
+    outraProvidenciaAtiva && !descricaoProvInput.value.trim()
+      ? "Descreva a outra providência."
+      : "",
+  );
+  if (!outraProvidenciaAtiva) descricaoProvInput.value = "";
 };
 
 export const readApreciacaoForm = (form) => {
@@ -139,21 +174,20 @@ export const readApreciacaoForm = (form) => {
   const tipoConclusao = data.get("tipoConclusao") || null;
   const existeProvidenciaSecretaria = data.get("existeProvidenciaSecretaria") === "true";
   const tipoProvidencia = data.get("tipoProvidencia") || null;
+  const descricaoProvidencia = data.get("descricaoProvidencia")?.trim() || null;
   const observacoes = data.get("observacoes")?.trim() || null;
+  const providenciaPermitida =
+    situacao === SituacaoApreciacao.CONCLUIDA && tiposConclusaoValidos.has(tipoConclusao);
+  const providenciaAtiva = providenciaPermitida && existeProvidenciaSecretaria;
 
   return {
     situacao,
     tipoConclusao: situacao === SituacaoApreciacao.CONCLUIDA ? tipoConclusao : null,
-    existeProvidenciaSecretaria:
-      situacao === SituacaoApreciacao.CONCLUIDA &&
-      [TipoConclusao.PARCIALMENTE_CUMPRIDA, TipoConclusao.NAO_CUMPRIDA].includes(tipoConclusao)
-        ? existeProvidenciaSecretaria
-        : false,
-    tipoProvidencia:
-      situacao === SituacaoApreciacao.CONCLUIDA &&
-      [TipoConclusao.PARCIALMENTE_CUMPRIDA, TipoConclusao.NAO_CUMPRIDA].includes(tipoConclusao) &&
-      existeProvidenciaSecretaria
-        ? tipoProvidencia
+    existeProvidenciaSecretaria: providenciaPermitida ? existeProvidenciaSecretaria : false,
+    tipoProvidencia: providenciaAtiva ? tipoProvidencia : null,
+    descricaoProvidencia:
+      providenciaAtiva && tipoProvidencia === TipoProvidencia.OUTRA
+        ? descricaoProvidencia
         : null,
     observacoes,
   };
@@ -165,6 +199,7 @@ export const lerApreciacaoParcial = (form) => {
   const tipoConclusao = data.get("tipoConclusao") || null;
   const existeProvidenciaSecretaria = data.get("existeProvidenciaSecretaria") === "true";
   const tipoProvidencia = data.get("tipoProvidencia") || null;
+  const descricaoProvidencia = data.get("descricaoProvidencia")?.trim() || null;
   const observacoes = data.get("observacoes")?.trim() || null;
 
   return {
@@ -172,6 +207,7 @@ export const lerApreciacaoParcial = (form) => {
     tipoConclusao,
     existeProvidenciaSecretaria,
     tipoProvidencia,
+    descricaoProvidencia,
     observacoes,
   };
 };

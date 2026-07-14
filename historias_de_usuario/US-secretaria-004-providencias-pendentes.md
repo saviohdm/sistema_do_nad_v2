@@ -9,21 +9,21 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `cumprir_pendenci
 
 ## Pré-condições
 - Persona logada é Secretaria.
-- Existe ao menos uma proposição cujo `apreciacaoDoCN.tipoConclusao` é `parcialmente_cumprida` ou `nao_cumprida`, com `apreciacaoDoCN.existeProvidenciaSecretaria = true`, gerando entrada em `pendenciasSecretaria[]` com `status = "pendente"`.
+- Existe ao menos uma proposição com qualquer resultado conclusivo e `apreciacaoDoCN.existeProvidenciaSecretaria = true`, gerando entrada em `pendenciasSecretaria[]` com `status = "pendente"`.
 
 ## Fluxo principal
 1. Acessa **Providências pendentes** no menu lateral.
-2. Vê a fila agrupada por proposição, ordenada pela providência mais antiga em aberto (decrescente em dias).
-3. Cada section traz contexto da proposição: número, unidade, tipo, descrição truncada, correição-mãe, ramo MP, temática, UF, prioridade, membro designado e badge da conclusão (`parcialmente_cumprida` / `nao_cumprida`) que originou a providência.
-4. Cada card de providência mostra tipo (`Encaminhamento à Corregedoria local` / `COCI` / `Outra providência`), descrição, dias em aberto e bloco colapsável **"Fundamentos da decisão que originou a providência"** com o texto de `apreciacaoDoCN.observacoes`.
-5. Aplica filtros (`tipoProvidencia` / correição-mãe / busca textual / "somente atrasadas") — totalizadores no toolbar atualizam por destino (X Local · Y COCI · Z Outra).
-6. Para cada providência, preenche `dataCumprimento` (o despacho externo já ocorreu) e `observações` (referência ao ofício, número, destinatário); submete.
+2. Vê o panorama com 2 KPIs clicáveis — **Providências pendentes** (total) e **Atrasadas (mais de 10 dias)** — e, abaixo, a fila agrupada por proposição, ordenada pela providência mais antiga em aberto (decrescente em dias).
+3. Cada section traz contexto da proposição: número, unidade, tipo, descrição truncada, linha de metadados em texto discreto (correição-mãe e membro designado) e no máximo 3 badges — sensível, prioridade (apenas quando urgente/importante) e conclusão que originou a providência.
+4. Cada card de providência mostra o tipo como overline (`Encaminhamento à Corregedoria local` / `COCI` / `Outra providência`), descrição, um único badge `Há N dias em aberto` (vermelho quando >10 dias, com filete lateral no card) e bloco colapsável **"Fundamentos da decisão que originou a providência"** com o texto de `apreciacaoDoCN.observacoes`.
+5. Filtra pela **busca exposta** (número/descrição, aplicação imediata enquanto digita) e pelo disclosure **"Filtros"** (correição-mãe + chips de `tipoProvidencia` com contagem por destino, multi-seleção). Com o painel fechado, filtros ativos aparecem como chips removíveis; "Limpar filtros" só aparece quando há filtro ativo.
+6. Clica em **"Registrar cumprimento"** no card → formulário expande inline com `dataCumprimento` pré-preenchida com a data de hoje; preenche `observações` (referência ao ofício, número, destinatário) e submete — ou cancela para recolher.
 7. Sistema invoca `registrarCumprimentoPendencia`, atualiza `status="cumprida"`, registra evento `CUMPRIMENTO_PENDENCIA_SECRETARIA` no `historico` e remove o card da tela.
 
 ## Fluxos alternativos
 - **Vazio com filtros**: nenhuma providência atende aos filtros → mensagem "Nenhuma providência atende aos filtros selecionados.".
 - **Vazio sem filtros**: nenhuma providência pendente em todo o sistema → mensagem "Nenhuma providência pendente no momento.".
-- **Atrasadas**: filtro "Somente atrasadas" mantém apenas providências em aberto há mais de 10 dias; badge `Há N dias em aberto` em vermelho.
+- **Atrasadas**: KPI "Atrasadas" do panorama aplica o filtro (`atrasadas=1`) e mantém apenas providências em aberto há mais de 10 dias; o título da página passa a "Providências pendentes atrasadas".
 - **Abrir proposição**: botão "Abrir proposição" no header leva ao detalhe da proposição, onde o histórico completo (incluindo providências cumpridas) está disponível.
 - **F5 / link compartilhado**: filtros persistidos em URL params (`atrasadas`, `tipo`, `correicao`, `q`).
 
@@ -32,7 +32,7 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`, permissão `cumprir_pendenci
 - Providências **não bloqueiam** transições do fluxo principal — uma proposição pode chegar a `BAIXA_DEFINITIVA` com providências ainda pendentes (ver [US-secretaria-002-aguardando-ciencia.md](US-secretaria-002-aguardando-ciencia.md)).
 - A tela exibe **apenas providências com `status = "pendente"`**; cumpridas continuam disponíveis no histórico da proposição via evento `CUMPRIMENTO_PENDENCIA_SECRETARIA`.
 - Ordenação prioriza a providência mais antiga em aberto (atrasadas naturalmente sobem ao topo).
-- Apenas decisões com `tipoConclusao` em `{parcialmente_cumprida, nao_cumprida}` podem gerar providência; "cumprida", "prejudicada" e "encerrada_sem_analise_de_merito" não geram (ver [SPECS.md](../SPECS.md)).
+- Qualquer um dos cinco resultados conclusivos pode gerar providência; quando o tipo for `outra_providencia`, a descrição personalizada é exibida no card (ver [SPECS.md](../SPECS.md)).
 
 ## Pós-condições
 - Cada providência cumprida tem `status="cumprida"`, `dataCumprimento` e `observacoes` registrados.

@@ -378,7 +378,12 @@ const bindHandlers = (proposicao) => {
     if (!form) return;
     aplicarRegrasApreciacaoForm(form);
     form.addEventListener("change", (event) => {
-      if (["situacao", "tipoConclusao", "existeProvidenciaSecretaria"].includes(event.target.name)) {
+      if (["situacao", "tipoConclusao", "existeProvidenciaSecretaria", "tipoProvidencia"].includes(event.target.name)) {
+        aplicarRegrasApreciacaoForm(form);
+      }
+    });
+    form.addEventListener("input", (event) => {
+      if (event.target.name === "descricaoProvidencia") {
         aplicarRegrasApreciacaoForm(form);
       }
     });
