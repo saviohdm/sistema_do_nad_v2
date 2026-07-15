@@ -17,6 +17,17 @@
   --primary-hover: #8f1414;
   --primary-strong: #7e1f1f;
 
+  /* Sidebar */
+  --sidebar-top: #5f1212;
+  --sidebar-bottom: #9b1e1e;
+  --sidebar-text: rgba(255, 255, 255, 0.86);
+  --sidebar-muted: rgba(255, 255, 255, 0.7);
+  --sidebar-hairline: rgba(255, 255, 255, 0.16);
+  --sidebar-hover: rgba(255, 255, 255, 0.1);
+  --sidebar-chip: rgba(255, 255, 255, 0.08);
+  --sidebar-active-bg: #ffffff;
+  --sidebar-active-text: var(--primary-dark);
+
   /* Cores de Estado */
   --accent: #8f1414;
   --success: #2d6a4f;

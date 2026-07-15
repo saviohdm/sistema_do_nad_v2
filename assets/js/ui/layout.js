@@ -188,29 +188,51 @@ const escapeHtml = (str) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
+const INICIAIS_POR_PERSONA = {
+  [PERSONAS.CORREGEDOR]: "CN",
+  [PERSONAS.MEMBRO]: "MA",
+  [PERSONAS.SECRETARIA]: "SP",
+};
+
+const computeIniciais = (nome) => {
+  const palavras = String(nome || "")
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p && !/^dra?\.?$/i.test(p));
+  if (!palavras.length) return "?";
+  return (
+    palavras[0].charAt(0) +
+    (palavras.length > 1 ? palavras[palavras.length - 1].charAt(0) : "")
+  ).toUpperCase();
+};
+
 export const renderPersonaBadge = () => {
   const persona = getCurrentPersona();
   if (!persona) return "";
 
   const user = persona === PERSONAS.CORREICIONADO ? getCurrentUser() : null;
-  const nomeExibido = user ? escapeHtml(user.nome) : persona;
+  const nomeExibido = escapeHtml(user ? user.nome : persona);
+  const iniciais = escapeHtml(
+    user ? computeIniciais(user.nome) : (INICIAIS_POR_PERSONA[persona] || "?"),
+  );
   const cargoExibido = user ? `<div class="sidebar-persona__cargo">${escapeHtml(user.cargo || "")}</div>` : "";
 
   return `
     <div class="sidebar-persona">
-      <div class="sidebar-persona__inner">
+      <div class="sidebar-persona__row">
+        <span class="sidebar-persona__avatar" aria-hidden="true" title="${nomeExibido}">${iniciais}</span>
         <div class="sidebar-persona__text">
-          <div class="sidebar-persona__label">Logado como ${user ? "<em>Correicionado</em>:" : ""}</div>
-          <div class="sidebar-persona__name">${nomeExibido}</div>
+          <div class="sidebar-persona__label">Logado como</div>
+          <div class="sidebar-persona__name" title="${nomeExibido}">${nomeExibido}</div>
           ${cargoExibido}
         </div>
-        <button
-          class="button button--small sidebar-persona__switch"
-          onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/pages/login.html';"
-        >
-          Trocar
-        </button>
       </div>
+      <button
+        class="button button--small sidebar-persona__switch"
+        onclick="localStorage.clear(); sessionStorage.clear(); window.location.href='/pages/login.html';"
+      >
+        Trocar
+      </button>
     </div>
   `;
 };
@@ -310,23 +332,28 @@ export const renderAppShell = ({ activePage, title, content, actions = "", bread
   return `
     <div class="app-shell${recolhida ? " app-shell--nav-recolhida" : ""}">
       <aside class="sidebar">
-        ${renderPersonaBadge()}
-        <p class="sidebar__title"><a href="${getHomeForPersona()}" title="Ir para a página inicial">NAD</a></p>
+        <div class="sidebar__brand">
+          <p class="sidebar__title"><a href="${getHomeForPersona()}" title="Ir para a página inicial">NAD</a></p>
+          <p class="sidebar__subtitle">Acompanhamento de Determinações</p>
+        </div>
         <nav aria-label="Menu principal">
           ${navGroups.map((grupo) => renderNavGroup(grupo, activePage)).join("")}
         </nav>
-        <button
-          class="sidebar__recolher"
-          type="button"
-          data-toggle-sidebar
-          aria-expanded="${String(!recolhida)}"
-          aria-label="${rotuloRecolher}"
-          title="${rotuloRecolher}"
-          onclick="window.__nadToggleSidebar()"
-        >
-          ${renderIcon("recolher", "sidebar__recolher-icone")}
-          <span class="sidebar__recolher-label">${rotuloRecolher}</span>
-        </button>
+        <div class="sidebar__footer">
+          ${renderPersonaBadge()}
+          <button
+            class="sidebar__recolher"
+            type="button"
+            data-toggle-sidebar
+            aria-expanded="${String(!recolhida)}"
+            aria-label="${rotuloRecolher}"
+            title="${rotuloRecolher}"
+            onclick="window.__nadToggleSidebar()"
+          >
+            ${renderIcon("recolher", "sidebar__recolher-icone")}
+            <span class="sidebar__recolher-label">${rotuloRecolher}</span>
+          </button>
+        </div>
       </aside>
       <main class="page">
         <header class="page-header">
