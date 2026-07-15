@@ -1,7 +1,7 @@
 # US-CORREICIONADO-004 · Prazo expirado sem comprovação
 
 **Como** sistema NAD em conjunto com a Corregedoria Nacional,
-**eu quero** que diligências com prazo vencido sejam automaticamente marcadas como expiradas e a proposição encaminhada ao membro auxiliar para avaliação,
+**eu quero** que diligências com prazo vencido sejam automaticamente marcadas como expiradas e a proposição encaminhada ao membro auxiliar para elaboração de minuta,
 **para que** a inação do correicionado não trave o ciclo da proposição.
 
 ## Ator
@@ -17,7 +17,7 @@ Sistema (registrado como `"Sistema"` no evento). Corregedor ou Secretaria podem 
    - Transita a proposição para `AGUARDANDO_AVALIACAO_MEMBRO`.
    - Registra `PRAZO_COMPROVACAO_EXPIRADO` com `usuario = "Sistema"`, `diligenciaId`, `prazoOriginal` e `rascunhoExistia`.
    - **Limpa** eventual `rascunhoComprovacao` (regra "limpeza ao sair da fase"); o flag `rascunhoExistia` no evento preserva a evidência de auditoria.
-3. As mudanças são persistidas em localStorage e propagadas ao membro auxiliar via fila de avaliação.
+3. As mudanças são persistidas em localStorage e propagadas ao membro auxiliar via fila de elaboração de minutas.
 
 ## Fluxo principal (botão manual)
 1. Corregedor ou Secretaria clicam em **Avançar tempo do sistema** (no shell, visível por permissão `avancar_tempo_sistema`).
@@ -26,11 +26,11 @@ Sistema (registrado como `"Sistema"` no evento). Corregedor ou Secretaria podem 
 
 ## Fluxos alternativos
 - **Sem diligência aberta**: nada a fazer; ciclo de expiração é noop.
-- **Com rascunho existente**: o evento registra `rascunhoExistia: true`. O membro auxiliar, ao avaliar, pode considerar que o correicionado iniciou esforço de comprovação sem concluir.
+- **Com rascunho existente**: o evento registra `rascunhoExistia: true`. O membro auxiliar, ao elaborar a minuta, pode considerar que o correicionado iniciou esforço de comprovação sem concluir.
 - **Lista do correicionado**: a proposição **sai** de "Minhas comprovações" porque já não está em `AGUARDANDO_COMPROVACAO`.
 
 ## Regras de negócio
-- A transição usa o mesmo `statusFluxo` destino que `registrarComprovacao` (`AGUARDANDO_AVALIACAO_MEMBRO`), tratando expiração como equivalente à omissão.
+- A transição usa o mesmo `statusFluxo` legado que `registrarComprovacao` (`AGUARDANDO_AVALIACAO_MEMBRO`), tratando expiração como equivalente à omissão.
 - A expiração **limpa** o rascunho (novo ciclo de diligência começa sem pré-preenchimento); a evidência histórica fica no flag `rascunhoExistia` do evento.
 - O evento `PRAZO_COMPROVACAO_EXPIRADO` é **visível ao correicionado** (transparência sobre o que aconteceu com sua proposição).
 - O lazy check é idempotente: roda no máximo uma vez por carga de página (flag `expirationDoneThisPageLoad`).

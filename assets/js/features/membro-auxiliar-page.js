@@ -10,7 +10,7 @@ const renderCard = (proposicao, temRascunho, index) =>
   renderFilaProposicaoEditorial(proposicao, {
     href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=membro-auxiliar`,
     badges: temRascunho ? renderBadge("Rascunho salvo", "warning") : "",
-    cta: temRascunho ? "Retomar avaliação" : "Avaliar proposição",
+    cta: temRascunho ? "Retomar minuta" : "Elaborar minuta",
     index,
   });
 
@@ -18,16 +18,16 @@ montarFilaNavegavel({
   statusFila: StatusFilaOperacional.AVALIACAO,
   persona: PERSONAS.MEMBRO,
   activePage: "membro-auxiliar",
-  title: "Minha fila de avaliação",
+  title: "Minha fila de elaboração de minutas",
   storageKey: "nad-membro-auxiliar-filtros",
   textos: {
-    panoramaTitulo: "Panorama da avaliação",
+    panoramaTitulo: "Panorama da elaboração de minutas",
     contagemLabel: "Pendentes",
-    filaTitulo: "Fila de avaliação",
-    emptyCorreicoes: "Nenhuma correição com avaliações pendentes.",
-    emptyUnidades: "Nenhum destinatário com avaliações pendentes nesta correição.",
+    filaTitulo: "Fila de elaboração de minutas",
+    emptyCorreicoes: "Nenhuma correição com minutas pendentes.",
+    emptyUnidades: "Nenhum destinatário com minutas pendentes nesta correição.",
     emptyFila: "Nenhuma proposição corresponde aos filtros selecionados.",
-    contadorIntro: "Restam para avaliar com esta seleção:",
+    contadorIntro: "Restam para elaborar com esta seleção:",
     totalSistemaLabel: "Total pendente no sistema",
   },
   getProposicoes: (state) =>
@@ -38,7 +38,7 @@ montarFilaNavegavel({
   },
   getKpis: (proposicoes) => [
     {
-      label: "Pendentes de avaliação",
+      label: "Minutas a elaborar",
       valor: proposicoes.length,
       filtros: { filaForcada: true },
     },
@@ -47,13 +47,13 @@ montarFilaNavegavel({
       valor: proposicoes.filter((p) => Boolean(p.rascunhoAvaliacao)).length,
       filtros: { comRascunho: true },
       destaque: true,
-      title: "Avaliações iniciadas e ainda não submetidas.",
+      title: "Minutas iniciadas e ainda não submetidas.",
     },
     {
       label: "Urgentes",
       valor: proposicoes.filter((p) => p.prioridade === Prioridade.URGENTE).length,
       filtros: { prioridade: Prioridade.URGENTE, filaForcada: true },
-      title: "Proposições com prioridade urgente — avalie primeiro.",
+      title: "Proposições com prioridade urgente — elabore primeiro.",
     },
   ],
   renderItens: (filtradas) =>

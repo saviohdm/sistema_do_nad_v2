@@ -20,9 +20,9 @@ This is the NAD (Núcleo de Acompanhamento de Determinações) Propositions Syst
 
 The system is **persona-oriented** with strict hierarchical authority:
 
-1. **Corregedor Nacional (National Prosecutor)**: Final decision-making authority. Can create, edit, delete propositions, approve/reject auxiliary member evaluations, and issue binding decisions.
+1. **Corregedor Nacional (National Prosecutor)**: Final decision-making authority. Can create, edit, delete propositions, accept, set aside or return auxiliary-member decision drafts, and issue binding decisions.
 
-2. **Membro Auxiliar da CN (Auxiliary Member)**: Provides technical evaluations that inform but never produce concrete effects alone. Evaluations are always subject to National Prosecutor approval.
+2. **Membro Auxiliar da CN (Auxiliary Member)**: Produces non-binding decision drafts written in decision-ready, imperative language. A draft only takes effect when the National Prosecutor acts.
 
 3. **Secretaria Processual da CN (Procedural Secretariat)**: Operational role that creates diligences, manages communications, and tracks administrative fulfillment of provisions.
 
@@ -34,11 +34,13 @@ The system is **persona-oriented** with strict hierarchical authority:
 - First layer: `necessita mais informações` (needs more info) or `concluída` (concluded)
 - Second layer (only when concluded): `cumprida`, `parcialmente cumprida`, `não cumprida`, `prejudicada - perda de objeto`, `encerrada - sem análise de mérito`
 
-**Evaluation vs Decision**:
-- Auxiliary member evaluations NEVER produce concrete effects
-- Only the National Prosecutor's decision or "evaluation with decision force" produces effects
-- Deferral (approval) adopts all evaluation invariants wholesale
-- Rejection requires the National Prosecutor to provide new invariants in the same act
+**Decision Draft vs Decision**:
+- Auxiliary-member decision drafts NEVER produce concrete effects
+- Accepting a draft deep-copies its complete wording and invariants without transformation into the National Prosecutor's decision
+- Setting a draft aside keeps it in the internal audit trail and requires a complete substitute decision in the same act
+- Returning a draft deletes its material content, clears the National Prosecutor's decision draft, records the legacy tombstone and sends the proposition back to the auxiliary-member queue
+- A direct decision is an exception only for propositions that already reach the decision desk without a draft
+- Legacy identifiers containing `avaliacao`, `deferimento` and `indeferimento` remain unchanged for persisted-state compatibility
 
 **Provision Control** (`providências`):
 - All five conclusive results allow additional provisions
@@ -53,33 +55,34 @@ The system is **persona-oriented** with strict hierarchical authority:
 
 ```
 SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretariat)
-→ Evidence (Inspected Party) → Evaluation (Auxiliary Member) → Decision (National Prosecutor)
+→ Evidence (Inspected Party) → Decision Draft (Auxiliary Member) → Decision (National Prosecutor)
 → Notification → [Parallel: Provision Tracking if applicable]
 ```
 
-**Return Loop**: When decision is `necessita mais informações`, the proposition returns to Secretariat for new diligence, restarting the evidence-evaluation-decision cycle.
+**Return Loop**: When decision is `necessita mais informações`, the proposition returns to Secretariat for new diligence, restarting the evidence-draft-decision cycle.
 
 **Termination**: Decisions marked `concluída` proceed to notification and close the main flow. Parallel provision tracking continues independently if applicable.
 
 ## Architecture Principles
 
 ### State Management
-- **Apreciação (object)**: Author-agnostic judgment object (`situacao`, `tipoConclusao`, `existeProvidenciaSecretaria`, `tipoProvidencia`, `descricaoProvidencia`, `observacoes`). Both the auxiliary member's evaluation and the National Prosecutor's decision carry an apreciação. Only the National Prosecutor's apreciação is binding.
+- **Apreciação (object)**: Author-agnostic judgment object (`situacao`, `tipoConclusao`, `existeProvidenciaSecretaria`, `tipoProvidencia`, `descricaoProvidencia`, `observacoes`). Both the auxiliary member's draft and the National Prosecutor's decision carry an apreciação. Final submissions require non-empty `observacoes`; only the National Prosecutor's apreciação is binding.
 - `statusFluxo`: Reflects current process phase, NOT the conclusive result
-- `apreciacaoDoCN`: Holds the binding/conclusive apreciação produced by the National Prosecutor (via decision or evaluation-with-decision-force). Empty until the CN acts; the auxiliary member's evaluation does NOT populate this field.
+- `apreciacaoDoCN`: Holds the binding/conclusive apreciação produced by the National Prosecutor. Empty until the CN acts; the auxiliary member's draft does NOT populate this field.
 - `apreciacaoDoCN.existeProvidenciaSecretaria`: Valid for any `tipoConclusao` when `situacao` is `concluida`
 - `apreciacaoDoCN.descricaoProvidencia`: Required only when `tipoProvidencia` is `outra_providencia`; otherwise `null`
 
 ### Audit Trail (`historico`)
 - All relevant events must be recorded with full audit trail
 - Minimum event types: `criacao`, `edicao`, `apagamento_proposicao`, `criacao_diligencia`, `comprovacao`, `avaliacao_membro_auxiliar`, `decisao`, `avaliacao_com_forca_de_decisao`, `avaliacao_removida_pelo_corregedor`, `cientificacao`, `cumprimento_pendencia_secretaria`
-- When evaluation is approved via deferral, both the evaluation AND the decision remain in history with identical invariants
-- When evaluation is rejected, both the evaluation AND the divergent decision remain in history
-- Removed evaluations are NOT kept as material content; only a removal event (`avaliacao_removida_pelo_corregedor`) is recorded
+- When a draft is accepted, both the draft AND the decision remain in internal history with identical wording and invariants
+- When a draft is set aside, both the draft AND the divergent substitute decision remain in internal history
+- Returned drafts are NOT kept as material content; only the legacy tombstone (`avaliacao_removida_pelo_corregedor`) is recorded
+- Inspected parties see only the National Prosecutor's decision with a neutral description, never the internal draft or its disposition
 
 ### Deletion Semantics
 - `APAGAR proposição`: Terminates the entire proposition lifecycle
-- `APAGAR avaliação`: Removes only the current evaluation, preserves the proposition, allows new auxiliary evaluation or direct decision by National Prosecutor
+- `DEVOLVER minuta`: After confirmation, removes the current draft and any National Prosecutor decision draft, preserves the proposition, and returns it to the auxiliary-member drafting queue
 
 ### Pending Items (`pendenciasSecretaria`)
 - Array structure containing parallel administrative tasks
@@ -113,13 +116,13 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 
 ## Important Constraints
 
-1. **Never violate persona authority**: Auxiliary evaluations cannot produce effects. Only National Prosecutor decisions matter.
+1. **Never violate persona authority**: Auxiliary-member decision drafts cannot produce effects. Only National Prosecutor decisions matter.
 
-2. **Preserve invariant structure**: Evaluations and decisions must use identical invariant schema (two-layer judgment + provision flag when applicable).
+2. **Preserve invariant structure**: Decision drafts and decisions must use the identical invariant schema (two-layer judgment + provision flag when applicable) and final acts require non-empty wording/fundamentation.
 
-3. **Honor deletion semantics**: Deleting a proposition vs deleting an evaluation have entirely different consequences.
+3. **Honor deletion semantics**: Deleting a proposition and returning a decision draft have entirely different consequences.
 
-4. **Maintain audit integrity**: Never remove historical events from material history. Use tombstone events for deletions.
+4. **Maintain audit integrity**: Keep historical events, except that returning a draft removes its material event and replaces it with the legacy tombstone required by the domain.
 
 5. **Provision independence**: The main proposition flow never waits for provision fulfillment. Provisions run in parallel and are for administrative tracking only.
 

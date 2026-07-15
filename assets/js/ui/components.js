@@ -46,12 +46,15 @@ export const renderApreciacaoBadge = (apreciacao) => {
   return renderBadge(label, getApreciacaoBadgeTone(apreciacao));
 };
 
-// Variante para a "apreciação atual" de uma proposição: baixada sem apreciação
+// Variante para a decisão atual de uma proposição: baixada sem decisão
 // (apagada pela CN ou Encaminhamento convertido) não está aguardando decisão.
-const renderApreciacaoAtualBadge = (proposicao) =>
-  !proposicao.apreciacaoDoCN && proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA
-    ? renderBadge("Sem decisão do CN", "neutral")
-    : renderApreciacaoBadge(proposicao.apreciacaoDoCN);
+const renderApreciacaoAtualBadge = (proposicao) => {
+  if (proposicao.apreciacaoDoCN) return renderApreciacaoBadge(proposicao.apreciacaoDoCN);
+  if (proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA) {
+    return renderBadge("Sem decisão do CN", "neutral");
+  }
+  return "";
+};
 
 /**
  * Zona de ação ("Sua vez") do detalhe — painel de trabalho com acento, de
@@ -67,7 +70,7 @@ export const renderDetailActionZone = ({ overline, title, children }) => `
 
 /**
  * A "peça em julgamento": o item específico que a persona vai julgar/responder
- * (avaliação vigente, comprovação, diligência, apreciação final). Cartão inset
+ * (minuta vigente, comprovação, diligência, decisão final). Cartão inset
  * legível, posicionado dentro da zona de ação.
  */
 export const renderJudgingAnchor = ({ overline, children }) => `
@@ -79,7 +82,7 @@ export const renderJudgingAnchor = ({ overline, children }) => `
 
 /** Render legível de uma apreciação (juízo) para usar dentro de uma âncora ou cartão. */
 export const renderApreciacaoResumo = (apreciacao, { autor, data } = {}) => {
-  if (!apreciacao) return `<p class="muted">Sem apreciação registrada.</p>`;
+  if (!apreciacao) return `<p class="muted">Sem decisão registrada.</p>`;
   const tipoLabel = apreciacao.tipoConclusao
     ? Labels.tipoConclusao[apreciacao.tipoConclusao]
     : Labels.situacaoApreciacao[apreciacao.situacao];
@@ -303,7 +306,7 @@ export const renderProposicaoTable = (proposicoes, { origem } = {}) => `
             <th>Tipo</th>
             <th>Unidade</th>
             <th>Status</th>
-            <th>Apreciação atual</th>
+            <th>Decisão atual</th>
             <th>Pendências</th>
           </tr>
         </thead>
@@ -382,7 +385,7 @@ const renderEventoExtras = (event, proposicao) => {
   }
 
   if (event.apreciacao?.observacoes) {
-    extras.push(`<p class="historico-evento__linha muted">Observações do juízo: ${event.apreciacao.observacoes}</p>`);
+    extras.push(`<p class="historico-evento__linha muted">Fundamentação: ${event.apreciacao.observacoes}</p>`);
   }
 
   return extras.join("");
@@ -1092,7 +1095,7 @@ export const renderProposicaoTableEditorial = (
             <th scope="col" class="acervo-th-numero">Proposição</th>
             <th scope="col">Destinatário</th>
             <th scope="col">Status do fluxo</th>
-            <th scope="col">Apreciação do CN</th>
+            <th scope="col">Decisão do CN</th>
             <th scope="col" class="acervo-th-pend">Providências pendentes</th>
             <th scope="col" class="acervo-th-idade">Última movimentação</th>
           </tr>

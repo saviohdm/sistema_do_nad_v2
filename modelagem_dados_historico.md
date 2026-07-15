@@ -19,12 +19,12 @@ Todo evento nasce em `buildHistoryEvent(tipo, usuario, extras)` ([historico.js](
 Comportamentos do agregado:
 
 - `appendHistory` insere e **reordena o array por `data` ascendente** a cada inserção.
-- `removeHistoryEvent` existe apenas para a remoção de avaliação pelo Corregedor (o conteúdo sai do histórico material; fica só o tombstone `avaliacao_removida_pelo_corregedor`).
+- `removeHistoryEvent` existe apenas para a devolução de minuta pelo Corregedor (o conteúdo sai do histórico material; fica só o tombstone legado `avaliacao_removida_pelo_corregedor`).
 - Campos derivados **não persistidos** (calculados na leitura): categoria e flag decisória (`categorizarEventoHistorico`) e o agrupamento em ciclos de diligência (`agruparHistoricoPorCiclos`).
 
 ## Objeto `apreciacao` embutido
 
-Avaliações e decisões carregam o juízo em duas camadas com schema único (autor-agnóstico, cf. SPECS.md):
+Minutas e decisões carregam o juízo em duas camadas com schema único (autor-agnóstico, cf. SPECS.md):
 
 ```js
 apreciacao: {
@@ -55,14 +55,14 @@ apreciacao: {
 | `criacao_diligencia` | `criarDiligencia` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao`, `prazoComprovacao` (date), `diligenciaId`, `loteId` (opcional, diligência em lote) |
 | `comprovacao` | `registrarComprovacao` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao`, `observacoes`, `anexos[]`, `diligenciaId` |
 | `prazo_comprovacao_expirado` | `expirarDiligenciasVencidas` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao` (2 variantes), `diligenciaId`, `prazoOriginal`, `rascunhoExistia` (bool); `usuario` = `"Sistema"` |
-| `avaliacao_membro_auxiliar` | `salvarAvaliacaoMembro` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | `descricao`, `apreciacao{…}` |
-| `decisao` | `deferirAvaliacao` / `indeferirAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | `descricao`, `modo` (`"deferimento"` \| `"indeferimento"`), `apreciacao{…}` |
-| `avaliacao_com_forca_de_decisao` | `registrarAvaliacaoComForcaDeDecisao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | `descricao`, `modo: null`, `apreciacao{…}` |
-| `avaliacao_removida_pelo_corregedor` | `removerAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | `descricao`, `avaliacaoRemovidaId` |
+| `avaliacao_membro_auxiliar` | `salvarAvaliacaoMembro` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | Minuta: `descricao`, `apreciacao{…}` |
+| `decisao` | `deferirAvaliacao` / `indeferirAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | Acolhimento/afastamento: `descricao`, `modo` legado (`"deferimento"` \| `"indeferimento"`), `apreciacao{…}` |
+| `avaliacao_com_forca_de_decisao` | `registrarAvaliacaoComForcaDeDecisao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | Decisão direta: `descricao`, `modo: null`, `apreciacao{…}` |
+| `avaliacao_removida_pelo_corregedor` | `removerAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | Devolução de minuta: `descricao`, `avaliacaoRemovidaId` |
 
 Schema dos `anexos[]` da comprovação: `{ nome, tamanhoBytes, mimeType, anexadoEm }` (o protótipo registra apenas metadados do arquivo, não o conteúdo).
 
-Eventos **decisórios** (destaque visual no Dossiê): `decisao` e `avaliacao_com_forca_de_decisao`.
+Eventos **decisórios** (destaque visual no Dossiê): `decisao` e o tipo legado de decisão direta `avaliacao_com_forca_de_decisao`.
 
 ### Categoria: comunicações
 
@@ -89,16 +89,16 @@ Os eventos `_salvo` registram apenas o **primeiro** salvamento (saves subsequent
 |---|---|---|
 | `rascunho_decisao_cn_salvo` | `salvarRascunhoDecisaoCN` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` |
 | `rascunho_decisao_cn_descartado` | `descartarRascunhoDecisaoCN` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` |
-| `rascunho_avaliacao_salvo` | `salvarRascunhoAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | `descricao` |
-| `rascunho_avaliacao_descartado` | `descartarRascunhoAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | `descricao` |
+| `rascunho_avaliacao_salvo` | `salvarRascunhoAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | Rascunho de minuta: `descricao` |
+| `rascunho_avaliacao_descartado` | `descartarRascunhoAvaliacao` ([avaliacoes.js](assets/js/domain/avaliacoes.js)) | Descarte de rascunho de minuta: `descricao` |
 | `rascunho_comprovacao_salvo` | `salvarRascunhoComprovacao` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao` |
 | `rascunho_comprovacao_descartado` | `descartarRascunhoComprovacao` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao` |
 
 ## Visibilidade por persona
 
-O correicionado enxerga somente os atos formais e comunicações dirigidas a ele — 13 tipos, definidos em `VISIBLE_TO_CORREICIONADO` ([correicionados.js](assets/js/domain/correicionados.js)): `criacao`, `edicao`, `referendo_cnmp`, `criacao_diligencia`, `comprovacao`, `prazo_comprovacao_expirado`, `decisao`, `avaliacao_com_forca_de_decisao`, `cientificacao`, `cumprimento_pendencia_secretaria`, `email_diligencia_enviado`, `email_ciencia_enviado`, `apagamento_proposicao`.
+O correicionado enxerga somente os atos formais e comunicações dirigidas a ele — 13 tipos, definidos em `VISIBLE_TO_CORREICIONADO` ([correicionados.js](assets/js/domain/correicionados.js)): `criacao`, `edicao`, `referendo_cnmp`, `criacao_diligencia`, `comprovacao`, `prazo_comprovacao_expirado`, `decisao`, `avaliacao_com_forca_de_decisao`, `cientificacao`, `cumprimento_pendencia_secretaria`, `email_diligencia_enviado`, `email_ciencia_enviado`, `apagamento_proposicao`. Na projeção pública, eventos decisórios recebem descrição neutra; acolhimento, afastamento e origem da minuta não são revelados.
 
-Os 13 tipos restantes (avaliação do membro auxiliar, remoção de avaliação, edição de metadados, confirmação de rascunho de criação, conversão de encaminhamento, os seis eventos de rascunho, visualização de ciência, relatório final) são internos à CN. As demais personas veem o histórico completo. A conversão de encaminhamento nunca chega ao correicionado na prática: proposições do tipo `Encaminhamento` não passam por diligência nem ciência.
+Os 13 tipos restantes (minuta do membro auxiliar, devolução de minuta, edição de metadados, confirmação de rascunho de criação, conversão de encaminhamento, os seis eventos de rascunho, visualização de ciência, relatório final) são internos à CN. As demais personas veem o histórico completo. A conversão de encaminhamento nunca chega ao correicionado na prática: proposições do tipo `Encaminhamento` não passam por diligência nem ciência.
 
 ## Pontos de atenção (estado atual)
 

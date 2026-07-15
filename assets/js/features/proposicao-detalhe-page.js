@@ -75,6 +75,7 @@ import {
   bindPrazoDiligenciaControls,
   renderPrazoDiligenciaControl,
 } from "../ui/prazo-diligencia-control.js";
+import { confirmarEExecutarDevolucaoMinuta } from "../ui/confirmacoes.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
 const origem = resolverOrigemDetalhe({
@@ -106,6 +107,14 @@ const bindContextoHandler = () => {
 
 const voltarParaOrigem = (proposicao) => {
   window.location.href = origem.href(proposicao);
+};
+
+const concluirAcaoCorregedor = (proposicao) => {
+  if (origem?.slug === "corregedor-decisao") {
+    voltarParaOrigem(proposicao);
+    return;
+  }
+  render();
 };
 
 const botaoVoltar = (proposicao) =>
@@ -202,7 +211,7 @@ const bindHandlers = (proposicao) => {
     render();
   });
 
-  // Rascunhos de apreciação (avaliação do membro e decisão do CN) compartilham o
+  // Rascunhos de apreciação (minuta do membro e decisão do CN) compartilham o
   // mesmo par salvar/descartar do form; muda apenas a função de domínio.
   const RASCUNHO_APRECIACAO = {
     "form-avaliacao-membro": {
@@ -254,7 +263,7 @@ const bindHandlers = (proposicao) => {
       deferirAvaliacao(item);
       return draft;
     });
-    render();
+    concluirAcaoCorregedor(proposicao);
   });
 
   document.querySelector("#form-decisao-corregedor")?.addEventListener("submit", (event) => {
@@ -265,16 +274,21 @@ const bindHandlers = (proposicao) => {
       indeferirAvaliacao(item, juizo);
       return draft;
     });
-    render();
+    concluirAcaoCorregedor(proposicao);
   });
 
   document.querySelector("[data-action='remover-avaliacao']")?.addEventListener("click", () => {
-    mutateState((draft) => {
-      const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
-      removerAvaliacao(item);
-      return draft;
+    confirmarEExecutarDevolucaoMinuta({
+      confirmar: (mensagem) => window.confirm(mensagem),
+      devolver: () => {
+        mutateState((draft) => {
+          const item = draft.proposicoes.find((entry) => entry.id === proposicao.id);
+          removerAvaliacao(item);
+          return draft;
+        });
+        concluirAcaoCorregedor(proposicao);
+      },
     });
-    render();
   });
 
   document.querySelector("#form-avaliacao-direta")?.addEventListener("submit", (event) => {
@@ -285,7 +299,7 @@ const bindHandlers = (proposicao) => {
       registrarAvaliacaoComForcaDeDecisao(item, juizo);
       return draft;
     });
-    render();
+    concluirAcaoCorregedor(proposicao);
   });
 
   document.querySelectorAll("[data-pendencia-form]").forEach((form) => {
@@ -406,7 +420,7 @@ const renderAcaoCorreicionadoCiencia = (proposicao, user) => {
 
   return renderDetailActionZone({
     overline: "Ciência · baixa definitiva",
-    title: "Apreciação final do Corregedor Nacional",
+    title: "Decisão final do Corregedor Nacional",
     children: `
       ${renderJudgingAnchor({
         overline: "Resultado do Corregedor Nacional",
@@ -553,7 +567,7 @@ const buildMeta = (proposicao, persona) => {
   ];
 };
 
-const renderComprovacaoAnchor = (proposicao, overline = "Comprovação a avaliar") => {
+const renderComprovacaoAnchor = (proposicao, overline = "Comprovação em análise") => {
   const comp = getUltimaComprovacao(proposicao);
   if (!comp) return "";
   const linhaMeta = [comp.usuario, comp.data ? formatDateTime(comp.data) : null]
@@ -584,17 +598,22 @@ const renderAcaoMembro = (proposicao, available) => {
   if (!available.podeAvaliarComoMembro) return "";
   return renderDetailActionZone({
     overline: "Sua vez · membro auxiliar",
-    title: "Avaliação técnica",
+    title: "Elaboração da minuta de decisão",
     children: `
       ${renderComprovacaoAnchor(proposicao)}
-      <p class="inline-note">Sua avaliação informa o Corregedor Nacional, mas não produz efeitos por si só — a decisão final é sempre dele.</p>
+      <p class="inline-note">A minuta não produz efeitos por si só. Redija-a para aproveitamento integral como decisão do Corregedor Nacional.</p>
       ${renderApreciacaoForm({
         formId: "form-avaliacao-membro",
-        title: "Avaliação do membro auxiliar",
-        submitLabel: "Salvar avaliação",
+        title: "Minuta de decisão",
+        submitLabel: "Submeter minuta",
         initialApreciacao: proposicao.rascunhoAvaliacao?.apreciacao || null,
         includeRascunho: true,
         variant: "bare",
+        observacoesLabel: "Redação da minuta",
+        observacoesHint:
+          "Use linguagem decisória e impositiva, pronta para ser acolhida sem ajustes pelo Corregedor Nacional.",
+        observacoesPlaceholder: "Redija a fundamentação e o comando decisório da minuta.",
+        observacoesRequired: true,
       })}
     `,
   });
@@ -679,27 +698,30 @@ const renderAcaoCorregedor = (proposicao, available) => {
     const avaliacao = getAvaliacaoVigente(proposicao);
     return renderDetailActionZone({
       overline: "Sua vez · decisão do Corregedor Nacional",
-      title: "Decidir sobre a avaliação",
+      title: "Decidir sobre a minuta",
       children: `
         ${renderJudgingAnchor({
-          overline: "Avaliação vigente · membro auxiliar",
+          overline: "Minuta vigente · membro auxiliar",
           children: renderApreciacaoResumo(avaliacao?.apreciacao, {
             autor: avaliacao?.usuario,
             data: avaliacao?.data,
           }),
         })}
-        <p class="inline-note">Deferir adota integralmente as invariantes acima. Indeferir exige redefini-las neste mesmo ato.</p>
+        <p class="inline-note">Acolher assume integralmente a redação e as invariantes acima. Afastar exige registrar uma decisão substitutiva completa.</p>
         <div class="button-row">
-          <button class="button" type="button" data-action="deferir-avaliacao">Deferir avaliação vigente</button>
+          <button class="button" type="button" data-action="deferir-avaliacao">Acolher minuta</button>
         </div>
         ${renderApreciacaoForm({
           formId: "form-decisao-corregedor",
-          title: "Indeferir e redefinir invariantes",
-          submitLabel: "Registrar decisão de indeferimento",
+          title: "Decisão substitutiva",
+          submitLabel: "Afastar minuta e decidir",
           includeDelete: true,
           includeRascunho: true,
           initialApreciacao: proposicao.rascunhoDecisaoCN?.apreciacao || null,
           variant: "bare",
+          observacoesLabel: "Fundamentação da decisão",
+          observacoesPlaceholder: "Redija a fundamentação e o comando da decisão substitutiva.",
+          observacoesRequired: true,
         })}
       `,
     });
@@ -708,17 +730,20 @@ const renderAcaoCorregedor = (proposicao, available) => {
   if (available.podeAvaliarDiretamente) {
     return renderDetailActionZone({
       overline: "Sua vez · Corregedor Nacional",
-      title: "Avaliar com força de decisão",
+      title: "Decisão direta",
       children: `
         ${renderComprovacaoAnchor(proposicao)}
-        <p class="inline-note">Sem avaliação do membro auxiliar nesta etapa: sua avaliação tem força de decisão e produz efeitos imediatos.</p>
+        <p class="inline-note">Excepcionalmente sem minuta do membro auxiliar: a decisão do Corregedor produz efeitos imediatos.</p>
         ${renderApreciacaoForm({
           formId: "form-avaliacao-direta",
-          title: "Avaliação com força de decisão",
-          submitLabel: "Avaliar diretamente",
+          title: "Decisão direta do Corregedor Nacional",
+          submitLabel: "Registrar decisão direta",
           includeRascunho: true,
           initialApreciacao: proposicao.rascunhoDecisaoCN?.apreciacao || null,
           variant: "bare",
+          observacoesLabel: "Fundamentação da decisão",
+          observacoesPlaceholder: "Redija a fundamentação e o comando da decisão.",
+          observacoesRequired: true,
         })}
       `,
     });
@@ -791,7 +816,7 @@ const bindCorreicionadoHandlers = (proposicao, user) => {
       });
       return draft;
     });
-    window.alert("Comprovação registrada. A proposição segue agora para avaliação do membro auxiliar.");
+    window.alert("Comprovação registrada. A proposição segue agora para elaboração de minuta pelo membro auxiliar.");
     window.location.href = "/pages/correicionado-comprovacoes.html";
   });
 
@@ -892,7 +917,7 @@ const render = () => {
         acaoPrincipalHtml: buildAcaoPrincipal(propAtualizada, persona, availableAtualizada, user),
         historico: filtrarHistoricoParaCorreicionado(propAtualizada.historico),
         historicoNota:
-          "São exibidos os atos formais e comunicações dirigidas a você. Avaliações internas da CN e rascunhos não constam desta visão.",
+          "São exibidos os atos formais e comunicações dirigidas a você. Atos preparatórios internos da CN e rascunhos não constam desta visão.",
         providenciasEditable: false,
       }),
     });

@@ -476,7 +476,7 @@ const buildFiltersPanel = (opcoes, filtros, todas, isCorreicionado) => {
       </div>
 
       <div class="acervo-filter-section">
-        <p class="acervo-filter-section__title">Classificação e apreciação</p>
+        <p class="acervo-filter-section__title">Classificação e decisão</p>
         <div class="acervo-filter-grid">
           ${selectSimples("filtro-tipo", "tipo", "Tipo", opcoes.tipos, filtros.tipo)}
           <div class="field">
@@ -490,7 +490,7 @@ const buildFiltersPanel = (opcoes, filtros, todas, isCorreicionado) => {
           </div>
           ${prioridadeESensibilidade}
           <div class="field">
-            <label for="filtro-situacao">Situação da apreciação</label>
+            <label for="filtro-situacao">Situação da decisão</label>
             <select id="filtro-situacao" name="situacaoApreciacao">
               ${situacaoOptions}
             </select>
@@ -614,7 +614,7 @@ const buildActiveFiltersChips = (filtros, opcoes) => {
         ? "Sem decisão do CN"
         : Labels.situacaoApreciacao[filtros.situacaoApreciacao];
     chips.push({
-      label: `Apreciação: ${label}`,
+      label: `Decisão: ${label}`,
       removeHref: removeFilterFromUrl(filtros, { key: "situacaoApreciacao" }),
     });
   }

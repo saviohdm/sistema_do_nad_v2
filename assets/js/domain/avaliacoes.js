@@ -2,6 +2,7 @@ import {
   Labels,
   SituacaoApreciacao,
   StatusFluxo,
+  TipoConclusao,
   TipoHistorico,
   TipoProvidencia,
 } from "./enums.js";
@@ -10,7 +11,51 @@ import { criarPendenciaSecretaria } from "./pendencias-secretaria.js";
 
 const cloneJuizo = (juizo) => JSON.parse(JSON.stringify(juizo));
 
+const TIPOS_CONCLUSAO_VALIDOS = new Set(Object.values(TipoConclusao));
+const TIPOS_PROVIDENCIA_VALIDOS = new Set(Object.values(TipoProvidencia));
+
+const validarApreciacaoDefinitiva = (juizo) => {
+  if (!juizo || !Object.values(SituacaoApreciacao).includes(juizo.situacao)) {
+    throw new Error("Defina uma situação válida para o ato.");
+  }
+  if (!juizo.observacoes?.trim()) {
+    throw new Error("A redação ou fundamentação é obrigatória no ato definitivo.");
+  }
+
+  if (juizo.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) {
+    if (
+      juizo.tipoConclusao ||
+      juizo.existeProvidenciaSecretaria ||
+      juizo.tipoProvidencia ||
+      juizo.descricaoProvidencia
+    ) {
+      throw new Error("O ato que necessita mais informações não admite conclusão ou providência.");
+    }
+    return;
+  }
+
+  if (!TIPOS_CONCLUSAO_VALIDOS.has(juizo.tipoConclusao)) {
+    throw new Error("Selecione um tipo de conclusão válido.");
+  }
+  if (!juizo.existeProvidenciaSecretaria) {
+    if (juizo.tipoProvidencia || juizo.descricaoProvidencia) {
+      throw new Error("Providência só pode ser informada quando sua existência estiver marcada.");
+    }
+    return;
+  }
+  if (!TIPOS_PROVIDENCIA_VALIDOS.has(juizo.tipoProvidencia)) {
+    throw new Error("Selecione um tipo de providência válido.");
+  }
+  if (
+    juizo.tipoProvidencia === TipoProvidencia.OUTRA &&
+    !juizo.descricaoProvidencia?.trim()
+  ) {
+    throw new Error("Descreva a outra providência.");
+  }
+};
+
 const finalizarOuRetornar = (proposicao, eventType, usuario, juizo, descricao, modo = null) => {
+  validarApreciacaoDefinitiva(juizo);
   const event = buildHistoryEvent(eventType, usuario, {
     descricao,
     modo,
@@ -49,8 +94,9 @@ export const salvarAvaliacaoMembro = (
   juizo,
   usuario = "Membro Auxiliar da CN",
 ) => {
+  validarApreciacaoDefinitiva(juizo);
   const event = buildHistoryEvent(TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, usuario, {
-    descricao: "Avaliação do membro auxiliar submetida ao Corregedor Nacional.",
+    descricao: "Minuta de decisão submetida ao Corregedor Nacional.",
     apreciacao: cloneJuizo(juizo),
   });
 
@@ -70,7 +116,7 @@ export const salvarRascunhoAvaliacao = (
     proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO &&
     proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_COMPROVACAO
   ) {
-    throw new Error("Rascunho de avaliação só pode ser salvo enquanto a proposição aguarda avaliação.");
+    throw new Error("Rascunho de minuta só pode ser salvo enquanto a proposição aguarda elaboração de minuta.");
   }
   const entrando = !proposicao.rascunhoAvaliacao;
   proposicao.rascunhoAvaliacao = {
@@ -83,7 +129,7 @@ export const salvarRascunhoAvaliacao = (
     appendHistory(
       proposicao,
       buildHistoryEvent(TipoHistorico.RASCUNHO_AVALIACAO_SALVO, usuario, {
-        descricao: "Rascunho de avaliação iniciado pelo membro auxiliar.",
+        descricao: "Rascunho de minuta iniciado pelo membro auxiliar.",
       }),
     );
   }
@@ -92,13 +138,13 @@ export const salvarRascunhoAvaliacao = (
 
 export const descartarRascunhoAvaliacao = (proposicao, usuario = "Membro Auxiliar da CN") => {
   if (!proposicao.rascunhoAvaliacao) {
-    throw new Error("Não há rascunho de avaliação ativo para descartar.");
+    throw new Error("Não há rascunho de minuta ativo para descartar.");
   }
   proposicao.rascunhoAvaliacao = null;
   appendHistory(
     proposicao,
     buildHistoryEvent(TipoHistorico.RASCUNHO_AVALIACAO_DESCARTADO, usuario, {
-      descricao: "Rascunho de avaliação descartado pelo membro auxiliar.",
+      descricao: "Rascunho de minuta descartado pelo membro auxiliar.",
     }),
   );
   return proposicao;
@@ -113,7 +159,7 @@ export const deferirAvaliacao = (proposicao, usuario = "Corregedor Nacional") =>
     TipoHistorico.DECISAO,
     usuario,
     avaliacao.apreciacao,
-    "Decisão de deferimento reproduzindo integralmente as invariantes da avaliação.",
+    "Decisão do Corregedor Nacional por acolhimento integral da minuta.",
     "deferimento",
   );
 };
@@ -124,7 +170,7 @@ export const indeferirAvaliacao = (proposicao, juizo, usuario = "Corregedor Naci
     TipoHistorico.DECISAO,
     usuario,
     juizo,
-    "Decisão de indeferimento com redefinição integral das invariantes.",
+    "Decisão do Corregedor Nacional com afastamento da minuta e redefinição integral das invariantes.",
     "indeferimento",
   );
 
@@ -141,7 +187,7 @@ export const removerAvaliacao = (proposicao, usuario = "Corregedor Nacional") =>
   appendHistory(
     proposicao,
     buildHistoryEvent(TipoHistorico.AVALIACAO_REMOVIDA, usuario, {
-      descricao: "Avaliação vigente removida pelo Corregedor Nacional.",
+      descricao: "Minuta devolvida pelo Corregedor Nacional.",
       avaliacaoRemovidaId: avaliacaoId,
     }),
   );
@@ -159,5 +205,5 @@ export const registrarAvaliacaoComForcaDeDecisao = (
     TipoHistorico.AVALIACAO_COM_FORCA_DE_DECISAO,
     usuario,
     juizo,
-    "Avaliação direta do Corregedor Nacional com força de decisão.",
+    "Decisão direta proferida pelo Corregedor Nacional.",
   );

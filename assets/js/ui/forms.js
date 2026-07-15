@@ -33,6 +33,10 @@ export const renderApreciacaoForm = ({
   initialApreciacao = null,
   includeRascunho = false,
   variant = "panel",
+  observacoesLabel = "Fundamentação",
+  observacoesHint = "",
+  observacoesPlaceholder = "",
+  observacoesRequired = false,
 }) => {
   const j = initialApreciacao || {};
   const situacaoValue = j.situacao || SituacaoApreciacao.CONCLUIDA;
@@ -98,8 +102,19 @@ export const renderApreciacaoForm = ({
         <textarea id="${formId}-descricaoProvidencia" name="descricaoProvidencia" placeholder="Descreva objetivamente a providência a ser cumprida.">${escapeHtml(descricaoProvidenciaValue)}</textarea>
       </div>
       <div class="field">
-        <label for="${formId}-observacoes">Avaliação</label>
-        <textarea id="${formId}-observacoes" name="observacoes">${observacoesValue}</textarea>
+        <label for="${formId}-observacoes">${escapeHtml(observacoesLabel)}</label>
+        <textarea
+          id="${formId}-observacoes"
+          name="observacoes"
+          ${observacoesHint ? `aria-describedby="${formId}-observacoes-hint"` : ""}
+          ${observacoesPlaceholder ? `placeholder="${escapeHtml(observacoesPlaceholder)}"` : ""}
+          ${observacoesRequired ? "required" : ""}
+        >${escapeHtml(observacoesValue)}</textarea>
+        ${
+          observacoesHint
+            ? `<p class="inline-note" id="${formId}-observacoes-hint">${escapeHtml(observacoesHint)}</p>`
+            : ""
+        }
       </div>
       <div class="button-row">
         <button class="button" type="submit">${submitLabel}</button>
@@ -115,7 +130,7 @@ export const renderApreciacaoForm = ({
         }
         ${
           includeDelete
-            ? `<button class="button button--danger" type="button" data-action="remover-avaliacao">Apagar avaliação vigente</button>`
+            ? `<button class="button button--danger" type="button" data-action="remover-avaliacao">Devolver minuta</button>`
             : ""
         }
       </div>
@@ -142,6 +157,7 @@ export const aplicarRegrasApreciacaoForm = (form) => {
 
   const conclusaoAtiva = situacaoSel.value === SituacaoApreciacao.CONCLUIDA;
   tipoConclusaoSel.disabled = !conclusaoAtiva;
+  tipoConclusaoSel.required = conclusaoAtiva;
   if (!conclusaoAtiva) tipoConclusaoSel.value = "";
 
   const cabeProvidencia =

@@ -8,7 +8,7 @@
 Corregedor Nacional, Membro Auxiliar da CN e Secretaria Processual da CN.
 
 ## Fluxo principal
-1. Acessa uma das cinco bandejas: referendo, diligência, avaliação, decisão ou ciência.
+1. Acessa uma das cinco bandejas: referendo, diligência, elaboração de minuta, decisão ou ciência.
 2. Na tabela **Por correição**, visualiza `Proposições aguardando` e `Unidades prontas / total`.
 3. Usa a prontidão como apoio para priorizar o trabalho em bloco.
 

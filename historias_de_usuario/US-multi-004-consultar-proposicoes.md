@@ -19,7 +19,7 @@
 2. Perfis internos veem o **Acervo institucional do NAD**, formado por todas as proposições.
 3. O correicionado vê **Minhas proposições**, limitado por `proposicaoVisivelPara`.
 4. A tela apresenta indicadores calculados apenas sobre esse universo autorizado.
-5. O usuário combina busca textual, status, classificação, apreciação, destinatário, localização, correição e período.
+5. O usuário combina busca textual, status, classificação, decisão, destinatário, localização, correição e período.
 6. Seleciona **Buscar proposições**; antes disso, nenhum resultado é listado.
 7. Os resultados podem ser exibidos em tabela ou cartões e mantêm os filtros na URL.
 
@@ -28,10 +28,10 @@
 - **Sem resultados**: apresenta estado vazio e uma sugestão de ampliação da busca.
 - **Período invertido**: bloqueia a busca e informa que a data final deve ser igual ou posterior à inicial.
 - **Membro destinatário escolhido**: o tipo de destinatário passa a ser `membro`; escolher outro tipo limpa o membro.
-- **Tipo de conclusão escolhido**: a situação da apreciação passa a ser `concluida`.
+- **Tipo de conclusão escolhido**: a situação interna da decisão passa a ser `concluida`.
 
 ## Regras de negócio
-- Os status seguem o ciclo: `rascunho_cn`, `aguardando_referendo_cnmp`, `aguardando_secretaria`, `aguardando_comprovacao`, `aguardando_avaliacao_membro`, `aguardando_decisao_corregedor`, `aguardando_ciencia` e `baixa_definitiva`.
+- Os status internos seguem o ciclo legado: `rascunho_cn`, `aguardando_referendo_cnmp`, `aguardando_secretaria`, `aguardando_comprovacao`, `aguardando_avaliacao_membro`, `aguardando_decisao_corregedor`, `aguardando_ciencia` e `baixa_definitiva`; a interface apresenta a etapa `aguardando_avaliacao_membro` como elaboração de minuta.
 - Perfis internos veem todos os oito filtros de status; o correicionado vê somente status presentes em suas proposições visíveis.
 - Prioridade, sensibilidade e observações internas não são exibidas nem pesquisadas na variante do correicionado.
 - Rascunhos de ação permanecem privados e não integram os filtros gerais.

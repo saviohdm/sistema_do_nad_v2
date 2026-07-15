@@ -44,7 +44,7 @@ const PERMISSIONS = {
 
 const PERSONA_MENU_OVERRIDES = {
   [PERSONAS.MEMBRO]: [
-    { href: "membro-auxiliar.html", label: "Minha fila de avaliação", icon: "avaliacao" },
+    { href: "membro-auxiliar.html", label: "Minha fila de elaboração de minutas", icon: "avaliacao" },
     { href: "proposicoes-lista.html", label: "Consulta de proposições", icon: "lupa" },
   ],
   // O menu do CN é agrupado ({ label?, items }); os demais permanecem planos —

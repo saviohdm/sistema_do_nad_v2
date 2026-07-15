@@ -2,7 +2,7 @@
 
 **Como** Corregedor Nacional,
 **eu quero** que, ao registrar o referendo da correição, os Encaminhamentos vindos do relatório da equipe (SCI) sejam baixados e convertidos automaticamente em pendência de providência,
-**para que** a Secretaria Processual controle o cumprimento desses encaminhamentos sem que eles percorram um ciclo de diligência/avaliação/decisão que não lhes pertence.
+**para que** a Secretaria Processual controle o cumprimento desses encaminhamentos sem que eles percorram um ciclo de diligência/minuta/decisão que não lhes pertence.
 
 ## Ator
 Corregedor Nacional (`PERSONAS.CORREGEDOR`), na fila de referendo.
@@ -26,9 +26,9 @@ Corregedor Nacional (`PERSONAS.CORREGEDOR`), na fila de referendo.
 - **Antes do referendo**: o Encaminhamento segue as regras comuns — pode ser rascunhado, editado e apagado (`APAGAR proposição` encerra o ciclo sem criar pendência).
 
 ## Regras de negócio
-- A conversão só ocorre no portão do referendo (ou na criação pós-referendo); avaliações e decisões nunca participam.
+- A conversão só ocorre no portão do referendo (ou na criação pós-referendo); minutas e decisões nunca participam.
 - A pendência é sempre `tipoProvidencia = outra_providencia`; o órgão-alvo (ex.: COCI) fica no texto da descrição.
-- `apreciacaoDoCN`, diligências, avaliações e cientificação não existem para Encaminhamentos; correicionado e membro auxiliar não participam.
+- `apreciacaoDoCN`, diligências, minutas e cientificação não existem para Encaminhamentos; correicionado e membro auxiliar não participam.
 - O `destinatario` permanece obrigatório e aponta para a unidade/membro correicionado sobre quem o encaminhamento versa.
 
 ## Pós-condições

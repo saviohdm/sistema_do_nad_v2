@@ -14,7 +14,7 @@ const renderCard = (proposicao, index) => {
   const statusBadge = rascunho
     ? renderBadge("Rascunho salvo", "warning")
     : renderBadge(
-        comAvaliacao ? "Decidir avaliação vigente" : "Avaliar diretamente",
+        comAvaliacao ? "Decidir minuta vigente" : "Decidir diretamente",
         comAvaliacao ? "primary" : "warning",
       );
   return renderFilaProposicaoEditorial(proposicao, {
@@ -51,8 +51,8 @@ montarFilaNavegavel({
     {
       key: "avaliacao",
       tipo: "string",
-      label: "Avaliação",
-      formatar: (value) => (value === "com" ? "Com avaliação submetida" : "Sem avaliação"),
+      label: "Minuta",
+      formatar: (value) => (value === "com" ? "Com minuta submetida" : "Sem minuta"),
     },
   ],
   aplicarFiltrosExtras: (lista, filtros) => {
@@ -62,11 +62,11 @@ montarFilaNavegavel({
   },
   renderFiltrosExtras: (filtros) => `
     <div class="field">
-      <label for="filtro-avaliacao">Avaliação do membro</label>
+      <label for="filtro-avaliacao">Minuta do membro</label>
       <select id="filtro-avaliacao" name="avaliacao">
         <option value="">Todas</option>
-        <option value="com"${filtros.avaliacao === "com" ? " selected" : ""}>Com avaliação submetida</option>
-        <option value="sem"${filtros.avaliacao === "sem" ? " selected" : ""}>Sem avaliação (decisão direta)</option>
+        <option value="com"${filtros.avaliacao === "com" ? " selected" : ""}>Com minuta submetida</option>
+        <option value="sem"${filtros.avaliacao === "sem" ? " selected" : ""}>Sem minuta (decisão direta)</option>
       </select>
     </div>
   `,
@@ -79,10 +79,10 @@ montarFilaNavegavel({
         filtros: { filaForcada: true },
       },
       {
-        label: "Com avaliação submetida",
+        label: "Com minuta submetida",
         valor: comAvaliacao,
         filtros: { avaliacao: "com", filaForcada: true },
-        title: "Prontas para deferir ou indeferir a avaliação do membro auxiliar.",
+        title: "Prontas para acolher, afastar ou devolver a minuta do membro auxiliar.",
       },
       {
         label: "Com rascunho a retomar",

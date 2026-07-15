@@ -97,7 +97,7 @@ export const Labels = {
     [StatusFluxo.RASCUNHO_CN]: "Rascunho da CN",
     [StatusFluxo.AGUARDANDO_SECRETARIA]: "Aguardando Secretaria",
     [StatusFluxo.AGUARDANDO_COMPROVACAO]: "Aguardando comprovação",
-    [StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO]: "Aguardando avaliação do membro",
+    [StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO]: "Aguardando elaboração de minuta",
     [StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR]: "Aguardando decisão do Corregedor",
     [StatusFluxo.AGUARDANDO_CIENCIA]: "Aguardando ciência",
     [StatusFluxo.BAIXA_DEFINITIVA]: "Baixa definitiva",

@@ -77,7 +77,7 @@ const filasSection = `
         secundarios: [
           {
             valor: comAvaliacaoSubmetida,
-            label: "com avaliação submetida",
+            label: "com minuta submetida",
             href: "corregedor-decisao.html?avaliacao=com&fila=1",
           },
           {

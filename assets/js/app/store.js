@@ -5,7 +5,7 @@ import { normalizarProposicoesDestinatario } from "../domain/destinatario.js";
 // v6: acrescenta o catálogo top-level `avisos` (página Início do CN).
 const STORAGE_KEY = "nad-sistema-state-v6";
 
-// Migração: o rascunho de avaliação deixou de viver em chaves próprias do
+// Migração legada: o rascunho de minuta deixou de viver em chaves próprias do
 // localStorage e passou a integrar o estado (proposicao.rascunhoAvaliacao).
 const LEGADO_RASCUNHO_AVALIACAO_PREFIX = "nad-rascunho-avaliacao-";
 const limparChavesLegadasRascunhoAvaliacao = () => {

@@ -24,7 +24,7 @@ const buildAssuntoCiencia = (proposicaoIds) => {
 const buildCorpoCiencia = (proposicoes) =>
   [
     `Há ${proposicoes.length === 1 ? "uma nova ciência" : `${proposicoes.length} novas ciências`} disponíveis no Sistema NAD.`,
-    "Acesse para visualizar a apreciação final do Corregedor Nacional.",
+    "Acesse para visualizar a decisão final do Corregedor Nacional.",
   ].join(" ");
 
 const proximoId = (state) => uid("cx");

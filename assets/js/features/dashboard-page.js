@@ -61,7 +61,7 @@ const atalhosPanel = `
     <div class="button-row">
       <a class="button" href="proposicoes-lista.html">Ir para proposições</a>
       <a class="button button--secondary" href="secretaria-diligencia.html">Abrir pendências</a>
-      <a class="button button--ghost" href="proposicao-detalhe.html?id=prop-003&from=dashboard">Abrir caso com avaliação pendente</a>
+      <a class="button button--ghost" href="proposicao-detalhe.html?id=prop-003&from=dashboard">Abrir caso com minuta pendente</a>
     </div>
   </section>
 `;

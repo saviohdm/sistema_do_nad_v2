@@ -24,7 +24,21 @@ const VISIBLE_TO_CORREICIONADO = new Set([
 ]);
 
 export const filtrarHistoricoParaCorreicionado = (historico) =>
-  (historico || []).filter((event) => VISIBLE_TO_CORREICIONADO.has(event.tipo));
+  (historico || [])
+    .filter((event) => VISIBLE_TO_CORREICIONADO.has(event.tipo))
+    .map((event) => {
+      if (
+        event.tipo !== TipoHistorico.DECISAO &&
+        event.tipo !== TipoHistorico.AVALIACAO_COM_FORCA_DE_DECISAO
+      ) {
+        return event;
+      }
+      const { modo: _modoInterno, ...decisaoPublica } = event;
+      return {
+        ...decisaoPublica,
+        descricao: "Decisão proferida pelo Corregedor Nacional.",
+      };
+    });
 
 // Quem já foi recebedor concreto de alguma comunicação (diligência/ciência) desta
 // proposição — mantém acesso ao que atuou (parte "histórica" da visibilidade híbrida).

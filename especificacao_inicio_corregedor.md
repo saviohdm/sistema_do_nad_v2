@@ -48,7 +48,7 @@ acessibilidade embutida (WCAG 2.2 AA como alvo); reuso integral dos seletores de
 | --- | --- | --- |
 | **Corregedor Nacional** | Situar-se; ver o que exige sua ação (decisões, referendos, rascunhos); alcançar as 2 filas em 1 clique; acessar serviços e avisos. NÃO precisa: gráficos, casos individuais, dados de terceiros. | **Página Início completa** (esta espec). |
 | Secretaria Processual | Grupos prontos p/ diligência e ciência, providências atrasadas/pendentes. | **Início próprio no mesmo padrão** (3 cards de fila; ver Adendo Fase 2). "Hoje/Acompanhar" aposentados. |
-| Membro Auxiliar da CN | Fila de avaliação com panorama de 3 KPIs. | Mantém `membro-auxiliar.html` como aterrissagem; menu ganha ícones (Fase 2). |
+| Membro Auxiliar da CN | Fila de elaboração de minutas com panorama de 3 KPIs. | Mantém `membro-auxiliar.html` como aterrissagem; menu ganha ícones (Fase 2). |
 | Correicionado | Comprovações pendentes e ciências. | Mantém `correicionado-comprovacoes.html`; menu ganha ícones (Fase 2). Sem avisos (parte externa; falta campo de audiência). |
 
 Diferença estrutural do CN: é o único papel cuja atividade se divide em **duas filas de mesma
@@ -103,7 +103,7 @@ As demais personas mantêm menus planos (renderizados como um grupo único sem r
 - **Propósito**: apresentar cada fila operacional como unidade de trabalho: volume, decomposição e acesso.
 - **Card "Aguardando decisão"** — fonte [proposicoes.js](assets/js/domain/proposicoes.js):
   - Número grande: `countPendentesDoCorregedor().pendentesDecisao`.
-  - Secundários: "com avaliação submetida" (`listProposicoesAguardandoDecisao` filtrado por
+  - Secundários: "com minuta submetida" (`listProposicoesAguardandoDecisao` filtrado pelo identificador legado
     `avaliacaoVigenteId`) → fila com filtro; "com rascunho a retomar" (`pendentesRascunhoDecisao`)
     → `corregedor-decisao.html?comRascunho=1`.
   - Ação: título/número e botão "Abrir fila" → `corregedor-decisao.html`.
@@ -195,7 +195,7 @@ As demais personas mantêm menus planos (renderizados como um grupo único sem r
 │ ⚖ Ag. decisão│  │                           │ CNMP                      │ │
 │    [9]       │  │   9  proposições          │   5  proposições          │ │
 │ ▣ Ag. refe-  │  │                           │                           │ │
-│    rendo [5] │  │ · 6 com avaliação submet. │ · 1 correição pronta      │ │
+│    rendo [5] │  │ · 6 com minuta submetida  │ · 1 correição pronta      │ │
 │              │  │ · 1 com rascunho a retomar│ · 1 rascunho de criação   │ │
 │ SERVIÇOS     │  │                           │                           │ │
 │ ▤ Correições │  │            [Abrir fila]   │            [Abrir fila]   │ │
@@ -229,7 +229,7 @@ Prioridade: atenção → filas → serviços → avisos. Uma coluna; sem encolh
 │ FILAS OPERACIONAIS           │
 │ ┌──────────────────────────┐ │
 │ │ Aguardando decisão    9  │ │
-│ │ · 6 com avaliação        │ │
+│ │ · 6 com minuta           │ │
 │ │ · 1 rascunho             │ │
 │ │              [Abrir fila]│ │
 │ └──────────────────────────┘ │
@@ -259,7 +259,7 @@ plena do shell é release futura (ver L). Os componentes da página já nascem f
 | --- | --- |
 | Título da página / menu | "Início" |
 | Seção de filas | "Filas operacionais" |
-| Card decisão — rótulos | "Aguardando decisão" · "com avaliação submetida" · "com rascunho a retomar" |
+| Card decisão — rótulos | "Aguardando decisão" · "com minuta submetida" · "com rascunho a retomar" |
 | Card referendo — rótulos | "Aguardando referendo do CNMP" · "correições prontas para referendar" · "rascunhos de criação a confirmar" |
 | CTA dos cards | "Abrir fila" |
 | Estado vazio do card | "Em dia — nenhuma pendência." |
@@ -403,7 +403,7 @@ existir na home (a seleção em lote vive nas filas — mudança consciente regi
 
 ### Membro Auxiliar e Correicionado — decisão de NÃO criar Início
 
-As aterrissagens atuais (fila de avaliação; comprovações) já são o padrão canônico
+As aterrissagens atuais (fila de elaboração de minutas; comprovações) já são o padrão canônico
 panorama-KPIs + fila. Ganham apenas **ícones no menu** (consistência e legibilidade no modo
 recolhido). Sem avisos para o Correicionado enquanto não existir campo `audiencia` no modelo.
 

@@ -27,7 +27,7 @@ export const ehEncaminhamento = (proposicao) => proposicao?.tipo === TIPO_ENCAMI
 
 /**
  * Efeito próprio do Encaminhamento ao passar pelo portão do referendo: não há
- * ciclo de diligência/avaliação/decisão — a proposição é baixada definitivamente
+ * ciclo de diligência/minuta/decisão — a proposição é baixada definitivamente
  * e vira uma pendência de providência da Secretaria (sempre "outra providência",
  * com a descrição do próprio encaminhamento).
  */
@@ -329,7 +329,7 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
   const personaMap = {
     "Corregedor Nacional": {
       ...baseActions,
-      podeAvaliarComoMembro: false, // CN não avalia como membro
+      podeAvaliarComoMembro: false, // CN não elabora minuta como membro
     },
     "Membro Auxiliar da CN": {
       podeCriarDiligencia: false,

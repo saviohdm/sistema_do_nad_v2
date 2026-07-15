@@ -14,7 +14,7 @@ Corregedor Nacional (`PERSONAS.CORREGEDOR`).
 1. Após o login, aterrissa no **Início**: hero com dateline, saudação e headline dinâmica
    (decisões → rascunhos de decisão → referendos → rascunhos de criação; zerado = "Sua mesa está limpa").
 2. Vê a seção **Filas operacionais** com 2 cards de mesmo peso: *Aguardando decisão* (nº grande +
-   "com avaliação submetida" + "com rascunho a retomar") e *Aguardando referendo do CNMP* (nº grande +
+   "com minuta submetida" + "com rascunho a retomar") e *Aguardando referendo do CNMP* (nº grande +
    "correições prontas para referendar" + "rascunhos de criação a confirmar").
 3. Clica no número, num secundário (fila já filtrada) ou em **Abrir fila**.
 4. Alternativamente usa **Serviços** (Correições · Criar proposição · Administração Superior) ou os

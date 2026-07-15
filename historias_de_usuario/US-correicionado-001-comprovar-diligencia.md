@@ -2,7 +2,7 @@
 
 **Como** correicionado (membro do MP),
 **eu quero** acessar o sistema a partir do e-mail recebido e comprovar a diligência aberta pela Secretaria,
-**para que** o ciclo da proposição prossiga até a apreciação final do Corregedor Nacional.
+**para que** o ciclo da proposição prossiga até a decisão final do Corregedor Nacional.
 
 ## Ator
 Correicionado (`PERSONAS.CORREICIONADO`, permissão `registrar_comprovacao`), identificado pelo diretório CNMP.
@@ -31,7 +31,7 @@ Correicionado (`PERSONAS.CORREICIONADO`, permissão `registrar_comprovacao`), id
 - Após `COMPROVAR`, a proposição **não retorna** mais à fila do correicionado (a menos que o CN decida `necessita_mais_informacoes` e nova diligência seja criada).
 
 ## Pós-condições
-- `statusFluxo = AGUARDANDO_AVALIACAO_MEMBRO`.
+- `statusFluxo = AGUARDANDO_AVALIACAO_MEMBRO` (identificador legado da fila de elaboração de minutas).
 - Diligência associada com `status = "comprovada"` e `comprovadaEm` preenchido.
 - Histórico ganha evento `COMPROVACAO` com `descricao`, `observacoes`, `anexos[]` e `diligenciaId`.
 - `rascunhoComprovacao` (se existia) é descartado.
