@@ -25,6 +25,7 @@ import {
   getDestinatarioDisplay,
   isFluxoPrincipalAberto,
 } from "../domain/filas-operacionais.js";
+import { formatDatelineEditorial } from "../app/utils.js";
 import {
   renderActiveFilterChip,
   renderAlert,
@@ -345,7 +346,14 @@ const buildHero = (todas, isCorreicionado) => {
 
   return `
     <section class="acervo-hero">
-      <div class="acervo-hero__breathing-space" aria-hidden="true"></div>
+      <div>
+        <div class="acervo-hero__top">
+          <p class="acervo-overline acervo-overline--accent">${
+            isCorreicionado ? "Proposições vinculadas a você" : "Acervo institucional do NAD"
+          } · ${formatDatelineEditorial()}</p>
+          <span class="acervo-hero__mark">${isCorreicionado ? "NAD · Você" : "NAD"}</span>
+        </div>
+      </div>
       <div class="acervo-hero__kpis" aria-label="Indicadores das proposições disponíveis">
         ${kpis
           .map(

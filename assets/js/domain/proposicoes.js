@@ -6,10 +6,12 @@ import {
   StatusFluxo,
   TipoConclusao,
   TipoHistorico,
+  TipoProvidencia,
 } from "./enums.js";
 import { buildHistoryEvent, appendHistory } from "./historico.js";
 import { getCorreicaoById, marcarReferendada, hydrateProposicao } from "./correicoes.js";
 import { projetarDestinatario, getTipoDestinatario } from "./destinatario.js";
+import { criarPendenciaSecretaria } from "./pendencias-secretaria.js";
 
 const PRIORIDADES_VALIDAS = new Set(Object.values(Prioridade));
 const PERSONAS_EDITAR_METADADOS = new Set([
@@ -17,6 +19,36 @@ const PERSONAS_EDITAR_METADADOS = new Set([
   "Membro Auxiliar da CN",
   "Secretaria Processual da CN",
 ]);
+
+// O tipo é armazenado como string livre (mesmo padrão de "Determinação"/"Recomendação").
+const TIPO_ENCAMINHAMENTO = "Encaminhamento";
+
+export const ehEncaminhamento = (proposicao) => proposicao?.tipo === TIPO_ENCAMINHAMENTO;
+
+/**
+ * Efeito próprio do Encaminhamento ao passar pelo portão do referendo: não há
+ * ciclo de diligência/avaliação/decisão — a proposição é baixada definitivamente
+ * e vira uma pendência de providência da Secretaria (sempre "outra providência",
+ * com a descrição do próprio encaminhamento).
+ */
+const converterEncaminhamento = (proposicao, usuario = "Corregedor Nacional") => {
+  proposicao.statusFluxo = StatusFluxo.BAIXA_DEFINITIVA;
+  criarPendenciaSecretaria(proposicao, {
+    tipoProvidencia: TipoProvidencia.OUTRA,
+    descricao: proposicao.descricao,
+  });
+  const pendencia = proposicao.pendenciasSecretaria[proposicao.pendenciasSecretaria.length - 1];
+  appendHistory(
+    proposicao,
+    buildHistoryEvent(TipoHistorico.CONVERSAO_ENCAMINHAMENTO, usuario, {
+      descricao:
+        "Encaminhamento baixado definitivamente e convertido em pendência de providência para a Secretaria Processual.",
+      pendenciaId: pendencia.id,
+      descricaoProvidencia: pendencia.descricao,
+    }),
+  );
+  return proposicao;
+};
 
 export const listProposicoes = (state) => [...state.proposicoes];
 
@@ -553,11 +585,15 @@ export const criarProposicao = (
     historico: [],
   };
 
+  const converterAgora =
+    !comoRascunho && correicaoJaReferendada && ehEncaminhamento(novaProposicao);
   const descricaoCriacao = comoRascunho
     ? "Proposição criada como rascunho pela Corregedoria Nacional (aguardando confirmação)."
-    : correicaoJaReferendada
-      ? "Proposição criada em correição já referendada; encaminhada diretamente à Secretaria Processual."
-      : "Proposição criada pela Corregedoria Nacional.";
+    : converterAgora
+      ? "Proposição criada pela Corregedoria Nacional em correição já referendada."
+      : correicaoJaReferendada
+        ? "Proposição criada em correição já referendada; encaminhada diretamente à Secretaria Processual."
+        : "Proposição criada pela Corregedoria Nacional.";
 
   appendHistory(
     novaProposicao,
@@ -567,6 +603,11 @@ export const criarProposicao = (
   );
 
   state.proposicoes.push(novaProposicao);
+  // Encaminhamento criado após o referendo da correição não espera novo referendo:
+  // o efeito (baixa definitiva + pendência de providência) é imediato.
+  if (converterAgora) {
+    converterEncaminhamento(novaProposicao);
+  }
   return novaProposicao;
 };
 
@@ -577,6 +618,7 @@ export const confirmarRascunhoCN = (state, proposicao) => {
     );
   }
   const correicaoJaReferendada = correicaoEstaReferendada(state, proposicao.correicaoId);
+  const converterAgora = correicaoJaReferendada && ehEncaminhamento(proposicao);
   proposicao.statusFluxo = correicaoJaReferendada
     ? StatusFluxo.AGUARDANDO_SECRETARIA
     : StatusFluxo.AGUARDANDO_REFERENDO_CNMP;
@@ -584,11 +626,17 @@ export const confirmarRascunhoCN = (state, proposicao) => {
   appendHistory(
     proposicao,
     buildHistoryEvent(TipoHistorico.RASCUNHO_CN_CONFIRMADO, "Corregedor Nacional", {
-      descricao: correicaoJaReferendada
-        ? "Rascunho confirmado pela Corregedoria Nacional; encaminhado diretamente à Secretaria Processual (correição já referendada)."
-        : "Rascunho confirmado pela Corregedoria Nacional; proposição passa a aguardar referendo do CNMP.",
+      descricao: converterAgora
+        ? "Rascunho confirmado pela Corregedoria Nacional (correição já referendada)."
+        : correicaoJaReferendada
+          ? "Rascunho confirmado pela Corregedoria Nacional; encaminhado diretamente à Secretaria Processual (correição já referendada)."
+          : "Rascunho confirmado pela Corregedoria Nacional; proposição passa a aguardar referendo do CNMP.",
     }),
   );
+
+  if (converterAgora) {
+    converterEncaminhamento(proposicao);
+  }
 
   return proposicao;
 };
@@ -678,7 +726,8 @@ export const editarProposicao = (proposicao, camposEditaveis, state) => {
 };
 
 export const referendarCorreicao = (state, correicaoId, usuario = "Corregedor Nacional") => {
-  if (!correicaoId) return 0;
+  const resultado = { encaminhadas: 0, convertidas: 0 };
+  if (!correicaoId) return resultado;
   const temRascunhos = state.proposicoes.some(
     (proposicao) =>
       proposicao.correicaoId === correicaoId &&
@@ -688,25 +737,37 @@ export const referendarCorreicao = (state, correicaoId, usuario = "Corregedor Na
     throw new Error("Confirme ou apague os rascunhos da correição antes de registrar o referendo.");
   }
   marcarReferendada(getCorreicaoById(state, correicaoId));
-  let afetadas = 0;
   state.proposicoes.forEach((proposicao) => {
     if (
-      proposicao.correicaoId === correicaoId &&
-      proposicao.statusFluxo === StatusFluxo.AGUARDANDO_REFERENDO_CNMP
+      proposicao.correicaoId !== correicaoId ||
+      proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_REFERENDO_CNMP
     ) {
-      proposicao.statusFluxo = StatusFluxo.AGUARDANDO_SECRETARIA;
+      return;
+    }
+    if (ehEncaminhamento(proposicao)) {
       appendHistory(
         proposicao,
         buildHistoryEvent(TipoHistorico.REFERENDO_CNMP, usuario, {
-          descricao:
-            "Correição referendada pelo CNMP; proposição encaminhada à Secretaria Processual.",
+          descricao: "Correição referendada pelo CNMP.",
           correicaoId,
         }),
       );
-      afetadas += 1;
+      converterEncaminhamento(proposicao, usuario);
+      resultado.convertidas += 1;
+      return;
     }
+    proposicao.statusFluxo = StatusFluxo.AGUARDANDO_SECRETARIA;
+    appendHistory(
+      proposicao,
+      buildHistoryEvent(TipoHistorico.REFERENDO_CNMP, usuario, {
+        descricao:
+          "Correição referendada pelo CNMP; proposição encaminhada à Secretaria Processual.",
+        correicaoId,
+      }),
+    );
+    resultado.encaminhadas += 1;
   });
-  return afetadas;
+  return resultado;
 };
 
 export const encaminharParaSecretaria = (proposicao) => {

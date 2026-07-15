@@ -4,6 +4,7 @@ import { mutateState } from "../app/store.js";
 import { formatDateTime } from "../app/utils.js";
 import { Labels, Prioridade, TipoProvidencia } from "../domain/enums.js";
 import { listFilaPendenciasProvidencia } from "../domain/secretaria-filas.js";
+import { ehEncaminhamento } from "../domain/proposicoes.js";
 import { registrarCumprimentoPendencia } from "../domain/pendencias-secretaria.js";
 import {
   renderBadge,
@@ -194,10 +195,12 @@ const renderConclusaoBadge = (juizo) => {
   return renderBadge(`Conclusão: ${label}`, tone);
 };
 
-const renderFundamentos = (juizo, pendenciaId) => {
-  const texto = juizo?.observacoes;
+const renderFundamentos = (proposicao, pendenciaId) => {
+  const texto = proposicao.apreciacaoDoCN?.observacoes;
   if (!texto || !String(texto).trim()) {
-    return `<p class="muted">Sem fundamentos registrados na decisão.</p>`;
+    return ehEncaminhamento(proposicao)
+      ? `<p class="muted">Providência originada de Encaminhamento da correição, convertido no referendo (não há decisão do CN).</p>`
+      : `<p class="muted">Sem fundamentos registrados na decisão.</p>`;
   }
   const safe = escapeAttr(texto).replace(/\n/g, "<br />");
   return `
@@ -302,7 +305,7 @@ const renderCardPendencia = (proposicao, pendencia, hoje) => {
       </div>
       ${mostraDescricao ? `<h4 class="providencia-item__title">${escapeAttr(pendencia.descricao)}</h4>` : ""}
       <p class="muted providencia-item__meta">Criada em ${formatDateTime(pendencia.dataCriacao)}</p>
-      ${renderFundamentos(proposicao.apreciacaoDoCN, pendencia.id)}
+      ${renderFundamentos(proposicao, pendencia.id)}
       <div class="providencia-item__actions">
         ${
           aberto

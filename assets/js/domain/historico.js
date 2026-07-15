@@ -37,6 +37,8 @@ export const summarizeHistoryEvent = (event) => {
         [TipoHistorico.RASCUNHO_CN_CONFIRMADO]: "Rascunho de criação confirmado",
         [TipoHistorico.APAGAMENTO_PROPOSICAO]: "Apagamento da proposição",
         [TipoHistorico.REFERENDO_CNMP]: "Referendo do CNMP",
+        [TipoHistorico.CONVERSAO_ENCAMINHAMENTO]:
+          "Baixa definitiva — Encaminhamento convertido em providência",
         [TipoHistorico.RELATORIO_FINAL_GERADO]: "Relatório final gerado",
         [TipoHistorico.CRIACAO_DILIGENCIA]: "Criação de diligência",
         [TipoHistorico.COMPROVACAO]: "Comprovação",
@@ -83,6 +85,7 @@ const CATEGORIA_POR_TIPO = {
   [TipoHistorico.RASCUNHO_CN_CONFIRMADO]: CategoriaHistorico.FLUXO,
   [TipoHistorico.APAGAMENTO_PROPOSICAO]: CategoriaHistorico.FLUXO,
   [TipoHistorico.REFERENDO_CNMP]: CategoriaHistorico.FLUXO,
+  [TipoHistorico.CONVERSAO_ENCAMINHAMENTO]: CategoriaHistorico.FLUXO,
   [TipoHistorico.RELATORIO_FINAL_GERADO]: CategoriaHistorico.FLUXO,
   [TipoHistorico.CRIACAO_DILIGENCIA]: CategoriaHistorico.FLUXO,
   [TipoHistorico.COMPROVACAO]: CategoriaHistorico.FLUXO,

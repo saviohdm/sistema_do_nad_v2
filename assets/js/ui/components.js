@@ -1,4 +1,4 @@
-import { Labels, getPrioridadeBadgeTone, getStatusCorreicaoBadgeTone } from "../domain/enums.js";
+import { Labels, StatusFluxo, getPrioridadeBadgeTone, getStatusCorreicaoBadgeTone } from "../domain/enums.js";
 import {
   formatDate,
   formatDateTime,
@@ -43,6 +43,13 @@ export const renderApreciacaoBadge = (apreciacao) => {
     : Labels.situacaoApreciacao[apreciacao.situacao];
   return renderBadge(label, getApreciacaoBadgeTone(apreciacao));
 };
+
+// Variante para a "apreciação atual" de uma proposição: baixada sem apreciação
+// (apagada pela CN ou Encaminhamento convertido) não está aguardando decisão.
+const renderApreciacaoAtualBadge = (proposicao) =>
+  !proposicao.apreciacaoDoCN && proposicao.statusFluxo === StatusFluxo.BAIXA_DEFINITIVA
+    ? renderBadge("Sem decisão do CN", "neutral")
+    : renderApreciacaoBadge(proposicao.apreciacaoDoCN);
 
 /**
  * Zona de ação ("Sua vez") do detalhe — painel de trabalho com acento, de
@@ -311,7 +318,7 @@ export const renderProposicaoTable = (proposicoes, { origem } = {}) => `
                   <td>${item.tipo}</td>
                   <td>${item.unidade}</td>
                   <td>${renderStatusBadge(item.statusFluxo)}</td>
-                  <td>${renderApreciacaoBadge(item.apreciacaoDoCN)}</td>
+                  <td>${renderApreciacaoAtualBadge(item)}</td>
                   <td>${item.pendenciasSecretaria.filter((pendencia) => pendencia.status === "pendente").length}</td>
                 </tr>
               `,
@@ -671,7 +678,7 @@ export const renderProposicaoHero = (proposicao) => `
       <div class="pill-list">
         ${renderSensivelBadge(proposicao.sensivel)}
         ${renderStatusBadge(proposicao.statusFluxo)}
-        ${renderApreciacaoBadge(proposicao.apreciacaoDoCN)}
+        ${renderApreciacaoAtualBadge(proposicao)}
       </div>
     </div>
     <p>${proposicao.descricao}</p>

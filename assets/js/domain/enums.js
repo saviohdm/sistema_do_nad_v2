@@ -58,6 +58,7 @@ export const TipoHistorico = {
   RASCUNHO_CN_CONFIRMADO: "rascunho_cn_confirmado",
   APAGAMENTO_PROPOSICAO: "apagamento_proposicao",
   REFERENDO_CNMP: "referendo_cnmp",
+  CONVERSAO_ENCAMINHAMENTO: "conversao_encaminhamento",
   RELATORIO_FINAL_GERADO: "relatorio_final_gerado",
   CRIACAO_DILIGENCIA: "criacao_diligencia",
   COMPROVACAO: "comprovacao",

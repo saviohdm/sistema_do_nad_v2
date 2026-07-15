@@ -89,12 +89,24 @@ O **rascunho de criação** da proposição é a exceção estrutural: a entidad
 ### 1. Origem da proposição
 
 - A conclusão da correição no SCI gera a migração das proposições para o sistema do NAD.
+- A proposição tem três tipos: `Determinação`, `Recomendação` e `Encaminhamento`.
 - A Corregedoria Nacional pode:
   - `RASCUNHAR criação` e `CRIAR`
   - `RASCUNHAR edição` e `EDITAR`
   - `APAGAR proposição`
 - `APAGAR proposição` extingue a própria proposição e encerra seu ciclo de vida.
 - Após `CRIAR` ou `EDITAR`, a proposição é `ENCAMINHADA para a Secretaria`.
+
+#### Proposição do tipo Encaminhamento
+
+- O `Encaminhamento` nasce no relatório da equipe de correição (enviado pelo SCI) e, na essência, é uma **providência**: não percorre o ciclo diligência → comprovação → avaliação → decisão.
+- Entra na fila `aguardando_referendo_cnmp` como as demais proposições e obedece às mesmas regras pré-referendo (rascunho de criação, edição, apagamento).
+- No **referendo da correição**, o Encaminhamento sofre dupla conversão, registrada pelo evento `conversao_encaminhamento`:
+  1. `statusFluxo` vira imediatamente `baixa_definitiva`, encerrando o ciclo principal;
+  2. nasce uma **pendência de providência** para a Secretaria Processual em `pendenciasSecretaria[]`, sempre com `tipoProvidencia = outra_providencia` e com a **mesma descrição** da proposição (o órgão-alvo, ex.: COCI, fica no texto).
+- Encaminhamento criado (ou rascunho confirmado) em **correição já referendada** converte imediatamente na criação — coerente com a regra de pular o referendo.
+- O `destinatario` continua obrigatório e aponta para a unidade/membro correicionado sobre quem o encaminhamento versa.
+- O Encaminhamento nunca tem `apreciacaoDoCN`, diligências, avaliações nem cientificação; o correicionado e o membro auxiliar não participam.
 
 #### Correição como agregado autônomo (gestão no NAD)
 
@@ -215,6 +227,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - `edicao_metadados`
 - `rascunho_cn_confirmado`
 - `apagamento_proposicao`
+- `conversao_encaminhamento`
 - `criacao_diligencia`
 - `comprovacao`
 - `avaliacao_membro_auxiliar`
@@ -250,6 +263,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - **Avaliação**: ato do membro auxiliar que produz uma apreciação. Não gera efeitos por si só; segue para a baia do Corregedor Nacional.
 - **Decisão**: ato do Corregedor Nacional que aprecia uma avaliação do membro auxiliar (deferindo ou indeferindo). Vinculante.
 - **Avaliação com força de decisão**: ato do Corregedor Nacional que produz apreciação vinculante sem necessidade de avaliação prévia do membro auxiliar.
+- **Encaminhamento**: tipo de proposição que nasce no relatório da equipe de correição (SCI) e que, na essência, é uma providência. Não percorre o ciclo de diligência/avaliação/decisão: ao passar pelo portão do referendo é baixado definitivamente e convertido em pendência de providência da Secretaria Processual.
 
 ## Modelagem de dados
 
@@ -274,7 +288,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 ```
 
 - `status` ∈ `ativo` (aguardando referendo do CNMP) | `referendada` (referendo registrado). O estado `encerrada` é **derivado** (não armazenado): a correição está encerrada quando **todas** as suas proposições estão inativas.
-- **Referendar** é uma transição do agregado `Correição`: marca `status = referendada` e encaminha as proposições filhas à Secretaria. Ocorre na fila de referendo (`corregedor-referendo`). A ação e a geração do relatório final ficam bloqueadas enquanto houver proposição filha em `rascunho_cn`.
+- **Referendar** é uma transição do agregado `Correição`: marca `status = referendada` e encaminha as proposições filhas à Secretaria — exceto as do tipo `Encaminhamento`, que são baixadas definitivamente e convertidas em pendência de providência (ver "Proposição do tipo Encaminhamento"). Ocorre na fila de referendo (`corregedor-referendo`). A ação e a geração do relatório final ficam bloqueadas enquanto houver proposição filha em `rascunho_cn`.
 
 ### Proposições
 
@@ -285,7 +299,7 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
   "_id": "ObjectId",
   "numero": "PROP-2024-0001",
   "correicaoId": "ObjectId",
-  "tipo": "Determinação",
+  "tipo": "Determinação", // "Determinação" | "Recomendação" | "Encaminhamento"
   "destinatario": {
     "tipo": "membro",                       // "membro" | "unidade" | "administracao_superior" (apenas um alvo)
     "membroId": "ObjectId",                 // tipo === "membro"
@@ -380,8 +394,9 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 
 - `statusFluxo` deve refletir a fase atual do processo, nunca o resultado conclusivo.
 - Valores válidos de `statusFluxo`: `aguardando_referendo_cnmp`, `rascunho_cn`, `aguardando_secretaria`, `aguardando_comprovacao`, `aguardando_avaliacao_membro`, `aguardando_decisao_corregedor`, `aguardando_ciencia`, `baixa_definitiva`.
-- `aguardando_ciencia` é o estado entre a decisão conclusiva e o ato de ciência ao correicionado. `baixa_definitiva` é o estado terminal pós-ciência (incluindo proposições apagadas pela CN).
-- A ciência (`CIENTIFICACAO`) é a única transição que leva a `baixa_definitiva`; pendências de providência (em `pendenciasSecretaria[]`) não influenciam essa transição.
+- `aguardando_ciencia` é o estado entre a decisão conclusiva e o ato de ciência ao correicionado. `baixa_definitiva` é o estado terminal (pós-ciência, proposições apagadas pela CN e Encaminhamentos convertidos).
+- Três transições levam a `baixa_definitiva`: a ciência (`CIENTIFICACAO`), o apagamento pela CN (`APAGAMENTO_PROPOSICAO`) e a conversão de Encaminhamento (`CONVERSAO_ENCAMINHAMENTO`); pendências de providência (em `pendenciasSecretaria[]`) não influenciam essas transições.
+- Proposições do tipo `Encaminhamento` nunca têm `apreciacaoDoCN`, `diligencias` nem avaliações; sua pendência de providência é sempre `outra_providencia` com a descrição da própria proposição.
 - O resultado conclusivo deve ficar em `apreciacaoDoCN`.
 - `apreciacaoDoCN` só é preenchido por atos do Corregedor Nacional (`decisao` ou `avaliacao_com_forca_de_decisao`); a avaliação do membro auxiliar não popula esse campo.
 - `apreciacaoDoCN.situacao` admite apenas:
@@ -406,3 +421,5 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - Praticar `avaliação com força de decisão` sem avaliação vigente.
 - Concluir proposição como `não cumprida` com criação de pendência paralela para a Secretaria Processual.
 - Concluir proposição como `cumprida` com criação de providência paralela personalizada.
+- Referendar correição contendo proposição do tipo `Encaminhamento`: baixa definitiva imediata + criação de pendência de providência com a descrição do encaminhamento.
+- Criar (ou confirmar rascunho de) `Encaminhamento` em correição já referendada, com conversão imediata na criação.

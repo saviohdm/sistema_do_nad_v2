@@ -3,6 +3,7 @@ import { mutateState } from "../app/store.js";
 import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
 import {
   confirmarRascunhoCN,
+  ehEncaminhamento,
   groupByCorreicao,
   listProposicoesAguardandoReferendo,
   listProposicoesRascunhoCN,
@@ -72,18 +73,41 @@ const handleReferendar = (correicaoId, ctx) => {
     window.alert("Confirme ou apague os rascunhos da correição antes de registrar o referendo.");
     return;
   }
+  const aguardando = listProposicoesAguardandoReferendo(ctx.state).filter(
+    (proposicao) => proposicao.correicaoId === correicaoId,
+  );
+  const totalEncaminhamentos = aguardando.filter(ehEncaminhamento).length;
+  const totalDemais = aguardando.length - totalEncaminhamentos;
+  const efeitos = [];
+  if (totalDemais > 0) {
+    efeitos.push(`${totalDemais} proposição(ões) será(ão) encaminhada(s) à Secretaria Processual`);
+  }
+  if (totalEncaminhamentos > 0) {
+    efeitos.push(
+      `${totalEncaminhamentos} encaminhamento(s) será(ão) baixado(s) definitivamente e convertido(s) em pendência de providência para a Secretaria Processual`,
+    );
+  }
   const confirmar = window.confirm(
-    `Marcar a correição ${correicaoId} como referendada pelo CNMP? Todas as proposições associadas serão encaminhadas à Secretaria Processual.`,
+    `Marcar a correição ${correicaoId} como referendada pelo CNMP?${efeitos.length ? ` ${efeitos.join("; ")}.` : ""}`,
   );
   if (!confirmar) return;
-  let afetadas = 0;
+  let resultado = { encaminhadas: 0, convertidas: 0 };
   mutateState((draft) => {
-    afetadas = referendarCorreicao(draft, correicaoId);
+    resultado = referendarCorreicao(draft, correicaoId);
     return draft;
   });
+  const partes = [];
+  if (resultado.encaminhadas > 0) {
+    partes.push(`${resultado.encaminhadas} proposição(ões) encaminhada(s) à Secretaria Processual`);
+  }
+  if (resultado.convertidas > 0) {
+    partes.push(
+      `${resultado.convertidas} encaminhamento(s) baixado(s) e convertido(s) em pendência de providência`,
+    );
+  }
   window.alert(
-    afetadas > 0
-      ? `${afetadas} proposição(ões) encaminhada(s) à Secretaria Processual.`
+    partes.length
+      ? `${partes.join("; ")}.`
       : "Nenhuma proposição aguardando referendo encontrada para esta correição.",
   );
   ctx.aplicarFiltros({});

@@ -11,7 +11,7 @@ Todo evento nasce em `buildHistoryEvent(tipo, usuario, extras)` ([historico.js](
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `id` | string | Identificador único (`hist-<n>` via `uid`) |
-| `tipo` | enum `TipoHistorico` | Um dos 25 tipos catalogados abaixo |
+| `tipo` | enum `TipoHistorico` | Um dos 26 tipos catalogados abaixo |
 | `data` | string ISO datetime | Data **e hora** do ato |
 | `usuario` | string | Responsável pelo ato (nome da persona ou nome próprio); texto livre, sem id |
 | _...extras_ | — | Campos específicos do tipo, espalhados no mesmo nível |
@@ -44,12 +44,13 @@ apreciacao: {
 
 | Tipo | Emissor | Campos além do envelope |
 |---|---|---|
-| `criacao` | `criarProposicao` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` (3 variantes: criação normal, como rascunho, em correição já referendada) |
+| `criacao` | `criarProposicao` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` (4 variantes: criação normal, como rascunho, em correição já referendada, encaminhamento em correição já referendada) |
 | `edicao` | `editarProposicao` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` fixa — não registra o diff dos campos |
 | `edicao_metadados` | `editarMetadados` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` (diff em texto), `prioridadeAnterior`, `prioridadeNova`, `sensivelAnterior`, `sensivelNovo` |
-| `rascunho_cn_confirmado` | `confirmarRascunhoCN` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` (2 variantes conforme referendo da correição) |
+| `rascunho_cn_confirmado` | `confirmarRascunhoCN` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` (3 variantes conforme referendo da correição e tipo Encaminhamento) |
 | `apagamento_proposicao` | `markPropositionDeleted` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` (tombstone do encerramento) |
-| `referendo_cnmp` | `referendarCorreicao` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao`, `correicaoId` |
+| `referendo_cnmp` | `referendarCorreicao` ([proposicoes.js](assets/js/domain/proposicoes.js)) | `descricao` (2 variantes: proposição encaminhada à Secretaria ou Encaminhamento), `correicaoId` |
+| `conversao_encaminhamento` | `converterEncaminhamento` ([proposicoes.js](assets/js/domain/proposicoes.js)), chamado por `referendarCorreicao`, `criarProposicao` e `confirmarRascunhoCN` | `descricao`, `pendenciaId`, `descricaoProvidencia` (baixa definitiva + pendência de providência criada, só em proposições do tipo `Encaminhamento`) |
 | `relatorio_final_gerado` | — (ver Pontos de atenção) | — |
 | `criacao_diligencia` | `criarDiligencia` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao`, `prazoComprovacao` (date), `diligenciaId`, `loteId` (opcional, diligência em lote) |
 | `comprovacao` | `registrarComprovacao` ([diligencias.js](assets/js/domain/diligencias.js)) | `descricao`, `observacoes`, `anexos[]`, `diligenciaId` |
@@ -97,7 +98,7 @@ Os eventos `_salvo` registram apenas o **primeiro** salvamento (saves subsequent
 
 O correicionado enxerga somente os atos formais e comunicações dirigidas a ele — 13 tipos, definidos em `VISIBLE_TO_CORREICIONADO` ([correicionados.js](assets/js/domain/correicionados.js)): `criacao`, `edicao`, `referendo_cnmp`, `criacao_diligencia`, `comprovacao`, `prazo_comprovacao_expirado`, `decisao`, `avaliacao_com_forca_de_decisao`, `cientificacao`, `cumprimento_pendencia_secretaria`, `email_diligencia_enviado`, `email_ciencia_enviado`, `apagamento_proposicao`.
 
-Os 12 tipos restantes (avaliação do membro auxiliar, remoção de avaliação, edição de metadados, confirmação de rascunho de criação, os seis eventos de rascunho, visualização de ciência, relatório final) são internos à CN. As demais personas veem o histórico completo.
+Os 13 tipos restantes (avaliação do membro auxiliar, remoção de avaliação, edição de metadados, confirmação de rascunho de criação, conversão de encaminhamento, os seis eventos de rascunho, visualização de ciência, relatório final) são internos à CN. As demais personas veem o histórico completo. A conversão de encaminhamento nunca chega ao correicionado na prática: proposições do tipo `Encaminhamento` não passam por diligência nem ciência.
 
 ## Pontos de atenção (estado atual)
 

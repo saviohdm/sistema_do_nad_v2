@@ -418,6 +418,10 @@
   color: var(--muted);
 }
 
+.acervo-overline--accent {
+  color: var(--primary);
+}
+
 /* --- Hero editorial ------------------------------------------------------ */
 
 .acervo-hero {
@@ -442,9 +446,38 @@
   background: linear-gradient(180deg, var(--primary), var(--primary-dark));
 }
 
-.acervo-hero__breathing-space {
+.acervo-hero__top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+/* Sem título próprio (o nome da página vive no cabeçalho do shell), a dateline
+   vira a âncora visual da coluna esquerda do hero. */
+.acervo-hero > div:first-child {
   align-self: center;
-  min-height: 4.5rem;
+}
+
+.acervo-hero > div:first-child .acervo-overline {
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+}
+
+.acervo-hero__top::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.acervo-hero__mark {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--primary);
 }
 
 .acervo-hero__kpis {
@@ -1324,9 +1357,6 @@
   .acervo-hero {
     grid-template-columns: 1fr;
     align-items: start;
-  }
-  .acervo-hero__breathing-space {
-    min-height: var(--space-4);
   }
   .acervo-hero__kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));

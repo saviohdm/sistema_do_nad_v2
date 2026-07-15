@@ -4,6 +4,8 @@
 
 O fluxo do sistema de proposições do NAD começa fora do sistema, com a conclusão da correição no SCI e a migração das proposições para o Sistema de Proposições. A partir daí, a proposição percorre um ciclo de criação ou edição, diligência, comprovação, avaliação, decisão e cientificação.
 
+As proposições têm três tipos: `Determinação`, `Recomendação` e `Encaminhamento`. Os dois primeiros percorrem o ciclo completo descrito acima. O `Encaminhamento` tem fluxo abreviado: ao passar pelo referendo, é baixado definitivamente e convertido em pendência de providência da Secretaria Processual (ver seção própria abaixo).
+
 O processo é orientado por persona. A avaliação do membro auxiliar nunca produz efeitos concretos por si só. Os efeitos jurídicos e operacionais da proposição decorrem sempre da decisão do Corregedor Nacional ou da avaliação direta com força de decisão praticada por ele.
 
 ## Passos por ator
@@ -43,6 +45,16 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
 19. Se a decisão for `concluída`, a proposição segue para `CIENTIFICAR`.
 20. Para qualquer resultado conclusivo, se houver providência adicional, o sistema cria em paralelo uma pendência para a Secretaria Processual informar o seu cumprimento.
 
+### Proposição do tipo Encaminhamento (fluxo abreviado)
+
+1. O `Encaminhamento` nasce no relatório da equipe de correição e é enviado diretamente pelo SCI; na essência, é uma providência (ex.: encaminhamento de informações à COCI).
+2. Ele entra na fila de `aguardando referendo` como as demais proposições e obedece às mesmas regras pré-referendo (rascunho, edição, apagamento).
+3. Quando o usuário registra o referendo da correição, o `Encaminhamento` tem dois efeitos imediatos:
+   - o status vira `baixa definitiva`, encerrando o seu ciclo; e
+   - nasce uma `pendência de providência` para a Secretaria Processual, na mesma fila das demais pendências, com a mesma descrição constante do encaminhamento.
+4. `Encaminhamento` criado (ou rascunho confirmado) em correição já referendada converte imediatamente na criação.
+5. Não há diligência, comprovação, avaliação, decisão nem cientificação: o correicionado e o membro auxiliar não participam.
+
 ### Secretaria Processual da CN
 
   1. A Secretaria recebe da CN a proposição encaminhada para tramitação.
@@ -52,6 +64,7 @@ O processo é orientado por persona. A avaliação do membro auxiliar nunca prod
   4. Quando a decisão da CN indicar `necessita mais informações`, a Secretaria cria
   nova diligência para reabrir a instrução.
   5. Quando houver providência adicional vinculada a qualquer decisão concluída,
+  ou quando um `Encaminhamento` é convertido no referendo da correição,
   a Secretaria recebe uma pendência paralela de providência.
   6. Essa pendência funciona como mecanismo de controle interno da Secretaria
   Processual e da Corregedoria Nacional.

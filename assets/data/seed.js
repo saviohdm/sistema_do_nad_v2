@@ -930,6 +930,37 @@ export const seedState = {
       ],
     },
     {
+      id: "prop-401",
+      numero: "PROP-2026-0401",
+      tipo: "Encaminhamento",
+      unidadeId: "adm-mpmg-pgj",
+      unidade: "Procuradoria-Geral de Justiça (MPMG)",
+      membroId: null,
+      membro: "",
+      destinatario: {
+        tipo: "administracao_superior",
+        administracaoSuperior: { ramoMP: "MPMG", tipo: "PGJ" },
+      },
+      descricao:
+        "Encaminhar à COCI o diagnóstico de metas institucionais apurado na correição, para acompanhamento coordenado das unidades de Minas Gerais.",
+      prioridade: "normal",
+      sensivel: false,
+      observacoesGerais:
+        "Encaminhamento migrado do SCI; ao ser referendado, será baixado e convertido em pendência de providência da Secretaria.",
+      correicaoId: "corr-REF-2026-MG-01",
+      statusFluxo: StatusFluxo.AGUARDANDO_REFERENDO_CNMP,
+      apreciacaoDoCN: null,
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [],
+      diligencias: [],
+      historico: [
+        createEvent("hist-401-cri", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao:
+            "Encaminhamento criado a partir do Relatório de Equipe; aguardando referendo em sessão do CNMP.",
+        }),
+      ],
+    },
+    {
       id: "prop-013",
       numero: "PROP-2026-0013",
       tipo: "Determinação",
@@ -2090,6 +2121,119 @@ export const seedState = {
         createEvent("hist-p110-ref", TipoHistorico.REFERENDO_CNMP, "CNMP", {
           descricao: "Proposição referendada em sessão do CNMP; disponível para diligência da Secretaria.",
           data: "2026-07-03T15:00:00Z",
+        }),
+      ],
+    },
+    {
+      id: "prop-402",
+      numero: "PROP-2026-0402",
+      tipo: "Encaminhamento",
+      unidadeId: "und-ba-feira-santana",
+      unidade: "Promotoria Regional de Feira de Santana",
+      membroId: null,
+      membro: "",
+      destinatario: { tipo: "unidade", unidadeId: "und-ba-feira-santana" },
+      descricao:
+        "Encaminhar à COCI as informações sobre o acervo de procedimentos com tramitação atípica identificado na correição, para acompanhamento coordenado.",
+      prioridade: "normal",
+      sensivel: false,
+      observacoesGerais:
+        "Encaminhamento convertido em pendência de providência no referendo da correição.",
+      correicaoId: "corr-2026-BA-03",
+      statusFluxo: StatusFluxo.BAIXA_DEFINITIVA,
+      apreciacaoDoCN: null,
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [
+        {
+          id: "pend-402",
+          tipo: "cumprimento_providencia",
+          tipoProvidencia: TipoProvidencia.OUTRA,
+          descricao:
+            "Encaminhar à COCI as informações sobre o acervo de procedimentos com tramitação atípica identificado na correição, para acompanhamento coordenado.",
+          status: "pendente",
+          dataCriacao: "2026-07-03T15:01:00Z",
+          dataCumprimento: null,
+          observacoes: null,
+        },
+      ],
+      diligencias: [],
+      historico: [
+        createEvent("hist-402-cri", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Encaminhamento criado a partir da migração do SCI.",
+          data: "2026-06-28T10:00:00Z",
+        }),
+        createEvent("hist-402-ref", TipoHistorico.REFERENDO_CNMP, "CNMP", {
+          descricao: "Correição referendada pelo CNMP.",
+          data: "2026-07-03T15:00:00Z",
+        }),
+        createEvent("hist-402-conv", TipoHistorico.CONVERSAO_ENCAMINHAMENTO, "CNMP", {
+          descricao:
+            "Encaminhamento baixado definitivamente e convertido em pendência de providência para a Secretaria Processual.",
+          data: "2026-07-03T15:01:00Z",
+          pendenciaId: "pend-402",
+          descricaoProvidencia:
+            "Encaminhar à COCI as informações sobre o acervo de procedimentos com tramitação atípica identificado na correição, para acompanhamento coordenado.",
+        }),
+      ],
+    },
+    {
+      id: "prop-403",
+      numero: "PROP-2026-0403",
+      tipo: "Encaminhamento",
+      unidadeId: "und-rs-pj-regional",
+      unidade: "Promotoria de Justiça Regional",
+      membroId: null,
+      membro: "",
+      destinatario: { tipo: "unidade", unidadeId: "und-rs-pj-regional" },
+      descricao:
+        "Encaminhar cópia do relatório da correição à Corregedoria-Geral do MPRS, para conhecimento e providências de sua alçada.",
+      prioridade: "normal",
+      sensivel: false,
+      observacoesGerais:
+        "Encaminhamento convertido no referendo; providência já cumprida pela Secretaria.",
+      correicaoId: "corr-2026-RS-01",
+      statusFluxo: StatusFluxo.BAIXA_DEFINITIVA,
+      apreciacaoDoCN: null,
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [
+        {
+          id: "pend-403",
+          tipo: "cumprimento_providencia",
+          tipoProvidencia: TipoProvidencia.OUTRA,
+          descricao:
+            "Encaminhar cópia do relatório da correição à Corregedoria-Geral do MPRS, para conhecimento e providências de sua alçada.",
+          status: "cumprida",
+          dataCriacao: "2026-02-05T14:01:00Z",
+          dataCumprimento: "2026-02-20T11:00:00Z",
+          observacoes:
+            "Ofício expedido à Corregedoria-Geral do MPRS com cópia integral do relatório da correição.",
+        },
+      ],
+      diligencias: [],
+      historico: [
+        createEvent("hist-403-cri", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Encaminhamento criado a partir da migração do SCI.",
+          data: "2026-01-15T09:00:00Z",
+        }),
+        createEvent("hist-403-ref", TipoHistorico.REFERENDO_CNMP, "CNMP", {
+          descricao: "Correição referendada pelo CNMP.",
+          data: "2026-02-05T14:00:00Z",
+        }),
+        createEvent("hist-403-conv", TipoHistorico.CONVERSAO_ENCAMINHAMENTO, "CNMP", {
+          descricao:
+            "Encaminhamento baixado definitivamente e convertido em pendência de providência para a Secretaria Processual.",
+          data: "2026-02-05T14:01:00Z",
+          pendenciaId: "pend-403",
+          descricaoProvidencia:
+            "Encaminhar cópia do relatório da correição à Corregedoria-Geral do MPRS, para conhecimento e providências de sua alçada.",
+        }),
+        createEvent("hist-403-cum", TipoHistorico.CUMPRIMENTO_PENDENCIA_SECRETARIA, "Secretaria Processual da CN", {
+          descricao:
+            "Providência registrada como cumprida: Encaminhar cópia do relatório da correição à Corregedoria-Geral do MPRS, para conhecimento e providências de sua alçada.",
+          data: "2026-02-20T11:00:00Z",
+          observacoes:
+            "Ofício expedido à Corregedoria-Geral do MPRS com cópia integral do relatório da correição.",
+          dataCumprimento: "2026-02-20T11:00:00Z",
         }),
       ],
     },

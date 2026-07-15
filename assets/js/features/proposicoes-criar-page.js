@@ -224,6 +224,7 @@ const render = () => {
             <select id="tipo" name="tipo" required>
               <option value="Determinação"${valor("tipo") === "Determinação" ? " selected" : ""}>Determinação</option>
               <option value="Recomendação"${valor("tipo") === "Recomendação" ? " selected" : ""}>Recomendação</option>
+              <option value="Encaminhamento"${valor("tipo") === "Encaminhamento" ? " selected" : ""}>Encaminhamento</option>
             </select>
           </div>
 
