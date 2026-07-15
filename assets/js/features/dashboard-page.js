@@ -6,7 +6,6 @@ import {
   countPendentesDoCorregedor,
   countPendentesPorPersona,
   countProposicoesPorAtividade,
-  countProposicoesPorRamoMP,
   findPropWithPendingProvidence,
   getDashboardSummary,
   listProposicoes,
@@ -22,7 +21,6 @@ import {
   renderChartCard,
   renderCnHero,
   renderProposicaoTable,
-  renderRamoMPTable,
   renderSoloChartCard,
   renderStatCard,
 } from "../ui/components.js";
@@ -92,7 +90,6 @@ const buildHeadlineCN = ({ pendentesDecisao, pendentesRascunhoDecisao, pendentes
 const buildCorregedorContent = () => {
   const proposicoes = countProposicoesPorAtividade(currentState);
   const correicoes = countCorreicoesPorAtividade(currentState);
-  const porRamo = countProposicoesPorRamoMP(currentState);
   const pendentesCN = countPendentesDoCorregedor(currentState);
   const pendentesPersona = countPendentesPorPersona(currentState);
   const providenciasAbertas = findPropWithPendingProvidence(currentState).length;
@@ -175,18 +172,10 @@ const buildCorregedorContent = () => {
     </section>
   `;
 
-  const ramoSection = `
-    <section class="cn-section">
-      <h2 class="cn-section__title">Distribuição por ramo do MP</h2>
-      ${renderRamoMPTable(porRamo)}
-    </section>
-  `;
-
   return `
     <div class="cn-dashboard">
       ${heroHtml}
       ${panoramaSection}
-      ${ramoSection}
     </div>
   `;
 };
