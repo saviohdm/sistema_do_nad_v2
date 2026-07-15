@@ -44,42 +44,98 @@ const PERMISSIONS = {
 
 const PERSONA_MENU_OVERRIDES = {
   [PERSONAS.MEMBRO]: [
-    { href: "membro-auxiliar.html", label: "Minha fila de avaliação" },
-    { href: "proposicoes-lista.html", label: "Consulta de proposições" },
+    { href: "membro-auxiliar.html", label: "Minha fila de avaliação", icon: "avaliacao" },
+    { href: "proposicoes-lista.html", label: "Consulta de proposições", icon: "lupa" },
   ],
+  // O menu do CN é agrupado ({ label?, items }); os demais permanecem planos —
+  // o layout normaliza ambos os formatos.
   [PERSONAS.CORREGEDOR]: [
-    { href: "dashboard.html", label: "Dashboard" },
-    { href: "corregedor-referendo.html", label: "Aguardando referendo do CNMP" },
-    { href: "corregedor-decisao.html", label: "Aguardando decisão" },
-    { href: "correicoes-lista.html", label: "Correições" },
-    { href: "proposicoes-lista.html", label: "Consulta de proposições" },
-    { href: "proposicoes-criar.html", label: "Criar proposição" },
-    { href: "administracao-superior.html", label: "Administração Superior" },
+    {
+      items: [{ href: "corregedor-inicio.html", label: "Início", icon: "inicio" }],
+    },
+    {
+      label: "Filas operacionais",
+      items: [
+        {
+          href: "corregedor-referendo.html",
+          label: "Aguardando referendo do CNMP",
+          icon: "referendo",
+          badgeKey: "pendentesReferendoCN",
+        },
+        {
+          href: "corregedor-decisao.html",
+          label: "Aguardando decisão",
+          icon: "decisao",
+          badgeKey: "pendentesDecisaoCN",
+        },
+      ],
+    },
+    {
+      label: "Serviços",
+      items: [
+        { href: "correicoes-lista.html", label: "Correições", icon: "correicoes" },
+        { href: "proposicoes-criar.html", label: "Criar proposição", icon: "criar" },
+        { href: "administracao-superior.html", label: "Administração Superior", icon: "admin" },
+      ],
+    },
+    {
+      items: [{ href: "proposicoes-lista.html", label: "Consulta de proposições", icon: "lupa" }],
+    },
+    {
+      items: [{ href: "dashboard.html", label: "Estatísticas", icon: "grafico" }],
+    },
   ],
   [PERSONAS.SECRETARIA]: [
-    { href: "dashboard.html", label: "Dashboard" },
-    { href: "secretaria-diligencia.html", label: "Aguardando diligência" },
     {
-      href: "secretaria-ciencia.html",
-      label: "Aguardando ciência",
-      badgeKey: "gruposCompletosProntos",
+      items: [{ href: "secretaria-inicio.html", label: "Início", icon: "inicio" }],
     },
-    { href: "secretaria-providencia.html", label: "Providências pendentes" },
-    { href: "proposicoes-lista.html", label: "Consulta de proposições" },
-    { href: "administracao-superior.html", label: "Administração Superior" },
+    {
+      label: "Filas operacionais",
+      items: [
+        {
+          href: "secretaria-diligencia.html",
+          label: "Aguardando diligência",
+          icon: "diligencia",
+          badgeKey: "gruposDiligenciaProntos",
+        },
+        {
+          href: "secretaria-ciencia.html",
+          label: "Aguardando ciência",
+          icon: "ciencia",
+          badgeKey: "gruposCompletosProntos",
+        },
+        {
+          href: "secretaria-providencia.html",
+          label: "Providências pendentes",
+          icon: "providencia",
+          badgeKey: "providenciasPendentes",
+        },
+      ],
+    },
+    {
+      label: "Serviços",
+      items: [
+        { href: "administracao-superior.html", label: "Administração Superior", icon: "admin" },
+      ],
+    },
+    {
+      items: [{ href: "proposicoes-lista.html", label: "Consulta de proposições", icon: "lupa" }],
+    },
   ],
   [PERSONAS.CORREICIONADO]: [
     {
       href: "correicionado-comprovacoes.html",
       label: "Minhas comprovações",
+      icon: "comprovacao",
       badgeKey: "minhasComprovacoesPendentes",
     },
     {
       href: "correicionado-ciencias.html",
       label: "Minhas ciências",
+      icon: "olho",
       badgeKey: "minhasCienciasNaoVisualizadas",
     },
-    { href: "proposicoes-lista.html", label: "Minhas proposições" },
+    { href: "proposicoes-lista.html", label: "Minhas proposições", icon: "pasta" },
   ],
 };
 
@@ -123,7 +179,8 @@ export const getCurrentUser = () => {
 export const getHomeForPersona = (persona = getCurrentPersona()) => {
   if (persona === PERSONAS.CORREICIONADO) return "/pages/correicionado-comprovacoes.html";
   if (persona === PERSONAS.MEMBRO) return "/pages/membro-auxiliar.html";
-  if (persona === PERSONAS.CORREGEDOR || persona === PERSONAS.SECRETARIA) return "/pages/dashboard.html";
+  if (persona === PERSONAS.CORREGEDOR) return "/pages/corregedor-inicio.html";
+  if (persona === PERSONAS.SECRETARIA) return "/pages/secretaria-inicio.html";
   return "/pages/login.html";
 };
 

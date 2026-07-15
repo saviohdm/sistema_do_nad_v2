@@ -18,6 +18,8 @@ import {
   summarizeHistoryEvent,
 } from "../domain/historico.js";
 import { getDestinatarioDisplay } from "../domain/filas-operacionais.js";
+import { LabelsSeveridadeAviso, SeveridadeAviso } from "../domain/avisos.js";
+import { renderIcon } from "./icons.js";
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -698,7 +700,14 @@ export const renderEmptyState = (message) => `
   </div>
 `;
 
-export const renderCnHero = ({ dateline, saudacao, headline, kpis = [] }) => {
+export const renderCnHero = ({
+  dateline,
+  saudacao,
+  headline,
+  kpis = [],
+  marca = "NAD · CN",
+  ariaLabel = "Resumo do dia para o Corregedor Nacional",
+}) => {
   const kpisHtml = kpis
     .map((kpi) => {
       const classes = `cn-kpi${kpi.destaque ? " cn-kpi--destaque" : ""}${kpi.href ? " cn-kpi--link" : ""}`;
@@ -712,17 +721,100 @@ export const renderCnHero = ({ dateline, saudacao, headline, kpis = [] }) => {
     .join("");
 
   return `
-    <section class="cn-hero" aria-label="Resumo do dia para o Corregedor Nacional">
+    <section class="cn-hero" aria-label="${escapeHtml(ariaLabel)}">
       <div class="cn-hero__top">
         <p class="cn-hero__dateline">${dateline}</p>
-        <span class="cn-hero__mark" aria-hidden="true">NAD · CN</span>
+        <span class="cn-hero__mark" aria-hidden="true">${escapeHtml(marca)}</span>
       </div>
       <div class="cn-hero__body">
         <p class="cn-hero__saudacao">${saudacao}</p>
         <p class="cn-hero__headline">${headline}</p>
       </div>
-      <div class="cn-hero__kpis">${kpisHtml}</div>
+      ${kpis.length ? `<div class="cn-hero__kpis">${kpisHtml}</div>` : ""}
     </section>
+  `;
+};
+
+// Card de fila operacional da página Início: número grande + contadores
+// secundários (links independentes; sem âncoras aninhadas) + CTA "Abrir fila".
+export const renderFilaCard = ({
+  titulo,
+  icone,
+  valor,
+  href,
+  hrefValor = href,
+  abrirLabel = "Abrir fila",
+  unidadeSingular = "proposição",
+  unidadePlural = "proposições",
+  secundarios = [],
+}) => {
+  const unidade = valor === 1 ? unidadeSingular : unidadePlural;
+  const tudoEmDia = valor === 0 && secundarios.every((sec) => !sec.valor);
+  const secundariosHtml = secundarios
+    .map((sec) => {
+      const conteudo = `<strong class="fila-card__sec-valor">${sec.valor}</strong> ${sec.label}`;
+      if (sec.href && sec.valor > 0) {
+        return `<a class="fila-card__sec" href="${sec.href}">${conteudo}</a>`;
+      }
+      return `<span class="fila-card__sec${sec.valor === 0 ? " fila-card__sec--zero" : ""}">${conteudo}</span>`;
+    })
+    .join("");
+  return `
+    <article class="fila-card${tudoEmDia ? " fila-card--em-dia" : ""}">
+      <header class="fila-card__header">
+        ${icone ? renderIcon(icone, "fila-card__icone") : ""}
+        <h3 class="fila-card__titulo">${titulo}</h3>
+      </header>
+      <a class="fila-card__valor" href="${hrefValor}" aria-label="${escapeHtml(`${titulo}: ${valor} ${unidade} — abrir fila`)}">
+        <span class="fila-card__numero" aria-hidden="true">${valor}</span>
+        <span class="fila-card__unidade" aria-hidden="true">${unidade}</span>
+      </a>
+      ${
+        tudoEmDia
+          ? `<p class="fila-card__em-dia">Em dia — nenhuma pendência.</p>`
+          : `<div class="fila-card__secundarios">${secundariosHtml}</div>`
+      }
+      <footer class="fila-card__footer">
+        <a class="button" href="${href}">${abrirLabel}</a>
+      </footer>
+    </article>
+  `;
+};
+
+// Avisos institucionais (página Início). Severidade sempre com rótulo textual,
+// nunca apenas cor. `critico` usa o banner; os demais, o card da seção Avisos.
+const TONS_SEVERIDADE_AVISO = {
+  [SeveridadeAviso.CRITICO]: "danger",
+  [SeveridadeAviso.ALERTA]: "warning",
+  [SeveridadeAviso.INFORMATIVO]: "neutral",
+};
+
+export const renderAvisoBanner = (aviso) => `
+  <div class="aviso-banner" role="alert">
+    ${renderBadge(LabelsSeveridadeAviso[aviso.severidade] || "Aviso", "danger")}
+    <div class="aviso-banner__texto">
+      <strong>${escapeHtml(aviso.titulo)}</strong>
+      ${aviso.corpo ? `<span>${escapeHtml(aviso.corpo)}</span>` : ""}
+    </div>
+  </div>
+`;
+
+export const renderAvisoCard = (aviso) => {
+  const tom = TONS_SEVERIDADE_AVISO[aviso.severidade] || "neutral";
+  return `
+    <article class="aviso-card aviso-card--${aviso.severidade}">
+      <div class="aviso-card__meta">
+        ${renderBadge(LabelsSeveridadeAviso[aviso.severidade] || "Aviso", tom)}
+        <span class="aviso-card__vigencia">Vigente até ${formatDate(aviso.vigenciaFim)}</span>
+      </div>
+      <h3 class="aviso-card__titulo">${escapeHtml(aviso.titulo)}</h3>
+      ${aviso.corpo ? `<p class="aviso-card__corpo">${escapeHtml(aviso.corpo)}</p>` : ""}
+      ${
+        aviso.link?.href
+          ? `<a class="aviso-card__link" href="${aviso.link.href}">${escapeHtml(aviso.link.label || "Saiba mais")} →</a>`
+          : ""
+      }
+    </article>
   `;
 };
 

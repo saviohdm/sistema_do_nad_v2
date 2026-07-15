@@ -78,6 +78,29 @@ const diretorioCnmp = {
 
 export const seedState = {
   diretorioCnmp,
+  // Avisos institucionais exibidos na página Início enquanto vigentes
+  // (vigenciaInicio <= hoje <= vigenciaFim). Severidades: critico | alerta | informativo.
+  avisos: [
+    {
+      id: "aviso-encaminhamento",
+      severidade: "informativo",
+      titulo: "Novo tipo de proposição: Encaminhamento",
+      corpo:
+        "Proposições do tipo Encaminhamento passam a ser baixadas automaticamente no referendo do CNMP, gerando providência de acompanhamento para a Secretaria Processual. Não há ciclo de diligência, avaliação ou decisão.",
+      vigenciaInicio: "2026-07-10",
+      vigenciaFim: "2026-09-30",
+      link: { href: "corregedor-referendo.html", label: "Ver fila de referendo" },
+    },
+    {
+      // Expirado de propósito: comprova que aviso fora de vigência não renderiza.
+      id: "aviso-migracao-sci",
+      severidade: "alerta",
+      titulo: "Janela de migração SCI → NAD concluída",
+      corpo: "A carga de correições do primeiro semestre foi migrada do SCI em 30/06/2026.",
+      vigenciaInicio: "2026-06-20",
+      vigenciaFim: "2026-06-30",
+    },
+  ],
   caixaDeSaida: [
     {
       id: "cx-001-dil",

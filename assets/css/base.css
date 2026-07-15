@@ -50,6 +50,12 @@ button {
   height: 100vh;
   overflow-y: auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar nav {
+  margin-bottom: var(--space-5);
 }
 
 .sidebar-persona {

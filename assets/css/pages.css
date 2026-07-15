@@ -1452,3 +1452,262 @@
     align-items: stretch;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Início do Corregedor Nacional
+   Hierarquia: [aviso crítico] → Hero → Filas operacionais → Serviços → Avisos
+   ──────────────────────────────────────────────────────────────────── */
+
+.cn-inicio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.inicio-filas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+
+.fila-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.fila-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.fila-card__icone {
+  color: var(--primary-dark);
+  flex-shrink: 0;
+}
+
+.fila-card__titulo {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.fila-card__valor {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: fit-content;
+  color: inherit;
+  border-radius: var(--radius-sm);
+}
+
+.fila-card__numero {
+  font-family: var(--font-display);
+  font-size: 3.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--primary-dark);
+}
+
+.fila-card__unidade {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.fila-card__valor:hover .fila-card__numero,
+.fila-card__valor:focus-visible .fila-card__numero {
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+
+.fila-card__valor:focus-visible {
+  outline: 2px solid var(--primary-dark);
+  outline-offset: 3px;
+}
+
+.fila-card__secundarios {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.fila-card__sec {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  width: fit-content;
+}
+
+.fila-card__sec-valor {
+  color: var(--primary-dark);
+}
+
+a.fila-card__sec:hover,
+a.fila-card__sec:focus-visible {
+  color: var(--primary-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fila-card__sec--zero,
+.fila-card__sec--zero .fila-card__sec-valor {
+  color: var(--muted);
+}
+
+.fila-card__em-dia {
+  margin: 0;
+  color: var(--success);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.fila-card--em-dia .fila-card__numero {
+  color: var(--muted);
+}
+
+.fila-card__footer {
+  margin-top: auto;
+}
+
+.inicio-servicos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.servico-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: 180ms ease;
+}
+
+.servico-link:hover {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.servico-link:focus-visible {
+  outline: 2px solid var(--primary-dark);
+  outline-offset: 2px;
+}
+
+.servico-link__icone {
+  color: var(--primary-dark);
+  flex-shrink: 0;
+}
+
+.inicio-consultas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.inicio-consultas a {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.inicio-consultas a:hover,
+.inicio-consultas a:focus-visible {
+  color: var(--primary-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.aviso-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface-warm);
+  border: 1px solid var(--danger);
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+}
+
+.aviso-banner__texto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.inicio-avisos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.aviso-card {
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--muted);
+  border-radius: var(--radius-md);
+}
+
+.aviso-card--critico {
+  border-left-color: var(--danger);
+}
+
+.aviso-card--alerta {
+  border-left-color: var(--warning);
+}
+
+.aviso-card--informativo {
+  border-left-color: var(--chart-3);
+}
+
+.aviso-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.aviso-card__vigencia {
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.aviso-card__titulo {
+  margin: var(--space-2) 0 0;
+  font-size: 1rem;
+}
+
+.aviso-card__corpo {
+  margin: var(--space-2) 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.aviso-card__link {
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-weight: 600;
+  color: var(--primary-dark);
+  font-size: 0.875rem;
+}
+
+.aviso-card__link:hover,
+.aviso-card__link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .fila-card__numero {
+    font-size: 2.5rem;
+  }
+}

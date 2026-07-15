@@ -7,15 +7,31 @@ import {
   getHomeForPersona,
 } from "../app/auth.js";
 import { loadState, saveState } from "../app/store.js";
-import { countGruposCompletosProntos } from "../domain/secretaria-filas.js";
+import {
+  countGruposCompletosProntos,
+  listGruposAguardandoDiligencia,
+} from "../domain/secretaria-filas.js";
 import {
   listProposicoesCorreicionadoCiencias,
   listProposicoesCorreicionadoPendentes,
   cienciaJaVisualizadaPor,
 } from "../domain/correicionados.js";
 import { expirarDiligenciasVencidas } from "../domain/diligencias.js";
+import { countPendenciasAbertas, countPendentesDoCorregedor } from "../domain/proposicoes.js";
+import { renderIcon } from "./icons.js";
 
-const getNavItemsForCurrentPersona = () => getMenuOverrideForCurrentPersona() || [];
+// O menu de uma persona pode ser plano (lista de itens) ou agrupado
+// ({ label?, items }). Normaliza para grupos; personas sem grupos viram um
+// grupo único sem rótulo (render idêntico ao anterior).
+const getNavGroupsForCurrentPersona = () => {
+  const menu = getMenuOverrideForCurrentPersona() || [];
+  if (!menu.length) return [];
+  const agrupado = menu.every((entry) => Array.isArray(entry.items));
+  return agrupado ? menu : [{ items: menu }];
+};
+
+const getNavItemsForCurrentPersona = () =>
+  getNavGroupsForCurrentPersona().flatMap((grupo) => grupo.items);
 
 const pageSlug = (href) => href.split("?")[0].split("/").pop().replace(/\.html$/i, "");
 
@@ -137,6 +153,22 @@ const computeBadgeValue = (badgeKey) => {
       ).length;
       return total > 0 ? total : null;
     }
+    if (badgeKey === "pendentesDecisaoCN" || badgeKey === "pendentesReferendoCN") {
+      const pendentes = countPendentesDoCorregedor(state);
+      const total =
+        badgeKey === "pendentesDecisaoCN"
+          ? pendentes.pendentesDecisao
+          : pendentes.pendentesReferendo;
+      return total > 0 ? total : null;
+    }
+    if (badgeKey === "gruposDiligenciaProntos") {
+      const total = listGruposAguardandoDiligencia(state).filter((g) => g.completo).length;
+      return total > 0 ? total : null;
+    }
+    if (badgeKey === "providenciasPendentes") {
+      const total = countPendenciasAbertas(state);
+      return total > 0 ? total : null;
+    }
   } catch (err) {
     return null;
   }
@@ -203,6 +235,57 @@ if (typeof window !== "undefined") {
   window.__nadAvancarTempo = handleAvancarTempo;
 }
 
+// ---------------------------------------------------------------------------
+// Sidebar recolhível: estado persistido por usuário do navegador; o toggle
+// atua no DOM já montado (sem re-render) para não perder handlers da página.
+// ---------------------------------------------------------------------------
+
+const SIDEBAR_RECOLHIDA_KEY = "nad-sidebar-recolhida";
+
+const isSidebarRecolhida = () => localStorage.getItem(SIDEBAR_RECOLHIDA_KEY) === "1";
+
+const handleToggleSidebar = () => {
+  const shell = document.querySelector(".app-shell");
+  if (!shell) return;
+  const recolhida = shell.classList.toggle("app-shell--nav-recolhida");
+  localStorage.setItem(SIDEBAR_RECOLHIDA_KEY, recolhida ? "1" : "0");
+  const botao = document.querySelector("[data-toggle-sidebar]");
+  if (!botao) return;
+  const rotulo = recolhida ? "Expandir menu" : "Recolher menu";
+  botao.setAttribute("aria-expanded", String(!recolhida));
+  botao.setAttribute("aria-label", rotulo);
+  botao.setAttribute("title", rotulo);
+  const labelEl = botao.querySelector(".sidebar__recolher-label");
+  if (labelEl) labelEl.textContent = rotulo;
+};
+
+if (typeof window !== "undefined") {
+  window.__nadToggleSidebar = handleToggleSidebar;
+}
+
+const renderNavItem = (item, activePage) => {
+  const ativo = pageSlug(item.href) === activePage;
+  // Item sem ícone (personas de menu plano) ganha a inicial do rótulo como
+  // marca visual do modo recolhido; invisível no modo expandido.
+  const marcaVisual = item.icon
+    ? renderIcon(item.icon)
+    : `<span class="nav-link__inicial" aria-hidden="true">${escapeHtml((item.label || "•").charAt(0))}</span>`;
+  return `
+    <a class="nav-link ${ativo ? "is-active" : ""}"${ativo ? ' aria-current="page"' : ""} href="${item.href}" title="${escapeHtml(item.label)}">
+      ${marcaVisual}
+      <span class="nav-link__label">${escapeHtml(item.label)}</span>
+      ${renderNavBadge(item.badgeKey)}
+    </a>
+  `;
+};
+
+const renderNavGroup = (grupo, activePage) => `
+  <div class="nav-group">
+    ${grupo.label ? `<p class="nav-group__label">${escapeHtml(grupo.label)}</p>` : ""}
+    ${grupo.items.map((item) => renderNavItem(item, activePage)).join("")}
+  </div>
+`;
+
 const renderAvancarTempoButton = () => {
   if (!hasPermission("avancar_tempo_sistema")) return "";
   return `
@@ -218,28 +301,32 @@ const renderAvancarTempoButton = () => {
 };
 
 export const renderAppShell = ({ activePage, title, content, actions = "", breadcrumb = "" }) => {
-  const navItems = getNavItemsForCurrentPersona();
+  const navGroups = getNavGroupsForCurrentPersona();
+  const recolhida = isSidebarRecolhida();
+  const rotuloRecolher = recolhida ? "Expandir menu" : "Recolher menu";
   const avancarTempo = renderAvancarTempoButton();
   const actionsAumentadas = [avancarTempo, actions].filter(Boolean).join(" ");
 
   return `
-    <div class="app-shell">
+    <div class="app-shell${recolhida ? " app-shell--nav-recolhida" : ""}">
       <aside class="sidebar">
         ${renderPersonaBadge()}
         <p class="sidebar__title"><a href="${getHomeForPersona()}" title="Ir para a página inicial">NAD</a></p>
-        <nav>
-          ${navItems
-            .map((item) => {
-              const ativo = pageSlug(item.href) === activePage;
-              return `
-                <a class="nav-link ${ativo ? "is-active" : ""}"${ativo ? ' aria-current="page"' : ""} href="${item.href}">
-                  <span class="nav-link__label">${item.label}</span>
-                  ${renderNavBadge(item.badgeKey)}
-                </a>
-              `;
-            })
-            .join("")}
+        <nav aria-label="Menu principal">
+          ${navGroups.map((grupo) => renderNavGroup(grupo, activePage)).join("")}
         </nav>
+        <button
+          class="sidebar__recolher"
+          type="button"
+          data-toggle-sidebar
+          aria-expanded="${String(!recolhida)}"
+          aria-label="${rotuloRecolher}"
+          title="${rotuloRecolher}"
+          onclick="window.__nadToggleSidebar()"
+        >
+          ${renderIcon("recolher", "sidebar__recolher-icone")}
+          <span class="sidebar__recolher-label">${rotuloRecolher}</span>
+        </button>
       </aside>
       <main class="page">
         <header class="page-header">

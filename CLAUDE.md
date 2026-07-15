@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the NAD (Núcleo de Acompanhamento de Determinações) Propositions System v2 - a workflow management system for tracking and processing propositions originated from the Brazilian National Prosecution Service's (Ministério Público) correctional inspections.
 
-**Current Status**: Specification and design phase. No implementation code exists yet. The repository contains detailed specifications and workflow documentation.
+**Current Status**: Working front-end prototype. A static, no-build ES-modules app lives under `pages/` (one HTML shell per screen) and `assets/js/` (`app/` core, `domain/` business rules, `ui/` shared renderers, `features/` page controllers), seeded into `localStorage` from `assets/data/seed.js` (`store.js` owns the versioned storage key). There is no backend; specs in this repository remain the authoritative source for behavior. Dev server: `.claude/dev-server.mjs` (port 8080).
 
 ## Domain Context
 
@@ -96,6 +96,8 @@ SCI Inspection → Migration to NAD → Create/Edit (CN) → Diligence (Secretar
 **Excalidraw.excalidraw**: Visual architecture diagram (requires Excalidraw to view).
 
 **modelagem_dados_historico.md**: Reference for the audit trail data model — common event envelope, per-event-type fields and emitters, embedded `apreciacao` schema, persona visibility rules, and known inconsistencies.
+
+**especificacao_inicio_corregedor.md**: UX/functional specification (sections A–N) of the Corregedor Nacional "Início" homepage, the 5-group sidebar navigation (grouped/iconized/collapsible), the demoted "Estatísticas" page, and the `avisos` (institutional notices) model.
 
 **historias_de_usuario/**: One Markdown file per user story, kept short (~40 lines). Each file follows the same template: Connextra story (Como/eu quero/para que), Ator, Pré-condições, Fluxo principal, Fluxos alternativos, Regras de negócio, Pós-condições, Referências.
 

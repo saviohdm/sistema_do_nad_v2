@@ -2,7 +2,8 @@ import { seedState } from "../../data/seed.js";
 import { expirarDiligenciasVencidas } from "../domain/diligencias.js";
 import { normalizarProposicoesDestinatario } from "../domain/destinatario.js";
 
-const STORAGE_KEY = "nad-sistema-state-v5";
+// v6: acrescenta o catálogo top-level `avisos` (página Início do CN).
+const STORAGE_KEY = "nad-sistema-state-v6";
 
 // Migração: o rascunho de avaliação deixou de viver em chaves próprias do
 // localStorage e passou a integrar o estado (proposicao.rascunhoAvaliacao).

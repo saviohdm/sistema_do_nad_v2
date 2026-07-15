@@ -198,7 +198,7 @@ const render = () => {
           ${renderAlert("Nenhuma correição cadastrada. A proposição precisa estar vinculada a uma correição.", "warning")}
           <div class="button-row">
             <a class="button" href="correicoes-criar.html">Criar correição primeiro</a>
-            <a class="button button--secondary" href="dashboard.html">Voltar</a>
+            <a class="button button--secondary" href="corregedor-inicio.html">Voltar</a>
           </div>
         </div>
       `,

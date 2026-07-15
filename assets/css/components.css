@@ -48,6 +48,156 @@
   flex-shrink: 0;
 }
 
+.nav-link:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.nav-link__icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  opacity: 0.85;
+}
+
+/* Inicial do rótulo: marca visual dos itens sem ícone, exibida só no modo recolhido. */
+.nav-link__inicial {
+  display: none;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.nav-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.nav-group + .nav-group {
+  margin-top: var(--space-3);
+}
+
+.nav-group__label {
+  margin: 0;
+  padding: 0 var(--space-1);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.sidebar__recolher {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.sidebar__recolher:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar__recolher:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.sidebar__recolher-icone {
+  flex-shrink: 0;
+  transition: transform 180ms ease;
+}
+
+/* --- Sidebar recolhida (trilho de ícones) --- */
+
+.app-shell--nav-recolhida {
+  grid-template-columns: 76px 1fr;
+}
+
+.app-shell--nav-recolhida .sidebar {
+  padding: var(--space-4) var(--space-2);
+}
+
+.app-shell--nav-recolhida .sidebar-persona {
+  display: none;
+}
+
+.app-shell--nav-recolhida .sidebar__title {
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+/* O rótulo do grupo vira separador; o texto permanece para leitores de tela. */
+.app-shell--nav-recolhida .nav-group__label {
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+  color: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  margin: var(--space-2) var(--space-1) 0;
+}
+
+.app-shell--nav-recolhida .nav-link {
+  justify-content: center;
+  padding: var(--space-3) var(--space-2);
+  position: relative;
+}
+
+/* Rótulo visualmente oculto, ainda anunciado por leitores de tela. */
+.app-shell--nav-recolhida .nav-link__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app-shell--nav-recolhida .nav-link__inicial {
+  display: inline-flex;
+}
+
+.app-shell--nav-recolhida .nav-link__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.6875rem;
+  border: 2px solid var(--primary-dark);
+}
+
+.app-shell--nav-recolhida .sidebar__recolher {
+  justify-content: center;
+  padding: var(--space-2);
+}
+
+.app-shell--nav-recolhida .sidebar__recolher-icone {
+  transform: rotate(180deg);
+}
+
+.app-shell--nav-recolhida .sidebar__recolher-label {
+  display: none;
+}
+
 .breadcrumb {
   display: flex;
   flex-wrap: wrap;
@@ -1789,253 +1939,10 @@ button.panorama-kpi {
   }
 }
 
-/* Dashboard da Secretaria Processual */
+/* Dashboard legado (fallback de persona sem página própria) */
 
 .dashboard-overview {
   padding-top: var(--space-4);
-}
-
-.secretaria-dashboard {
-  gap: var(--space-6);
-  padding-top: var(--space-4);
-}
-
-.secretaria-dashboard__section-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-}
-
-.secretaria-dashboard__section-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.6rem;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.secretaria-dashboard__section-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 0.6rem;
-  border-radius: 999px;
-  background: var(--surface-alt);
-  color: var(--text);
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.secretaria-dashboard__panel + .secretaria-dashboard__panel {
-  margin-top: var(--space-4);
-}
-
-.secretaria-dashboard__block-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-
-.secretaria-dashboard__block-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  color: var(--text);
-}
-
-.secretaria-dashboard__block-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.75rem;
-  height: 1.75rem;
-  padding: 0 0.5rem;
-  border-radius: 999px;
-  background: var(--primary);
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.secretaria-dashboard__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.secretaria-dashboard__list--inline {
-  margin-top: var(--space-2);
-}
-
-.secretaria-dashboard__row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  color: var(--text);
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-  transition: 150ms ease;
-  text-decoration: none;
-  width: 100%;
-}
-
-.secretaria-dashboard__row::before {
-  content: "";
-  width: 0.35rem;
-  align-self: stretch;
-  border-radius: 999px;
-  background: var(--line);
-  grid-row: 1;
-  grid-column: 1;
-  margin-right: var(--space-2);
-  display: none;
-}
-
-.secretaria-dashboard__row--action {
-  grid-template-columns: 0.35rem minmax(0, 1fr) auto;
-}
-
-.secretaria-dashboard__row--action::before {
-  display: block;
-}
-
-.secretaria-dashboard__row--diligencia::before {
-  background: var(--warning);
-}
-
-.secretaria-dashboard__row--ciencia::before {
-  background: var(--success);
-}
-
-.secretaria-dashboard__row--providencia::before {
-  background: var(--danger);
-}
-
-.secretaria-dashboard__row--partial::before {
-  background: var(--chart-3);
-}
-
-.secretaria-dashboard__row:hover {
-  border-color: var(--primary);
-  background: var(--surface-alt);
-  transform: translateX(2px);
-}
-
-.secretaria-dashboard__row--static {
-  cursor: default;
-}
-
-.secretaria-dashboard__row--static:hover {
-  border-color: var(--line);
-  background: var(--surface);
-  transform: none;
-}
-
-.secretaria-dashboard__row-main {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.secretaria-dashboard__row--action .secretaria-dashboard__row-main {
-  grid-column: 2;
-}
-
-.secretaria-dashboard__row-main strong {
-  font-size: 1rem;
-  color: var(--text);
-}
-
-.secretaria-dashboard__row-desc {
-  font-size: 0.85rem;
-}
-
-.secretaria-dashboard__row-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  justify-content: flex-end;
-  font-size: 0.9rem;
-}
-
-.secretaria-dashboard__row--action .secretaria-dashboard__row-meta {
-  grid-column: 3;
-}
-
-.secretaria-dashboard__see-all {
-  display: inline-block;
-  margin-top: var(--space-2);
-  font-size: 0.9rem;
-  color: var(--primary);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.secretaria-dashboard__see-all:hover {
-  text-decoration: underline;
-}
-
-.secretaria-dashboard__empty {
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-md);
-  text-align: center;
-}
-
-.secretaria-dashboard__empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  text-align: center;
-}
-
-.secretaria-dashboard__expansor {
-  margin-top: var(--space-3);
-}
-
-.secretaria-dashboard__expansor summary {
-  cursor: pointer;
-  color: var(--primary);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-@media (max-width: 720px) {
-  .secretaria-dashboard__row {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: flex-start;
-  }
-  .secretaria-dashboard__row--action {
-    grid-template-columns: 0.35rem minmax(0, 1fr);
-  }
-  .secretaria-dashboard__row--action .secretaria-dashboard__row-meta {
-    grid-column: 2;
-  }
-  .secretaria-dashboard__row-meta {
-    justify-content: flex-start;
-  }
 }
 
 .field--checkbox {
@@ -2515,8 +2422,8 @@ button.panorama-kpi {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   Dashboard do Corregedor Nacional — "Mesa do Corregedor"
-   Hierarquia: Hero editorial → 01 Mesa → 02 Pauta → 03 Panorama → 04 Ramo
+   Corregedor Nacional — Estatísticas (ex-Dashboard, só o Panorama) e
+   hero editorial (.cn-hero), hoje usado pela página Início.
    ──────────────────────────────────────────────────────────────────── */
 
 .cn-dashboard {
