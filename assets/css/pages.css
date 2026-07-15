@@ -1471,6 +1471,7 @@
 }
 
 .fila-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -1479,6 +1480,22 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: border-color 180ms ease;
+}
+
+.fila-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 40px;
+  background: var(--primary);
+}
+
+.fila-card:hover {
+  border-color: rgba(166, 26, 26, 0.35);
 }
 
 .fila-card__header {
@@ -1490,6 +1507,12 @@
 .fila-card__icone {
   color: var(--primary-dark);
   flex-shrink: 0;
+  box-sizing: content-box;
+  width: 20px;
+  height: 20px;
+  padding: 8px;
+  background: var(--surface-warm);
+  border-radius: 999px;
 }
 
 .fila-card__titulo {
@@ -1512,6 +1535,8 @@
   font-weight: 700;
   line-height: 1;
   color: var(--primary-dark);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .fila-card__unidade {
@@ -1569,8 +1594,30 @@ a.fila-card__sec:focus-visible {
   color: var(--muted);
 }
 
+.fila-card--em-dia::before {
+  background: var(--success);
+}
+
 .fila-card__footer {
   margin-top: auto;
+}
+
+.fila-card__footer .button {
+  background: transparent;
+  border-color: var(--primary-dark);
+  color: var(--primary-dark);
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.fila-card__footer .button:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.fila-card__footer .button:focus-visible {
+  outline: 2px solid var(--primary-dark);
+  outline-offset: 2px;
 }
 
 .inicio-servicos {
@@ -1592,6 +1639,7 @@ a.fila-card__sec:focus-visible {
 }
 
 .servico-link:hover {
+  background: var(--surface-warm);
   border-color: var(--primary);
   color: var(--primary-dark);
 }
@@ -1677,13 +1725,14 @@ a.fila-card__sec:focus-visible {
 }
 
 .aviso-card__vigencia {
+  margin-left: auto;
   color: var(--muted);
   font-size: 0.8125rem;
 }
 
 .aviso-card__titulo {
   margin: var(--space-2) 0 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 
 .aviso-card__corpo {
@@ -1707,6 +1756,10 @@ a.fila-card__sec:focus-visible {
 }
 
 @media (max-width: 720px) {
+  .inicio-filas-grid {
+    grid-template-columns: 1fr;
+  }
+
   .fila-card__numero {
     font-size: 2.5rem;
   }

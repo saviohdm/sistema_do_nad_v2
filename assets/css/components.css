@@ -2606,6 +2606,8 @@ button.panorama-kpi {
   justify-content: space-between;
   gap: var(--space-3);
   flex-wrap: wrap;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(166, 26, 26, 0.15);
 }
 
 .cn-hero__dateline {
@@ -2648,6 +2650,7 @@ button.panorama-kpi {
   line-height: 1.15;
   color: var(--text);
   font-weight: 400;
+  text-wrap: balance;
 }
 
 .cn-hero__headline strong {
@@ -2731,6 +2734,19 @@ button.panorama-kpi {
   color: var(--text);
 }
 
+.cn-inicio .cn-section__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cn-inicio .cn-section__title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 /* ─── Painel "Panorama" (gráficos donut existentes) ─────────────────── */
 .cn-panorama-grid {
   display: grid;
@@ -2788,6 +2804,11 @@ button.panorama-kpi {
 }
 
 @media (max-width: 520px) {
+  .cn-hero__dateline {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+  }
+
   .panorama-kpis {
     grid-template-columns: 1fr;
   }
