@@ -12,7 +12,7 @@ test("sempre renderiza o painel de contexto colapsado por padrão", () => {
     html,
     /<details class="panel contexto-panel" data-contexto-panel>/,
   );
-  assert.match(html, /<span class="panel__title">Contexto<\/span>/);
+  assert.match(html, /<h3 class="panel__title">Contexto<\/h3>/);
   assert.match(html, new RegExp(MENSAGEM_SEM_CONTEXTO.replace(".", "\\.")));
   assert.doesNotMatch(html, /data-contexto-panel open/);
 });

@@ -508,7 +508,7 @@ const renderHistoricoFiltros = (eventos, filtroAtivo) => {
   `;
 };
 
-const renderCicloBloco = (bloco, proposicao, { open }) => {
+const renderCicloBloco = (bloco, proposicao) => {
   const eventosDesc = [...bloco.eventos].sort((a, b) => new Date(b.data) - new Date(a.data));
   const titulo =
     bloco.tipo === "origem"
@@ -521,7 +521,7 @@ const renderCicloBloco = (bloco, proposicao, { open }) => {
   const contagem = `${eventosDesc.length} evento${eventosDesc.length === 1 ? "" : "s"}`;
 
   return `
-    <details class="historico-ciclo"${open ? " open" : ""}>
+    <details class="historico-ciclo">
       <summary class="historico-ciclo__summary">
         <span class="historico-ciclo__title">${titulo}</span>
         <span class="historico-ciclo__meta">
@@ -569,11 +569,7 @@ export const renderHistoricoUnificado = (
         ? renderEmptyState("Nenhum evento nesta categoria.")
         : `
           <div class="historico-ciclos">
-            ${blocos
-              .map((bloco, index) =>
-                renderCicloBloco(bloco, proposicao, { open: filtroAtivo !== "todos" || index === 0 }),
-              )
-              .join("")}
+            ${blocos.map((bloco) => renderCicloBloco(bloco, proposicao)).join("")}
           </div>
         `;
   }
@@ -674,7 +670,7 @@ export const renderContextoSection = (proposicao, { aberto = false } = {}) => {
   return `
     <details class="panel contexto-panel" data-contexto-panel${aberto ? " open" : ""}>
       <summary class="contexto-panel__summary">
-        <span class="panel__title">Contexto</span>
+        <h3 class="panel__title">Contexto</h3>
       </summary>
       <div class="contexto-panel__body">
         ${conteudo}

@@ -29,10 +29,11 @@ export const renderApreciacaoForm = ({
   formId,
   title,
   submitLabel,
-  includeDelete = false,
   initialApreciacao = null,
   includeRascunho = false,
   variant = "panel",
+  ariaLabel = "",
+  invariantesLegend = "",
   observacoesLabel = "Fundamentação",
   observacoesHint = "",
   observacoesPlaceholder = "",
@@ -67,40 +68,50 @@ export const renderApreciacaoForm = ({
   );
 
   const formClass = variant === "bare" ? "stack" : "panel stack";
+  const invariantesHtml = `
+    <div class="field-grid">
+      <div class="field">
+        <label for="${formId}-situacao">Situação</label>
+        <select id="${formId}-situacao" name="situacao" required>
+          ${situacaoOpts}
+        </select>
+      </div>
+      <div class="field">
+        <label for="${formId}-tipoConclusao">Tipo de conclusão</label>
+        <select id="${formId}-tipoConclusao" name="tipoConclusao">
+          ${conclusaoOpts}
+        </select>
+      </div>
+      <div class="field">
+        <label for="${formId}-existeProvidenciaSecretaria">Existe providência da Secretaria?</label>
+        <select id="${formId}-existeProvidenciaSecretaria" name="existeProvidenciaSecretaria">
+          ${existeProvidenciaOpts}
+        </select>
+      </div>
+      <div class="field">
+        <label for="${formId}-tipoProvidencia">Tipo de providência</label>
+        <select id="${formId}-tipoProvidencia" name="tipoProvidencia" aria-controls="${formId}-descricaoProvidencia-field">
+          ${providenciaOpts}
+        </select>
+      </div>
+    </div>
+    <div class="field hidden" id="${formId}-descricaoProvidencia-field" data-role="descricao-providencia-field" hidden>
+      <label for="${formId}-descricaoProvidencia">Descrição da providência</label>
+      <textarea id="${formId}-descricaoProvidencia" name="descricaoProvidencia" placeholder="Descreva objetivamente a providência a ser cumprida.">${escapeHtml(descricaoProvidenciaValue)}</textarea>
+    </div>
+  `;
 
   return `
-    <form class="${formClass}" id="${formId}" data-has-rascunho="${initialApreciacao ? "true" : "false"}">
+    <form class="${formClass}" id="${formId}" data-has-rascunho="${initialApreciacao ? "true" : "false"}"${ariaLabel ? ` aria-label="${escapeHtml(ariaLabel)}"` : ""}>
       ${title ? `<h3 class="panel__title">${title}</h3>` : ""}
-      <div class="field-grid">
-        <div class="field">
-          <label for="${formId}-situacao">Situação</label>
-          <select id="${formId}-situacao" name="situacao" required>
-            ${situacaoOpts}
-          </select>
-        </div>
-        <div class="field">
-          <label for="${formId}-tipoConclusao">Tipo de conclusão</label>
-          <select id="${formId}-tipoConclusao" name="tipoConclusao">
-            ${conclusaoOpts}
-          </select>
-        </div>
-        <div class="field">
-          <label for="${formId}-existeProvidenciaSecretaria">Existe providência da Secretaria?</label>
-          <select id="${formId}-existeProvidenciaSecretaria" name="existeProvidenciaSecretaria">
-            ${existeProvidenciaOpts}
-          </select>
-        </div>
-        <div class="field">
-          <label for="${formId}-tipoProvidencia">Tipo de providência</label>
-          <select id="${formId}-tipoProvidencia" name="tipoProvidencia" aria-controls="${formId}-descricaoProvidencia-field">
-            ${providenciaOpts}
-          </select>
-        </div>
-      </div>
-      <div class="field hidden" id="${formId}-descricaoProvidencia-field" data-role="descricao-providencia-field" hidden>
-        <label for="${formId}-descricaoProvidencia">Descrição da providência</label>
-        <textarea id="${formId}-descricaoProvidencia" name="descricaoProvidencia" placeholder="Descreva objetivamente a providência a ser cumprida.">${escapeHtml(descricaoProvidenciaValue)}</textarea>
-      </div>
+      ${
+        invariantesLegend
+          ? `<fieldset class="apreciacao-invariantes">
+              <legend>${escapeHtml(invariantesLegend)}</legend>
+              ${invariantesHtml}
+            </fieldset>`
+          : invariantesHtml
+      }
       <div class="field">
         <label for="${formId}-observacoes">${escapeHtml(observacoesLabel)}</label>
         <textarea
@@ -126,11 +137,6 @@ export const renderApreciacaoForm = ({
         ${
           includeRascunho && initialApreciacao
             ? `<button class="button button--ghost" type="button" data-action="descartar-rascunho">Descartar rascunho</button>`
-            : ""
-        }
-        ${
-          includeDelete
-            ? `<button class="button button--danger" type="button" data-action="remover-avaliacao">Devolver minuta</button>`
             : ""
         }
       </div>

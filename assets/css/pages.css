@@ -117,6 +117,44 @@
   gap: var(--space-2);
 }
 
+.decisao-minuta__actions {
+  align-items: center;
+}
+
+.decisao-minuta__actions .button--danger {
+  border-color: rgba(166, 26, 26, 0.35);
+  background: transparent;
+  color: var(--danger);
+}
+
+.decisao-minuta__actions .button--danger:hover {
+  border-color: var(--danger);
+  background: rgba(166, 26, 26, 0.08);
+}
+
+.decisao-substitutiva {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+
+.apreciacao-invariantes {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.apreciacao-invariantes legend {
+  margin-bottom: var(--space-4);
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
 /* =========================================================================
    Dossiê unificado — Histórico único da proposição: faixa "Em aberto",
    chips de filtro por categoria e ciclos de diligência recolhíveis.
@@ -363,6 +401,10 @@
   border-top: 1px solid var(--line);
   display: grid;
   gap: var(--space-3);
+}
+
+.metadados-panel__actions {
+  justify-content: flex-end;
 }
 
 .contexto-livre__grupo {

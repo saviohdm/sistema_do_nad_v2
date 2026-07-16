@@ -105,6 +105,15 @@ const bindContextoHandler = () => {
   });
 };
 
+// Metadados colapsados por padrão; preserva a escolha do usuário entre re-renders.
+let metadadosAberto = false;
+
+const bindMetadadosHandler = () => {
+  document.querySelector("[data-metadados-panel]")?.addEventListener("toggle", (event) => {
+    metadadosAberto = event.currentTarget.open;
+  });
+};
+
 const voltarParaOrigem = (proposicao) => {
   window.location.href = origem.href(proposicao);
 };
@@ -697,7 +706,6 @@ const renderAcaoCorregedor = (proposicao, available) => {
   if (available.podeDecidir) {
     const avaliacao = getAvaliacaoVigente(proposicao);
     return renderDetailActionZone({
-      overline: "Sua vez · decisão do Corregedor Nacional",
       title: "Decidir sobre a minuta",
       children: `
         ${renderJudgingAnchor({
@@ -707,22 +715,24 @@ const renderAcaoCorregedor = (proposicao, available) => {
             data: avaliacao?.data,
           }),
         })}
-        <p class="inline-note">Acolher assume integralmente a redação e as invariantes acima. Afastar exige registrar uma decisão substitutiva completa.</p>
-        <div class="button-row">
+        <div class="button-row decisao-minuta__actions" role="group" aria-label="Ações sobre a minuta">
           <button class="button" type="button" data-action="deferir-avaliacao">Acolher minuta</button>
+          <button class="button button--danger" type="button" data-action="remover-avaliacao">Devolver minuta</button>
         </div>
-        ${renderApreciacaoForm({
-          formId: "form-decisao-corregedor",
-          title: "Decisão substitutiva",
-          submitLabel: "Afastar minuta e decidir",
-          includeDelete: true,
-          includeRascunho: true,
-          initialApreciacao: proposicao.rascunhoDecisaoCN?.apreciacao || null,
-          variant: "bare",
-          observacoesLabel: "Fundamentação da decisão",
-          observacoesPlaceholder: "Redija a fundamentação e o comando da decisão substitutiva.",
-          observacoesRequired: true,
-        })}
+        <div class="decisao-substitutiva">
+          ${renderApreciacaoForm({
+            formId: "form-decisao-corregedor",
+            submitLabel: "Afastar minuta e decidir",
+            includeRascunho: true,
+            initialApreciacao: proposicao.rascunhoDecisaoCN?.apreciacao || null,
+            variant: "bare",
+            ariaLabel: "Decisão substitutiva",
+            invariantesLegend: "Novas invariantes da decisão substitutiva",
+            observacoesLabel: "Fundamentação da decisão",
+            observacoesPlaceholder: "Redija a fundamentação e o comando da decisão substitutiva.",
+            observacoesRequired: true,
+          })}
+        </div>
       `,
     });
   }
@@ -780,17 +790,21 @@ const renderDetalheContent = ({
   <section class="stack">
     ${renderProposicaoHero(proposicao)}
     ${acaoPrincipalHtml || ""}
-    <section class="panel">
-      <div class="panel__header-row">
+    <details class="panel contexto-panel metadados-panel" data-metadados-panel${metadadosAberto ? " open" : ""}>
+      <summary class="contexto-panel__summary">
         <h3 class="panel__title">Metadados do caso</h3>
+      </summary>
+      <div class="contexto-panel__body">
         ${
           podeEditarMetadados
-            ? `<button class="button button--ghost button--small" type="button" data-action="editar-metadados">Editar</button>`
+            ? `<div class="toolbar metadados-panel__actions">
+                <button class="button button--ghost button--small" type="button" data-action="editar-metadados">Editar</button>
+              </div>`
             : ""
         }
+        ${renderMetaList(meta)}
       </div>
-      ${renderMetaList(meta)}
-    </section>
+    </details>
     ${renderContextoSection(proposicao, { aberto: contextoAberto })}
     ${renderDossie({ proposicao, historico, historicoNota, providenciasEditable })}
   </section>
@@ -924,6 +938,7 @@ const render = () => {
     bindCorreicionadoHandlers(propAtualizada, user);
     bindHistoricoHandlers();
     bindContextoHandler();
+    bindMetadadosHandler();
     return;
   }
 
@@ -946,6 +961,7 @@ const render = () => {
   bindHandlers(proposicao);
   bindHistoricoHandlers();
   bindContextoHandler();
+  bindMetadadosHandler();
 };
 
 render();
