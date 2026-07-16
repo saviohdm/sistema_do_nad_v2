@@ -152,6 +152,8 @@ O **rascunho de criação** da proposição é a exceção estrutural: a entidad
 - `AFASTAR minuta e decidir` preserva a minuta no histórico interno e exige nova apreciação completa no mesmo ato.
 - `DEVOLVER minuta` exige confirmação, remove o conteúdo material da minuta e eventual rascunho decisório do Corregedor, registra `avaliacao_removida_pelo_corregedor` e retorna a proposição limpa para `aguardando_avaliacao_membro`.
 - A devolução não abre decisão direta; o novo ciclo pertence à fila compartilhada do membro auxiliar.
+- A fila operacional de decisão preserva, por sessão, a ordem exata da seleção filtrada. Após acolher, afastar, decidir diretamente ou devolver uma minuta, o detalhe avança para a próxima proposição ainda disponível nessa ordem.
+- A navegação ignora itens posteriores que já tenham saído da mesa de decisão. Ao esgotar a seleção, informa o usuário e retorna à mesma fila filtrada; detalhes abertos fora da fila retornam à sua origem.
 
 ## Conteúdo da apreciação de valor
 

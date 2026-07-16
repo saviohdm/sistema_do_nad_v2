@@ -4,6 +4,7 @@ import { listProposicoesAguardandoDecisao } from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
 import { renderBadge, renderFilaProposicaoEditorial } from "../ui/components.js";
+import { CONTEXTO_NAVEGACAO_DECISAO_KEY } from "../ui/fila-contexto-navegacao.js";
 
 const temAvaliacaoVigente = (proposicao) => Boolean(proposicao.avaliacaoVigenteId);
 const temRascunhoDecisao = (proposicao) => Boolean(proposicao.rascunhoDecisaoCN);
@@ -31,6 +32,7 @@ montarFilaNavegavel({
   activePage: "corregedor-decisao",
   title: "Aguardando decisão",
   storageKey: "nad-corregedor-decisao-filtros",
+  navigationContextKey: CONTEXTO_NAVEGACAO_DECISAO_KEY,
   textos: {
     panoramaTitulo: "Panorama da decisão",
     contagemLabel: "Aguardando decisão",

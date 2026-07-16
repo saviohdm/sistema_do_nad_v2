@@ -45,6 +45,7 @@ import {
   getAvailableActions,
   getAvailableActionsByPersona,
   getProposicaoById,
+  listProposicoesAguardandoDecisao,
   markPropositionDeleted,
   salvarRascunhoDecisaoCN,
 } from "../domain/proposicoes.js";
@@ -76,6 +77,12 @@ import {
   renderPrazoDiligenciaControl,
 } from "../ui/prazo-diligencia-control.js";
 import { confirmarEExecutarDevolucaoMinuta } from "../ui/confirmacoes.js";
+import {
+  CAMINHO_FILA_DECISAO,
+  CONTEXTO_NAVEGACAO_DECISAO_KEY,
+  lerContextoNavegacaoFila,
+  resolverDestinoNavegacaoFila,
+} from "../ui/fila-contexto-navegacao.js";
 
 const proposicaoId = queryParam("id") || "prop-003";
 const origem = resolverOrigemDetalhe({
@@ -118,9 +125,58 @@ const voltarParaOrigem = (proposicao) => {
   window.location.href = origem.href(proposicao);
 };
 
+const getContextoNavegacaoDecisao = () =>
+  lerContextoNavegacaoFila({
+    storage: sessionStorage,
+    key: CONTEXTO_NAVEGACAO_DECISAO_KEY,
+    caminhoPermitido: CAMINHO_FILA_DECISAO,
+  });
+
+const getHrefRetornoOrigem = (proposicao) => {
+  if (origem?.slug === "corregedor-decisao") {
+    return getContextoNavegacaoDecisao()?.returnHref || origem.href(proposicao);
+  }
+  return origem?.href(proposicao) || "proposicoes-lista.html";
+};
+
 const concluirAcaoCorregedor = (proposicao) => {
   if (origem?.slug === "corregedor-decisao") {
-    voltarParaOrigem(proposicao);
+    const contexto = getContextoNavegacaoDecisao();
+    const validIds = listProposicoesAguardandoDecisao(state()).map((item) => item.id);
+    const destino = resolverDestinoNavegacaoFila({
+      contexto,
+      currentId: proposicao.id,
+      validIds,
+    });
+
+    if (destino.type === "next") {
+      window.location.replace(
+        `/pages/proposicao-detalhe.html?id=${encodeURIComponent(destino.nextId)}&from=corregedor-decisao`,
+      );
+      return;
+    }
+
+    if (destino.type === "last") {
+      window.alert("Esta era a última proposição da lista filtrada.");
+      window.location.replace(destino.returnHref);
+      return;
+    }
+
+    if (destino.type === "exhausted") {
+      window.alert("Não há outras proposições disponíveis na lista filtrada.");
+      window.location.replace(destino.returnHref);
+      return;
+    }
+
+    window.alert(
+      "Não foi possível recuperar o contexto da lista. Você retornará à fila operacional.",
+    );
+    window.location.replace(origem.href(proposicao));
+    return;
+  }
+
+  if (origem) {
+    window.location.replace(origem.href(proposicao));
     return;
   }
   render();
@@ -128,7 +184,7 @@ const concluirAcaoCorregedor = (proposicao) => {
 
 const botaoVoltar = (proposicao) =>
   origem
-    ? `<a class="button button--ghost" href="${origem.href(proposicao)}">${origem.voltarLabel}</a>`
+    ? `<a class="button button--ghost" href="${getHrefRetornoOrigem(proposicao)}">${origem.voltarLabel}</a>`
     : `<a class="button button--ghost" href="proposicoes-lista.html">Voltar à consulta</a>`;
 
 const renderTrilha = (proposicao) =>
@@ -274,6 +330,21 @@ const bindHandlers = (proposicao) => {
     });
     concluirAcaoCorregedor(proposicao);
   });
+
+  const alternarDecisaoSubstitutiva = document.querySelector(
+    "[data-action='alternar-decisao-substitutiva']",
+  );
+  const painelDecisaoSubstitutiva = document.querySelector("#painel-decisao-substitutiva");
+  if (alternarDecisaoSubstitutiva && painelDecisaoSubstitutiva) {
+    alternarDecisaoSubstitutiva.addEventListener("click", () => {
+      const abrir = painelDecisaoSubstitutiva.hidden;
+      painelDecisaoSubstitutiva.hidden = !abrir;
+      alternarDecisaoSubstitutiva.setAttribute("aria-expanded", String(abrir));
+      if (abrir) {
+        painelDecisaoSubstitutiva.querySelector("select, textarea")?.focus();
+      }
+    });
+  }
 
   document.querySelector("#form-decisao-corregedor")?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -606,11 +677,8 @@ const renderAcaoCorreicionado = (proposicao, user, available) => {
 const renderAcaoMembro = (proposicao, available) => {
   if (!available.podeAvaliarComoMembro) return "";
   return renderDetailActionZone({
-    overline: "Sua vez · membro auxiliar",
-    title: "Elaboração da minuta de decisão",
     children: `
       ${renderComprovacaoAnchor(proposicao)}
-      <p class="inline-note">A minuta não produz efeitos por si só. Redija-a para aproveitamento integral como decisão do Corregedor Nacional.</p>
       ${renderApreciacaoForm({
         formId: "form-avaliacao-membro",
         title: "Minuta de decisão",
@@ -619,8 +687,6 @@ const renderAcaoMembro = (proposicao, available) => {
         includeRascunho: true,
         variant: "bare",
         observacoesLabel: "Redação da minuta",
-        observacoesHint:
-          "Use linguagem decisória e impositiva, pronta para ser acolhida sem ajustes pelo Corregedor Nacional.",
         observacoesPlaceholder: "Redija a fundamentação e o comando decisório da minuta.",
         observacoesRequired: true,
       })}
@@ -718,11 +784,18 @@ const renderAcaoCorregedor = (proposicao, available) => {
         <div class="button-row decisao-minuta__actions" role="group" aria-label="Ações sobre a minuta">
           <button class="button" type="button" data-action="deferir-avaliacao">Acolher minuta</button>
           <button class="button button--danger" type="button" data-action="remover-avaliacao">Devolver minuta</button>
+          <button
+            class="button button--ghost decisao-minuta__toggle"
+            type="button"
+            data-action="alternar-decisao-substitutiva"
+            aria-expanded="false"
+            aria-controls="painel-decisao-substitutiva"
+          >Afastar minuta e decidir</button>
         </div>
-        <div class="decisao-substitutiva">
+        <div class="decisao-substitutiva" id="painel-decisao-substitutiva" hidden>
           ${renderApreciacaoForm({
             formId: "form-decisao-corregedor",
-            submitLabel: "Afastar minuta e decidir",
+            submitLabel: "Confirmar",
             includeRascunho: true,
             initialApreciacao: proposicao.rascunhoDecisaoCN?.apreciacao || null,
             variant: "bare",

@@ -6,6 +6,7 @@
 //
 // Hooks de config:
 //   activePage, title, storageKey, persona            -> identidade/guard
+//   navigationContextKey (opcional)                   -> salva ordem/retorno exato da fila
 //   statusFila                                        -> status contabilizados no panorama
 //   textos                                             -> rótulos/empty-states (ver defaults)
 //   getProposicoes(state)                              -> lista já hidratada (obrigatório)
@@ -43,6 +44,7 @@ import {
   renderFilaOperacionalHeader,
   renderPanoramaKpis,
 } from "../ui/components.js";
+import { salvarContextoNavegacaoFila } from "./fila-contexto-navegacao.js";
 
 const escapeAttr = (value) => String(value ?? "").replace(/"/g, "&quot;");
 const uniq = (values) => Array.from(new Set(values.filter(Boolean)));
@@ -381,6 +383,15 @@ export function montarFilaNavegavel(config) {
   const renderModoFila = (proposicoes, filtros, ctx) => {
     const filtradas = filtrarParaFila(proposicoes, filtros, ctx);
     ctx.filtradas = filtradas;
+
+    if (config.navigationContextKey) {
+      salvarContextoNavegacaoFila({
+        storage: sessionStorage,
+        key: config.navigationContextKey,
+        ids: filtradas.map((proposicao) => proposicao.id),
+        returnHref: `${window.location.pathname}${window.location.search}`,
+      });
+    }
 
     const totalUniverso = proposicoes.length;
 
