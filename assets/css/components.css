@@ -1352,6 +1352,50 @@ button.panorama-kpi {
   font-size: 0.875rem;
 }
 
+.proposicao-card__list li {
+  min-width: 0;
+}
+
+.proposicao-card__list-description,
+.providencia-group__description {
+  margin-top: 0.15rem;
+}
+
+.longform-text {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-3);
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.longform-text p {
+  margin: 0;
+}
+
+.text-clamp {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+}
+
+.text-clamp--2 {
+  -webkit-line-clamp: 2;
+}
+
+.text-clamp--3 {
+  -webkit-line-clamp: 3;
+}
+
+.fundamentos-decisao {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-muted, var(--surface-alt));
+}
+
 .proposicao-card__support {
   font-size: 0.85rem;
 }
@@ -1706,6 +1750,7 @@ button.panorama-kpi {
   color: var(--text-secondary);
   font-size: 0.88rem;
   line-height: 1.5;
+  min-width: 0;
 }
 
 .fila-operacional-item__meta {

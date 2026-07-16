@@ -25,6 +25,39 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+const normalizarParagrafos = (value) =>
+  String(value ?? "")
+    .replace(/\r\n?/g, "\n")
+    .trim()
+    .split(/\n\s*\n+/)
+    .map((paragrafo) =>
+      paragrafo
+        .split("\n")
+        .map((linha) => linha.trim())
+        .filter(Boolean)
+        .join(" "),
+    )
+    .filter(Boolean);
+
+/** Renderiza texto jurídico como parágrafos literais, sem interpretar Markdown. */
+export const renderTextParagraphs = (value, { className = "" } = {}) => {
+  const paragrafos = normalizarParagrafos(value);
+  if (paragrafos.length === 0) return "";
+  const classes = ["longform-text", className].filter(Boolean).join(" ");
+  return `<div class="${classes}">${paragrafos
+    .map((paragrafo) => `<p>${escapeHtml(paragrafo)}</p>`)
+    .join("")}</div>`;
+};
+
+/** Mantém o texto completo no DOM e limita apenas sua apresentação visual. */
+export const renderClampedText = (value, { lines = 3, className = "" } = {}) => {
+  const limite = lines === 2 ? 2 : 3;
+  const classes = ["text-clamp", `text-clamp--${limite}`, className]
+    .filter(Boolean)
+    .join(" ");
+  return `<span class="${classes}">${escapeHtml(value)}</span>`;
+};
+
 export const renderBadge = (label, tone = "neutral") =>
   `<span class="badge badge--${tone}">${label}</span>`;
 
@@ -99,7 +132,7 @@ export const renderApreciacaoResumo = (apreciacao, { autor, data } = {}) => {
         ? `<p><strong>Providência da Secretaria:</strong> ${escapeHtml(descricaoProvidencia)}</p>`
         : ""
     }
-    ${apreciacao.observacoes ? `<p>${apreciacao.observacoes}</p>` : ""}
+    ${apreciacao.observacoes ? renderTextParagraphs(apreciacao.observacoes) : ""}
   `;
 };
 
@@ -381,7 +414,12 @@ const renderEventoExtras = (event, proposicao) => {
   }
 
   if (event.apreciacao?.observacoes) {
-    extras.push(`<p class="historico-evento__linha muted">Fundamentação: ${event.apreciacao.observacoes}</p>`);
+    extras.push(`
+      <div class="historico-evento__linha historico-evento__fundamentacao muted">
+        <strong>Fundamentação:</strong>
+        ${renderTextParagraphs(event.apreciacao.observacoes)}
+      </div>
+    `);
   }
 
   return extras.join("");
@@ -692,7 +730,7 @@ export const renderProposicaoHero = (proposicao) => `
         ${renderApreciacaoAtualBadge(proposicao)}
       </div>
     </div>
-    <p>${proposicao.descricao}</p>
+    ${renderTextParagraphs(proposicao.descricao, { className: "detail-hero__descricao" })}
   </section>
 `;
 
@@ -879,17 +917,12 @@ export const renderFilaProposicaoEditorial = (
     className = "",
     attributes = "",
     index = 0,
-    descriptionLimit = 180,
   } = {},
 ) => {
   const { capitular, resto } = splitNumeroCapitular(proposicao.numero);
   const prioridadeClass =
     FILA_PRIORIDADE_CLASS[proposicao.prioridade] || FILA_PRIORIDADE_CLASS.normal;
   const descricao = proposicao.descricao || "";
-  const descricaoResumo =
-    descricao.length > descriptionLimit
-      ? `${descricao.substring(0, descriptionLimit)}...`
-      : descricao;
   const idade = formatTempoRelativo(getUltimaMovimentacao(proposicao));
   const delay = Math.min(index, 18) * 28;
   const classes = [
@@ -921,7 +954,11 @@ export const renderFilaProposicaoEditorial = (
       ${badges ? `<div class="fila-operacional-item__badges">${badges}</div>` : ""}
     </header>
     <p class="fila-operacional-item__unidade">${proposicao.unidade || "—"}</p>
-    ${descricaoResumo ? `<p class="fila-operacional-item__descricao">${descricaoResumo}</p>` : ""}
+    ${
+      descricao
+        ? `<p class="fila-operacional-item__descricao">${renderClampedText(descricao, { lines: 3 })}</p>`
+        : ""
+    }
     <dl class="fila-operacional-item__meta">
       <div><dt>Temática</dt><dd>${proposicao.tematica || "—"}</dd></div>
       <div><dt>Membro</dt><dd>${proposicao.membro || "—"}</dd></div>

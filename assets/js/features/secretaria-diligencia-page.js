@@ -73,7 +73,6 @@ const renderCardSelecionavel = (proposicao, index) => {
     badges: subStatusBadge,
     selecionado,
     index,
-    descriptionLimit: 200,
   });
 };
 

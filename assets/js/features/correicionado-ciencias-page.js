@@ -15,6 +15,7 @@ import {
   renderBadge,
   renderEmptyState,
   renderSensivelBadge,
+  renderTextParagraphs,
 } from "../ui/components.js";
 
 requireAuth();
@@ -69,9 +70,9 @@ const renderApreciacaoFundamentos = (apreciacao) => {
   const fundamentos = apreciacao.observacoes || "";
   if (!fundamentos) return "";
   return `
-    <div class="panel" style="padding: 0.75rem; background: var(--color-surface-muted);">
+    <div class="panel fundamentos-decisao">
       <strong>Fundamentos da decisão:</strong>
-      <p style="margin: 0.25rem 0 0;">${fundamentos}</p>
+      ${renderTextParagraphs(fundamentos)}
     </div>
   `;
 };
@@ -100,7 +101,7 @@ const renderCardCiencia = (proposicao) => {
           }
         </div>
       </header>
-      <p>${proposicao.descricao}</p>
+      ${renderTextParagraphs(proposicao.descricao)}
       ${renderApreciacaoFundamentos(apreciacao)}
       <div>
         <p style="margin: 0.5rem 0 0.25rem; font-weight: 600;">Providências derivadas:</p>

@@ -1,4 +1,5 @@
 import { Labels, Prioridade } from "../domain/enums.js";
+import { renderClampedText } from "./components.js";
 
 const MODAL_ROOT_ID = "nad-modal-root";
 
@@ -55,7 +56,7 @@ export const openRelatorioFinalModal = ({ correicaoId, ramoMP, proposicoes }) =>
               <td><strong>${p.numero}</strong></td>
               <td>${p.unidade}</td>
               <td>${p.tematica || "—"}</td>
-              <td>${(p.descricao || "").substring(0, 140)}${(p.descricao || "").length > 140 ? "..." : ""}</td>
+              <td>${renderClampedText(p.descricao || "—", { lines: 3 })}</td>
             </tr>
           `,
         )

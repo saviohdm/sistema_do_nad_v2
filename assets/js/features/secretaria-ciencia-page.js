@@ -12,6 +12,7 @@ import {
   renderFilaFiltrosAtivos,
   renderFilaOperacionalHeader,
   renderPanoramaKpis,
+  renderClampedText,
 } from "../ui/components.js";
 import { closeModal } from "../ui/modal.js";
 import { showToast } from "../ui/toast.js";
@@ -290,7 +291,13 @@ const renderCardGrupo = (grupo) => {
       : "";
 
   const proposicoesLista = grupo.proposicoes
-    .map((p) => `<li><strong>${p.numero}</strong> — ${p.descricao?.substring(0, 80) || "—"}${(p.descricao || "").length > 80 ? "…" : ""}</li>`)
+    .map(
+      (p) =>
+        `<li><strong>${p.numero}</strong>${renderClampedText(p.descricao || "—", {
+          lines: 2,
+          className: "proposicao-card__list-description",
+        })}</li>`,
+    )
     .join("");
 
   return `

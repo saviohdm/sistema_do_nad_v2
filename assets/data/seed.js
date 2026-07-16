@@ -8,6 +8,10 @@ import {
   TipoHistorico,
   TipoProvidencia,
 } from "../js/domain/enums.js";
+import {
+  CONTEUDO_PROPOSICOES_LONGAS,
+  REVISAO_CONTEUDO_PROPOSICOES,
+} from "../js/domain/migracao-conteudo-proposicoes.js";
 
 const now = "2026-04-15T10:00:00Z";
 
@@ -77,6 +81,7 @@ const diretorioCnmp = {
 };
 
 export const seedState = {
+  revisaoConteudoProposicoes: REVISAO_CONTEUDO_PROPOSICOES,
   diretorioCnmp,
   // Avisos institucionais exibidos na página Início enquanto vigentes
   // (vigenciaInicio <= hoje <= vigenciaFim). Severidades: critico | alerta | informativo.
@@ -362,7 +367,7 @@ export const seedState = {
       unidade: "Procuradoria de Justiça Especializada",
       membroId: "memb-beatriz-lima",
       membro: "Dra. Beatriz Lima",
-      descricao: "Formalizar protocolo de atendimento de demandas urgentes.",
+      descricao: CONTEUDO_PROPOSICOES_LONGAS["prop-003"].descricao,
       prioridade: "urgente",
       sensivel: true,
       observacoesGerais: "Caso submetido à decisão do Corregedor após avaliação técnica.",
@@ -412,13 +417,7 @@ export const seedState = {
         }),
         createEvent("hist-6", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
           descricao: "Avaliação técnica submetida ao Corregedor.",
-          apreciacao: {
-            situacao: SituacaoApreciacao.CONCLUIDA,
-            tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
-            existeProvidenciaSecretaria: true,
-            tipoProvidencia: TipoProvidencia.COCI,
-            observacoes: "Ainda falta consolidar a rotina nas unidades descentralizadas.",
-          },
+          apreciacao: { ...CONTEUDO_PROPOSICOES_LONGAS["prop-003"].apreciacao },
         }),
       ],
     },
@@ -1404,8 +1403,7 @@ export const seedState = {
       unidade: "Promotoria de Justiça de Fortaleza",
       membroId: "memb-augusto-nobrega",
       membro: "Dr. Augusto Nóbrega",
-      descricao:
-        "Apurar denúncias de violação de sigilo funcional em inquéritos sob segredo de justiça.",
+      descricao: CONTEUDO_PROPOSICOES_LONGAS["prop-301"].descricao,
       prioridade: "urgente",
       sensivel: true,
       observacoesGerais:
@@ -1439,13 +1437,7 @@ export const seedState = {
         createEvent("hist-301-aval", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
           descricao: "Avaliação técnica conclui pela existência de quebra de sigilo.",
           data: "2026-05-12T15:30:00Z",
-          apreciacao: {
-            situacao: SituacaoApreciacao.CONCLUIDA,
-            tipoConclusao: TipoConclusao.NAO_CUMPRIDA,
-            existeProvidenciaSecretaria: true,
-            tipoProvidencia: TipoProvidencia.CORREGEDORIA_LOCAL,
-            observacoes: "Há elementos suficientes para responsabilização administrativa.",
-          },
+          apreciacao: { ...CONTEUDO_PROPOSICOES_LONGAS["prop-301"].apreciacao },
         }),
       ],
     },
@@ -1457,8 +1449,7 @@ export const seedState = {
       unidade: "Procuradoria-Geral de Justiça de São Paulo",
       membroId: "memb-mariana-tavares",
       membro: "Dra. Mariana Tavares",
-      descricao:
-        "Reorganizar gabinetes especializados após denúncia de assédio moral institucional.",
+      descricao: CONTEUDO_PROPOSICOES_LONGAS["prop-302"].descricao,
       prioridade: "urgente",
       sensivel: true,
       observacoesGerais: "Caso sensível; pareceres técnicos consolidados.",
@@ -1491,13 +1482,7 @@ export const seedState = {
         createEvent("hist-302-aval", TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR, "Membro Auxiliar da CN", {
           descricao: "Avaliação conclusiva indicando cumprimento parcial das medidas.",
           data: "2026-05-21T09:00:00Z",
-          apreciacao: {
-            situacao: SituacaoApreciacao.CONCLUIDA,
-            tipoConclusao: TipoConclusao.PARCIALMENTE_CUMPRIDA,
-            existeProvidenciaSecretaria: true,
-            tipoProvidencia: TipoProvidencia.COCI,
-            observacoes: "Avanços importantes, mas pendência de acompanhamento contínuo.",
-          },
+          apreciacao: { ...CONTEUDO_PROPOSICOES_LONGAS["prop-302"].apreciacao },
         }),
       ],
     },

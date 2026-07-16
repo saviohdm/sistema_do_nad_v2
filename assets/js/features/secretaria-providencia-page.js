@@ -13,6 +13,7 @@ import {
   renderPanoramaKpis,
   renderPrioridadeBadge,
   renderSensivelBadge,
+  renderClampedText,
 } from "../ui/components.js";
 
 requireAuth();
@@ -257,11 +258,17 @@ const renderHeaderProposicao = (proposicao) => {
     <header class="providencia-group__header">
       <div>
         <h3 class="providencia-group__title">${proposicao.numero} · ${proposicao.unidade || "—"}</h3>
-        <p class="muted providencia-group__subtitle">${proposicao.tipo || ""}${
-          proposicao.descricao
-            ? ` — ${escapeAttr(proposicao.descricao).slice(0, 160)}${proposicao.descricao.length > 160 ? "…" : ""}`
-            : ""
-        }</p>
+        <p class="muted providencia-group__subtitle">
+          ${escapeAttr(proposicao.tipo || "")}
+          ${
+            proposicao.descricao
+              ? renderClampedText(proposicao.descricao, {
+                  lines: 2,
+                  className: "providencia-group__description",
+                })
+              : ""
+          }
+        </p>
         ${metadados ? `<p class="muted providencia-group__meta">${metadados}</p>` : ""}
       </div>
       <a class="button button--ghost button--small" href="proposicao-detalhe.html?id=${escapeAttr(proposicao.id)}&from=secretaria-providencia">Abrir proposição</a>

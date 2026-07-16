@@ -1,6 +1,7 @@
 import { seedState } from "../../data/seed.js";
 import { expirarDiligenciasVencidas } from "../domain/diligencias.js";
 import { normalizarProposicoesDestinatario } from "../domain/destinatario.js";
+import { migrarConteudoProposicoesLongas } from "../domain/migracao-conteudo-proposicoes.js";
 
 // v6: acrescenta o catálogo top-level `avisos` (página Início do CN).
 const STORAGE_KEY = "nad-sistema-state-v6";
@@ -25,10 +26,14 @@ let expirationDoneThisPageLoad = false;
 const aplicarExpiracaoLazy = (state) => {
   // Materializa o agregado Destinatário em proposições legadas (idempotente).
   normalizarProposicoesDestinatario(state);
-  if (expirationDoneThisPageLoad) return state;
+  const conteudoMigrado = migrarConteudoProposicoesLongas(state);
+  if (expirationDoneThisPageLoad) {
+    if (conteudoMigrado) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return state;
+  }
   expirationDoneThisPageLoad = true;
   const afetadas = expirarDiligenciasVencidas(state);
-  if (afetadas.length > 0) {
+  if (conteudoMigrado || afetadas.length > 0) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
   return state;

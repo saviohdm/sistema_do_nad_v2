@@ -17,6 +17,11 @@
   font-size: 2.4rem;
 }
 
+.detail-hero__descricao {
+  max-width: 78ch;
+  line-height: 1.65;
+}
+
 .detail-section {
   display: grid;
   gap: var(--space-4);
@@ -337,6 +342,16 @@
 .historico-evento__meta,
 .historico-evento__linha {
   font-size: 0.85rem;
+}
+
+.historico-evento__fundamentacao {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.historico-evento__fundamentacao .longform-text {
+  gap: var(--space-2);
 }
 
 .historico-evento__badges {
