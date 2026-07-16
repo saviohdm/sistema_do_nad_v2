@@ -374,17 +374,6 @@ export const getAvailableActionsByPersona = (proposicao, persona) => {
   return personaMap[persona] || {};
 };
 
-export const getHumanSummary = (proposicao) => {
-  const apreciacaoDoCN = proposicao.apreciacaoDoCN;
-  if (!apreciacaoDoCN) return "Sem decisão do CN registrada.";
-
-  if (apreciacaoDoCN.situacao === SituacaoApreciacao.NECESSITA_MAIS_INFORMACOES) {
-    return "A proposição retornou à Secretaria para nova diligência.";
-  }
-
-  return `Decisão do CN: ${Labels.tipoConclusao[apreciacaoDoCN.tipoConclusao]}.`;
-};
-
 export const findPropWithPendingProvidence = (state) =>
   listProposicoes(state).filter((proposicao) =>
     proposicao.pendenciasSecretaria.some((item) => item.status === "pendente"),

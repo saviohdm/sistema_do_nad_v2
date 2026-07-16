@@ -5,11 +5,7 @@ import {
   formatTempoRelativo,
   parseDateValue,
 } from "../app/utils.js";
-import {
-  getHumanSummary,
-  getApreciacaoBadgeTone,
-  getStatusBadgeTone,
-} from "../domain/proposicoes.js";
+import { getApreciacaoBadgeTone, getStatusBadgeTone } from "../domain/proposicoes.js";
 import {
   CategoriaHistorico,
   LabelsCategoriaHistorico,
@@ -620,6 +616,16 @@ const humanizarChaveContexto = (chave) => {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 };
 
+const temInformacaoContexto = (valor) => {
+  if (valor === null || valor === undefined) return false;
+  if (typeof valor === "string") return valor.trim().length > 0;
+  if (Array.isArray(valor)) return valor.some(temInformacaoContexto);
+  if (typeof valor === "object") {
+    return Object.values(valor).some(temInformacaoContexto);
+  }
+  return true;
+};
+
 /**
  * Render livre do contexto enviado pelo SCI (formato ainda não padronizado pelo
  * time): percorre qualquer JSON e apresenta tudo como texto legível — objetos
@@ -657,17 +663,21 @@ const renderContextoLivre = (valor) => {
 /**
  * Seção "Contexto" do detalhe da proposição: a origem do caso na correição
  * (quesito respondido, estatística ou procedimento analisado na entrevista).
- * Colapsada por padrão — conteúdo volumoso, nem sempre útil; abre sob clique.
+ * Sempre disponível e colapsada por padrão; quando não há informação útil,
+ * apresenta uma mensagem discreta no corpo do painel.
  */
 export const renderContextoSection = (proposicao, { aberto = false } = {}) => {
-  if (!proposicao.contexto) return "";
+  const conteudo = temInformacaoContexto(proposicao.contexto)
+    ? renderContextoLivre(proposicao.contexto)
+    : `<span class="muted">Sem informações de contexto.</span>`;
+
   return `
     <details class="panel contexto-panel" data-contexto-panel${aberto ? " open" : ""}>
       <summary class="contexto-panel__summary">
         <span class="panel__title">Contexto</span>
       </summary>
       <div class="contexto-panel__body">
-        ${renderContextoLivre(proposicao.contexto)}
+        ${conteudo}
       </div>
     </details>
   `;
@@ -687,7 +697,6 @@ export const renderProposicaoHero = (proposicao) => `
       </div>
     </div>
     <p>${proposicao.descricao}</p>
-    <div class="inline-note">${getHumanSummary(proposicao)}</div>
   </section>
 `;
 

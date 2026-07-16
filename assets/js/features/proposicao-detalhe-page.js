@@ -779,6 +779,7 @@ const renderDetalheContent = ({
 }) => `
   <section class="stack">
     ${renderProposicaoHero(proposicao)}
+    ${acaoPrincipalHtml || ""}
     <section class="panel">
       <div class="panel__header-row">
         <h3 class="panel__title">Metadados do caso</h3>
@@ -791,7 +792,6 @@ const renderDetalheContent = ({
       ${renderMetaList(meta)}
     </section>
     ${renderContextoSection(proposicao, { aberto: contextoAberto })}
-    ${acaoPrincipalHtml || ""}
     ${renderDossie({ proposicao, historico, historicoNota, providenciasEditable })}
   </section>
 `;
