@@ -24,6 +24,7 @@ Corregedor Nacional (`PERSONAS.CORREGEDOR`), na fila **Aguardando decisão**.
 - **Snapshot ausente ou inválido**: avisa que o contexto não pôde ser recuperado e retorna com segurança à fila operacional.
 - **Devolução cancelada ou rascunho salvo**: permanece no detalhe atual.
 - **Detalhe aberto fora da fila**: após a ação, retorna ao dashboard, consulta ou outra origem registrada.
+- **Ação disparada na própria fila** (acolher/devolver inline ou em lote): ver [US-CORREGEDOR-006](US-corregedor-006-acoes-rapidas-fila-decisao.md); a fila re-renderiza no lugar, sem entrar no fluxo sequencial.
 
 ## Regras de negócio
 - “Próxima” é a posição seguinte na ordem exibida, sem nova ordenação.

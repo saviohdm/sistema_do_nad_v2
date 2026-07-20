@@ -164,6 +164,34 @@ export const deferirAvaliacao = (proposicao, usuario = "Corregedor Nacional") =>
   );
 };
 
+// Lote de deferimentos por correição: cada acolhimento é um ato individual
+// (evento `decisao` próprio, modo deferimento). Ficam fora as proposições sem
+// minuta vigente e as com rascunho de decisão do CN, para não descartar
+// trabalho em andamento do Corregedor.
+export const acolherMinutasDaCorreicao = (state, correicaoId, usuario = "Corregedor Nacional") => {
+  const resultado = { acolhidas: 0, semMinuta: 0, comRascunho: 0 };
+  if (!correicaoId) return resultado;
+  state.proposicoes.forEach((proposicao) => {
+    if (
+      proposicao.correicaoId !== correicaoId ||
+      proposicao.statusFluxo !== StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR
+    ) {
+      return;
+    }
+    if (!proposicao.avaliacaoVigenteId) {
+      resultado.semMinuta += 1;
+      return;
+    }
+    if (proposicao.rascunhoDecisaoCN) {
+      resultado.comRascunho += 1;
+      return;
+    }
+    deferirAvaliacao(proposicao, usuario);
+    resultado.acolhidas += 1;
+  });
+  return resultado;
+};
+
 export const indeferirAvaliacao = (proposicao, juizo, usuario = "Corregedor Nacional") =>
   finalizarOuRetornar(
     proposicao,

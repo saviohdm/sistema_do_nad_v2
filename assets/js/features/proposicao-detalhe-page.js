@@ -91,6 +91,8 @@ const origem = resolverOrigemDetalhe({
   fromMembro: queryParam("fromMembro"),
   fromCorregedor: queryParam("fromCorregedor"),
 });
+// Deep-link dos botões da Fila de decisão: afastar | decidir | retomar.
+const acaoSolicitada = queryParam("acao");
 
 // Filtro de categoria do histórico unificado; sobrevive aos re-renders da página.
 let filtroHistoricoAtivo = "todos";
@@ -1033,4 +1035,28 @@ const render = () => {
   bindMetadadosHandler();
 };
 
+// Abre o formulário prometido pelo botão da fila. Aplicado uma única vez, no
+// load; se o estado mudou e a ação não é mais cabível, não faz nada.
+const aplicarAcaoSolicitada = () => {
+  if (!acaoSolicitada) return;
+  const proposicao = getProposicaoById(state(), proposicaoId);
+  if (!proposicao) return;
+  const available = getAvailableActions(proposicao);
+  if (available.podeDecidir && (acaoSolicitada === "afastar" || acaoSolicitada === "retomar")) {
+    // Reusa o toggle existente: expande o painel, seta aria-expanded e foca o 1º campo.
+    document.querySelector("[data-action='alternar-decisao-substitutiva']")?.click();
+    return;
+  }
+  if (
+    available.podeAvaliarDiretamente &&
+    (acaoSolicitada === "decidir" || acaoSolicitada === "retomar")
+  ) {
+    const form = document.querySelector("#form-avaliacao-direta");
+    if (!form) return;
+    form.scrollIntoView({ block: "start" });
+    form.querySelector("select, textarea")?.focus({ preventScroll: true });
+  }
+};
+
 render();
+aplicarAcaoSolicitada();
