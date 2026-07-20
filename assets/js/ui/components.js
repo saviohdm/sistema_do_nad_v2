@@ -51,7 +51,7 @@ export const renderTextParagraphs = (value, { className = "" } = {}) => {
 
 /** Mantém o texto completo no DOM e limita apenas sua apresentação visual. */
 export const renderClampedText = (value, { lines = 3, className = "" } = {}) => {
-  const limite = lines === 2 ? 2 : 3;
+  const limite = [1, 2, 3].includes(lines) ? lines : 3;
   const classes = ["text-clamp", `text-clamp--${limite}`, className]
     .filter(Boolean)
     .join(" ");
@@ -903,6 +903,14 @@ const FILA_PRIORIDADE_CLASS = {
   normal: "fila-operacional-item--prio-normal",
 };
 
+// Texto longo da fila conforme a visão ativa: "compacta" = 1 linha com
+// reticências, "cartoes" = clamp fixo (a grade não pode crescer sem limite),
+// "expandida" = integral em parágrafos.
+const renderFilaTextoPorView = (value, view, { linhasCartoes = 2 } = {}) =>
+  view === "expandida"
+    ? renderTextParagraphs(value)
+    : renderClampedText(value, { lines: view === "cartoes" ? linhasCartoes : 1 });
+
 export const renderFilaProposicaoEditorial = (
   proposicao,
   {
@@ -912,6 +920,8 @@ export const renderFilaProposicaoEditorial = (
     actions = "",
     footerExtras = "",
     cta = "Abrir proposição",
+    excerto = "",
+    view = "compacta",
     selecionado = false,
     desabilitado = false,
     className = "",
@@ -923,11 +933,12 @@ export const renderFilaProposicaoEditorial = (
   const prioridadeClass =
     FILA_PRIORIDADE_CLASS[proposicao.prioridade] || FILA_PRIORIDADE_CLASS.normal;
   const descricao = proposicao.descricao || "";
-  const idade = formatTempoRelativo(getUltimaMovimentacao(proposicao));
+  const destinatario = getDestinatarioDisplay(proposicao);
   const delay = Math.min(index, 18) * 28;
   const classes = [
     "fila-operacional-item",
     prioridadeClass,
+    view === "cartoes" ? "fila-operacional-item--card" : "",
     checkboxHtml ? "fila-operacional-item--selecionavel" : "",
     selecionado ? "is-selected" : "",
     desabilitado ? "is-disabled" : "",
@@ -953,18 +964,18 @@ export const renderFilaProposicaoEditorial = (
       </div>
       ${badges ? `<div class="fila-operacional-item__badges">${badges}</div>` : ""}
     </header>
-    <p class="fila-operacional-item__unidade">${proposicao.unidade || "—"}</p>
+    <p class="fila-operacional-item__destinatario">${destinatario.rotulo}</p>
     ${
-      descricao
-        ? `<p class="fila-operacional-item__descricao">${renderClampedText(descricao, { lines: 3 })}</p>`
+      destinatario.rotuloSecundario
+        ? `<p class="fila-operacional-item__destinatario-apoio">${destinatario.rotuloSecundario}</p>`
         : ""
     }
-    <dl class="fila-operacional-item__meta">
-      <div><dt>Temática</dt><dd>${proposicao.tematica || "—"}</dd></div>
-      <div><dt>Membro</dt><dd>${proposicao.membro || "—"}</dd></div>
-      <div><dt>Correição</dt><dd>${proposicao.correicao?.numero || proposicao.correicaoId || "—"}</dd></div>
-      <div><dt>Última movimentação</dt><dd>${idade}</dd></div>
-    </dl>
+    ${
+      descricao
+        ? `<div class="fila-operacional-item__descricao">${renderFilaTextoPorView(descricao, view)}</div>`
+        : ""
+    }
+    ${excerto}
     <footer class="fila-operacional-item__footer">
       <div class="fila-operacional-item__signals">${sensivel}${prioridade}${footerExtras}</div>
       ${cta ? `<span class="fila-operacional-item__cta" aria-hidden="true">${cta} →</span>` : ""}
@@ -982,6 +993,49 @@ export const renderFilaProposicaoEditorial = (
         ${actions ? `<div class="fila-operacional-item__actions">${actions}</div>` : ""}
       </div>
     </article>`;
+};
+
+// Excerto do card de fila: prévia do insumo que a persona vai julgar (minuta ou
+// comprovação). Overline + linha-força opcional + texto conforme a visão ativa
+// (1 linha na compacta, clamp fixo nos cartões, integral na expandida).
+export const renderFilaExcerto = ({ overline, destaque = "", texto = "", apoio = "", view = "compacta" }) => {
+  if (!destaque && !texto) return "";
+  return `
+    <div class="fila-operacional-item__excerto">
+      <p class="fila-operacional-item__excerto-overline">${overline}</p>
+      ${destaque ? `<p class="fila-operacional-item__excerto-destaque">${destaque}</p>` : ""}
+      ${texto ? `<div class="fila-operacional-item__excerto-texto">${renderFilaTextoPorView(texto, view)}</div>` : ""}
+      ${apoio ? `<p class="fila-operacional-item__excerto-apoio">${apoio}</p>` : ""}
+    </div>`;
+};
+
+// Excerto da minuta vigente (evento avaliacao_membro_auxiliar): conclusão
+// proposta nas duas camadas do juízo + trecho da redação.
+export const renderFilaExcertoMinuta = (avaliacao, { view } = {}) => {
+  const apreciacao = avaliacao?.apreciacao;
+  if (!apreciacao) return "";
+  const situacaoLabel = Labels.situacaoApreciacao[apreciacao.situacao] || "";
+  const conclusaoLabel = apreciacao.tipoConclusao
+    ? Labels.tipoConclusao[apreciacao.tipoConclusao] || ""
+    : "";
+  return renderFilaExcerto({
+    overline: "Minuta do membro auxiliar",
+    destaque: [situacaoLabel, conclusaoLabel].filter(Boolean).join(" · "),
+    texto: apreciacao.observacoes || "",
+    view,
+  });
+};
+
+// Excerto da comprovação do correicionado (evento comprovacao).
+export const renderFilaExcertoComprovacao = (comprovacao, { view } = {}) => {
+  if (!comprovacao) return "";
+  const qtdAnexos = comprovacao.anexos?.length || 0;
+  return renderFilaExcerto({
+    overline: "Comprovação do correicionado",
+    texto: comprovacao.descricao || "",
+    apoio: qtdAnexos ? `${qtdAnexos} anexo${qtdAnexos > 1 ? "s" : ""}` : "",
+    view,
+  });
 };
 
 export const renderFilaOperacionalHeader = ({

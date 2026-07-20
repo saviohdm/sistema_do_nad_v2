@@ -31,12 +31,13 @@ const renderAcoesCard = (proposicao) => {
   return `${editar}${apagar}`;
 };
 
-const renderCard = (proposicao, index) =>
+const renderCard = (proposicao, index, view) =>
   renderFilaProposicaoEditorial(proposicao, {
     href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=corregedor-referendo`,
     badges: ehRascunho(proposicao) ? renderBadge("Rascunho salvo", "warning") : "",
     actions: renderAcoesCard(proposicao),
     attributes: `data-proposicao-id="${proposicao.id}"`,
+    view,
     index,
   });
 
@@ -218,8 +219,8 @@ montarFilaNavegavel({
     !ctx.filtros.comRascunho
       ? renderAcoesCorreicao(ctx.filtros.correicaoId, ctx)
       : "",
-  renderItens: (filtradas) =>
-    filtradas.map((proposicao, index) => renderCard(proposicao, index)).join(""),
+  renderItens: (filtradas, ctx) =>
+    filtradas.map((proposicao, index) => renderCard(proposicao, index, ctx.view)).join(""),
   bindExtra: (ctx) => {
     document.querySelectorAll("[data-action='referendar-correicao']").forEach((btn) => {
       btn.addEventListener("click", (event) => {

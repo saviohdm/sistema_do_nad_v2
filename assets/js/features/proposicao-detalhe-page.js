@@ -28,7 +28,7 @@ import {
   cienciaJaVisualizadaPor,
   getDataVisualizacaoCiencia,
 } from "../domain/correicionados.js";
-import { Labels, SituacaoApreciacao, StatusFluxo, TipoDestinatario, TipoHistorico } from "../domain/enums.js";
+import { Labels, SituacaoApreciacao, StatusFluxo, TipoDestinatario } from "../domain/enums.js";
 import {
   getDestinatario,
   getTipoDestinatario,
@@ -45,6 +45,7 @@ import {
   getAvailableActions,
   getAvailableActionsByPersona,
   getProposicaoById,
+  getUltimaComprovacao,
   listProposicoesAguardandoDecisao,
   markPropositionDeleted,
   salvarRascunhoDecisaoCN,
@@ -579,11 +580,6 @@ const renderAcaoCorreicionadoComprovacao = (proposicao) => {
     `,
   });
 };
-
-const getUltimaComprovacao = (proposicao) =>
-  (proposicao.historico || [])
-    .filter((event) => event.tipo === TipoHistorico.COMPROVACAO)
-    .sort((a, b) => new Date(b.data) - new Date(a.data))[0] || null;
 
 // Linhas de metadados específicas da orientação do destinatário.
 const metaDestinatario = (proposicao) => {

@@ -1,15 +1,24 @@
 import { PERSONAS } from "../app/auth.js";
 import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
-import { listProposicoesAguardandoDecisao } from "../domain/proposicoes.js";
+import {
+  getAvaliacaoVigente,
+  getUltimaComprovacao,
+  listProposicoesAguardandoDecisao,
+} from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
-import { renderBadge, renderFilaProposicaoEditorial } from "../ui/components.js";
+import {
+  renderBadge,
+  renderFilaExcertoComprovacao,
+  renderFilaExcertoMinuta,
+  renderFilaProposicaoEditorial,
+} from "../ui/components.js";
 import { CONTEXTO_NAVEGACAO_DECISAO_KEY } from "../ui/fila-contexto-navegacao.js";
 
 const temAvaliacaoVigente = (proposicao) => Boolean(proposicao.avaliacaoVigenteId);
 const temRascunhoDecisao = (proposicao) => Boolean(proposicao.rascunhoDecisaoCN);
 
-const renderCard = (proposicao, index) => {
+const renderCard = (proposicao, index, view) => {
   const comAvaliacao = temAvaliacaoVigente(proposicao);
   const rascunho = temRascunhoDecisao(proposicao);
   const statusBadge = rascunho
@@ -18,10 +27,16 @@ const renderCard = (proposicao, index) => {
         comAvaliacao ? "Decidir minuta vigente" : "Decidir diretamente",
         comAvaliacao ? "primary" : "warning",
       );
+  // Prévia do insumo da decisão: minuta vigente ou, na decisão direta, a comprovação.
+  const excerto = comAvaliacao
+    ? renderFilaExcertoMinuta(getAvaliacaoVigente(proposicao), { view })
+    : renderFilaExcertoComprovacao(getUltimaComprovacao(proposicao), { view });
   return renderFilaProposicaoEditorial(proposicao, {
     href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=corregedor-decisao`,
     badges: statusBadge,
     cta: rascunho ? "Retomar decisão" : "Abrir para decidir",
+    excerto,
+    view,
     index,
   });
 };
@@ -95,6 +110,6 @@ montarFilaNavegavel({
       },
     ];
   },
-  renderItens: (filtradas) =>
-    filtradas.map((proposicao, index) => renderCard(proposicao, index)).join(""),
+  renderItens: (filtradas, ctx) =>
+    filtradas.map((proposicao, index) => renderCard(proposicao, index, ctx.view)).join(""),
 });

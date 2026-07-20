@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": [".claude/dev-server.mjs"],
       "port": 8080
+    },
+    {
+      "name": "nad-static-8081",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "process.env.PORT='8081'; import('./.claude/dev-server.mjs');"],
+      "port": 8081
     }
   ]
 }

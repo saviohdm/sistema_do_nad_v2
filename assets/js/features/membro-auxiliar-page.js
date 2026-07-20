@@ -1,16 +1,22 @@
 import { PERSONAS } from "../app/auth.js";
 import { montarFilaNavegavel } from "../ui/fila-navegavel.js";
-import { listProposicoesParaAvaliar } from "../domain/proposicoes.js";
+import { getUltimaComprovacao, listProposicoesParaAvaliar } from "../domain/proposicoes.js";
 import { hydrateProposicao } from "../domain/correicoes.js";
 import { Prioridade } from "../domain/enums.js";
 import { StatusFilaOperacional } from "../domain/filas-operacionais.js";
-import { renderBadge, renderFilaProposicaoEditorial } from "../ui/components.js";
+import {
+  renderBadge,
+  renderFilaExcertoComprovacao,
+  renderFilaProposicaoEditorial,
+} from "../ui/components.js";
 
-const renderCard = (proposicao, temRascunho, index) =>
+const renderCard = (proposicao, temRascunho, index, view) =>
   renderFilaProposicaoEditorial(proposicao, {
     href: `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=membro-auxiliar`,
     badges: temRascunho ? renderBadge("Rascunho salvo", "warning") : "",
     cta: temRascunho ? "Retomar minuta" : "Elaborar minuta",
+    excerto: renderFilaExcertoComprovacao(getUltimaComprovacao(proposicao), { view }),
+    view,
     index,
   });
 
@@ -56,8 +62,8 @@ montarFilaNavegavel({
       title: "Proposições com prioridade urgente — elabore primeiro.",
     },
   ],
-  renderItens: (filtradas) =>
+  renderItens: (filtradas, ctx) =>
     filtradas
-      .map((p, index) => renderCard(p, Boolean(p.rascunhoAvaliacao), index))
+      .map((p, index) => renderCard(p, Boolean(p.rascunhoAvaliacao), index, ctx.view))
       .join(""),
 });

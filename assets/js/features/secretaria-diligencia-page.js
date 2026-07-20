@@ -62,7 +62,7 @@ const hidratarSelecao = () => {
 hidratarSelecao();
 
 // --- Cards e UI de lote ---
-const renderCardSelecionavel = (proposicao, index) => {
+const renderCardSelecionavel = (proposicao, index, view) => {
   const selecionado = selecaoIds.has(proposicao.id);
   const subStatusBadge = isRetornada(proposicao)
     ? renderBadge("Retornou · necessita mais informações", "warning")
@@ -72,6 +72,7 @@ const renderCardSelecionavel = (proposicao, index) => {
     checkboxHtml: `<input type="checkbox" data-prop-checkbox="${escapeAttr(proposicao.id)}" ${selecionado ? "checked" : ""} aria-label="Selecionar proposição ${proposicao.numero}" />`,
     badges: subStatusBadge,
     selecionado,
+    view,
     index,
   });
 };
@@ -374,8 +375,10 @@ montarFilaNavegavel({
       title: "Retornaram por decisão do Corregedor — exigem nova diligência.",
     },
   ],
-  renderItens: (filtradas) =>
-    filtradas.map((proposicao, index) => renderCardSelecionavel(proposicao, index)).join(""),
+  renderItens: (filtradas, ctx) =>
+    filtradas
+      .map((proposicao, index) => renderCardSelecionavel(proposicao, index, ctx.view))
+      .join(""),
   renderFilaTopo: (ctx) => renderSelectAllRow(ctx.filtradas),
   renderFilaRodape: (ctx) => {
     const idsVisiveis = new Set(ctx.filtradas.map((p) => p.id));

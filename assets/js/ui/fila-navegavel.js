@@ -23,7 +23,12 @@
 //       ("afunilador": filtro OFF mostra tudo, ON restringe aos detectados).
 //   bindExtra(ctx)                       (opcional)    -> handlers próprios da persona
 //
-// ctx = { filtros, proposicoes, filtradas, extras, state, aplicarFiltros, render }
+// ctx = { filtros, proposicoes, filtradas, extras, state, aplicarFiltros, render, view }
+//
+// Visão da fila (apresentação, não filtro): "compacta" (textos em 1 linha),
+// "expandida" (textos integrais) e "cartoes" (grade estilo acervo). Preferência
+// única para as 4 filas em localStorage (nad.fila.view), fora da URL — mesmo
+// padrão do seletor "Visão" da consulta. Repassada aos itens via ctx.view.
 
 import { baseActions, mountPage, state } from "../app/bootstrap.js";
 import { getCurrentPersona, requireAuth } from "../app/auth.js";
@@ -52,6 +57,46 @@ const optionTag = (value, label, selected) =>
   `<option value="${escapeAttr(value)}"${selected === value ? " selected" : ""}>${label}</option>`;
 
 const BASE_KEYS = ["correicaoId", "destinatarioRef", "unidadeRef", "unidade", "prioridade", "sensivel"];
+
+const FILA_VIEW_KEY = "nad.fila.view";
+const FILA_VIEW_DEFAULT = "compacta";
+const FILA_VIEWS = [
+  { value: "compacta", label: "Compacta" },
+  { value: "expandida", label: "Expandida" },
+  { value: "cartoes", label: "Cartões" },
+];
+
+const getFilaView = () => {
+  try {
+    const view = localStorage.getItem(FILA_VIEW_KEY);
+    return FILA_VIEWS.some((opcao) => opcao.value === view) ? view : FILA_VIEW_DEFAULT;
+  } catch {
+    return FILA_VIEW_DEFAULT;
+  }
+};
+
+const setFilaView = (view) => {
+  try {
+    localStorage.setItem(FILA_VIEW_KEY, view);
+  } catch {
+    /* ignore */
+  }
+};
+
+const renderFilaViewbar = (view) => `
+  <div class="fila-operacional-viewbar">
+    <div class="acervo-toolbar-group">
+      <span class="acervo-toolbar-label">Visão</span>
+      <div class="acervo-view-switch" role="tablist" aria-label="Visão da fila">
+        ${FILA_VIEWS.map(
+          (opcao) =>
+            `<button type="button" role="tab" aria-selected="${view === opcao.value}" class="${
+              view === opcao.value ? "is-active" : ""
+            }" data-fila-view="${opcao.value}">${opcao.label}</button>`,
+        ).join("")}
+      </div>
+    </div>
+  </div>`;
 
 // Seções do painel "Destinatários", em ordem de prioridade (adm. superior no
 // topo). Cada uma só é renderizada se tiver ao menos um destinatário.
@@ -269,7 +314,7 @@ export function montarFilaNavegavel(config) {
       </section>`;
   };
 
-  // --- Painel de filtros (só atributos da proposição: prioridade, sensível, rascunho) ---
+  // --- Barra de filtros (só atributos da proposição: prioridade, sensível, rascunho) ---
   const renderPainelFiltros = (proposicoes, filtros, ctx) => {
     const prioridades = uniq(proposicoes.map((p) => p.prioridade));
     const prioOpts = prioridades
@@ -287,10 +332,7 @@ export function montarFilaNavegavel(config) {
       : "";
 
     return `
-      <form class="fila-operacional-filtros" id="painel-filtros">
-        <header class="fila-operacional-filtros__head">
-          <h3 class="fila-operacional-filtros__title">Filtros da fila</h3>
-        </header>
+      <form class="fila-operacional-filtros fila-operacional-filtros--toolbar" id="painel-filtros" aria-label="Filtros da fila">
         <div class="fila-operacional-filtros__fields">
           <div class="field">
             <label for="filtro-prioridade">Prioridade</label>
@@ -436,17 +478,15 @@ export function montarFilaNavegavel(config) {
           itemPlural,
           actions: headerActions,
         })}
+        ${renderPainelFiltros(proposicoes, filtros, ctx)}
         ${renderFilaFiltrosAtivos(filtrosAtivos)}
-        <div class="page-grid page-grid--two fila-operacional-corpo">
-          <div class="stack">
-            ${config.renderFilaTopo ? config.renderFilaTopo(ctx) : ""}
-            <div class="fila-operacional-list">${itens}</div>
-            ${config.renderFilaRodape ? config.renderFilaRodape(ctx) : ""}
-          </div>
-
-          <aside class="fila-operacional-sidebar">
-            ${renderPainelFiltros(proposicoes, filtros, ctx)}
-          </aside>
+        ${renderFilaViewbar(ctx.view)}
+        <div class="stack">
+          ${config.renderFilaTopo ? config.renderFilaTopo(ctx) : ""}
+          <div class="fila-operacional-list${
+            ctx.view === "cartoes" && filtradas.length ? " fila-operacional-list--cards" : ""
+          }">${itens}</div>
+          ${config.renderFilaRodape ? config.renderFilaRodape(ctx) : ""}
         </div>
       </section>`;
   };
@@ -458,7 +498,16 @@ export function montarFilaNavegavel(config) {
     const currentState = state();
     const proposicoes = config.getProposicoes(currentState);
     const extras = config.prepare ? config.prepare(currentState) : {};
-    const ctx = { filtros, proposicoes, filtradas: [], extras, state: currentState, aplicarFiltros, render };
+    const ctx = {
+      filtros,
+      proposicoes,
+      filtradas: [],
+      extras,
+      state: currentState,
+      aplicarFiltros,
+      render,
+      view: getFilaView(),
+    };
 
     const modo = determinarModo(filtros);
     let content;
@@ -521,6 +570,15 @@ export function montarFilaNavegavel(config) {
         unidadeRef: filtros.unidadeRef,
         unidade: filtros.unidade,
         filaForcada: !filtros.destinatarioRef && !filtros.unidadeRef && !filtros.unidade,
+      });
+    });
+
+    // Troca de visão: aplica na hora, sem tocar na URL (preferência, não filtro).
+    document.querySelectorAll("[data-fila-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.filaView === getFilaView()) return;
+        setFilaView(button.dataset.filaView);
+        render();
       });
     });
 

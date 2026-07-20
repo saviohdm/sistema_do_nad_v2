@@ -248,6 +248,11 @@ export const filtrarProposicoes = (proposicoes, filtros = {}) => {
 export const getAvaliacaoVigente = (proposicao) =>
   proposicao.historico.find((event) => event.id === proposicao.avaliacaoVigenteId) || null;
 
+export const getUltimaComprovacao = (proposicao) =>
+  (proposicao.historico || [])
+    .filter((event) => event.tipo === TipoHistorico.COMPROVACAO)
+    .sort((a, b) => new Date(b.data) - new Date(a.data))[0] || null;
+
 export const countPendenciasAbertas = (state) =>
   state.proposicoes.flatMap((proposicao) => proposicao.pendenciasSecretaria).filter((item) => item.status === "pendente").length;
 

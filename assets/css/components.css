@@ -1381,6 +1381,10 @@ button.panorama-kpi {
   -webkit-box-orient: vertical;
 }
 
+.text-clamp--1 {
+  -webkit-line-clamp: 1;
+}
+
 .text-clamp--2 {
   -webkit-line-clamp: 2;
 }
@@ -1602,6 +1606,20 @@ button.panorama-kpi {
   gap: var(--space-3);
 }
 
+/* Seletor "Visão" da fila (Compacta / Expandida / Cartões) — reusa o visual do
+   switch da consulta (acervo-view-switch, em pages.css). */
+.fila-operacional-viewbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Visão "Cartões": mesmos itens da fila, dispostos em grade estilo acervo. */
+.fila-operacional-list--cards {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
 @keyframes fila-operacional-item-in {
   from {
     opacity: 0;
@@ -1737,12 +1755,19 @@ button.panorama-kpi {
   max-width: 52%;
 }
 
-.fila-operacional-item__unidade {
+.fila-operacional-item__destinatario {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.08rem;
   font-weight: 600;
   line-height: 1.25;
+}
+
+/* Unidade de origem, exibida quando o destinatário é um membro. */
+.fila-operacional-item__destinatario-apoio {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 .fila-operacional-item__descricao {
@@ -1753,20 +1778,17 @@ button.panorama-kpi {
   min-width: 0;
 }
 
-.fila-operacional-item__meta {
+/* Excerto do insumo em julgamento (minuta do membro / comprovação do
+   correicionado): prévia clampada, conteúdo integral fica no detalhe. */
+.fila-operacional-item__excerto {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2) var(--space-4);
-  margin: 0;
+  gap: var(--space-1);
   padding-top: var(--space-3);
   border-top: 1px dashed var(--line);
 }
 
-.fila-operacional-item__meta div {
-  min-width: 0;
-}
-
-.fila-operacional-item__meta dt {
+.fila-operacional-item__excerto-overline {
+  margin: 0;
   color: var(--muted);
   font-size: 0.62rem;
   font-weight: 700;
@@ -1774,13 +1796,24 @@ button.panorama-kpi {
   text-transform: uppercase;
 }
 
-.fila-operacional-item__meta dd {
-  margin: 2px 0 0;
-  overflow: hidden;
-  color: var(--text);
-  font-size: 0.8rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.fila-operacional-item__excerto-destaque {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.fila-operacional-item__excerto-texto {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.fila-operacional-item__excerto-apoio {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
 }
 
 .fila-operacional-item__footer {
@@ -1825,6 +1858,38 @@ button.panorama-kpi {
   padding: var(--space-3) var(--space-5) var(--space-4);
   border-top: 1px solid var(--line);
   background: var(--surface-warm);
+}
+
+/* Item no modo cartão: coluna de altura uniforme com footer/ações ancorados na
+   base, à la acervo-card da consulta. */
+.fila-operacional-item--card {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.fila-operacional-item--card .fila-operacional-item__body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.fila-operacional-item--card .fila-operacional-item__link {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.fila-operacional-item--card .fila-operacional-item__footer {
+  margin-top: auto;
+}
+
+.fila-operacional-item--card .fila-operacional-item__badges {
+  max-width: 60%;
+}
+
+/* Texto integral (visão expandida): parágrafos com respiro menor que o longform padrão. */
+.fila-operacional-item__descricao .longform-text,
+.fila-operacional-item__excerto-texto .longform-text {
+  gap: var(--space-2);
 }
 
 .fila-operacional-grupo {
@@ -1941,6 +2006,59 @@ button.panorama-kpi {
 .fila-operacional-filtros__actions {
   padding-top: var(--space-3);
   border-top: 1px solid var(--line);
+}
+
+/* Variante toolbar — filas do engine (decisão, referendo, diligência, minutas):
+   filtros horizontais acima dos cards, lista em largura total. Comprovações e
+   ciência seguem na variante empilhada da sidebar (regras acima permanecem).
+   Este bloco precisa vir depois das regras base de input/__busca: duas
+   sobrescritas abaixo ganham por posição em empate de especificidade. */
+.fila-operacional-filtros--toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4);
+}
+
+.fila-operacional-filtros--toolbar .fila-operacional-filtros__fields {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3) var(--space-4);
+  min-width: 0;
+}
+
+.fila-operacional-filtros--toolbar .fila-operacional-filtros__fields .field {
+  flex: 1 1 160px;
+  max-width: 260px;
+}
+
+.fila-operacional-filtros--toolbar .fila-operacional-filtros__fields input,
+.fila-operacional-filtros--toolbar .fila-operacional-filtros__fields select {
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.fila-operacional-filtros--toolbar .fila-operacional-filtros__fields .fila-operacional-filtros__busca {
+  flex: 2 1 240px;
+  max-width: 420px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.fila-operacional-filtros--toolbar .fila-operacional-filtros__fields .grupos-toggle {
+  flex: 1 1 300px;
+  max-width: 440px;
+  margin-top: 0;
+}
+
+.fila-operacional-filtros--toolbar .fila-operacional-filtros__actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .fila-operacional-empty {
@@ -2501,10 +2619,6 @@ button.panorama-kpi {
     justify-content: flex-start;
   }
 
-  .fila-operacional-item__meta {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .fila-operacional-sidebar {
     position: static;
   }
@@ -2534,6 +2648,18 @@ button.panorama-kpi {
     padding: var(--space-4);
   }
 
+  .fila-operacional-filtros--toolbar .fila-operacional-filtros__fields .field,
+  .fila-operacional-filtros--toolbar .fila-operacional-filtros__fields .fila-operacional-filtros__busca,
+  .fila-operacional-filtros--toolbar .fila-operacional-filtros__fields .grupos-toggle {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .fila-operacional-filtros--toolbar .fila-operacional-filtros__actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
   .fila-operacional-header__summary {
     grid-template-columns: 1fr 1fr;
     width: 100%;
@@ -2558,16 +2684,6 @@ button.panorama-kpi {
   .fila-operacional-item__badges {
     justify-content: flex-start;
     max-width: 100%;
-  }
-
-  .fila-operacional-item__meta {
-    grid-template-columns: 1fr;
-  }
-
-  .fila-operacional-item__meta dd {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
   }
 
   .fila-operacional-item__actions {
