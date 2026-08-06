@@ -94,9 +94,10 @@ O processo é orientado por persona. A minuta de decisão do membro auxiliar nun
 
 ### Membro Auxiliar da CN
 
-1. Após a comprovação do correicionado, o membro auxiliar `RASCUNHA minuta`.
-2. O membro auxiliar `SUBMETE MINUTA`.
-3. A minuta registra uma apreciação com as mesmas invariantes e a mesma redação que poderão constar da decisão final:
+1. Após a comprovação do correicionado, o membro auxiliar abre a minuta com `Concluída`, `Cumprida`, sem providência da Secretaria e com a redação genérica editável “Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.”
+2. Se o modelo corresponder ao caso, o membro auxiliar pode `SUBMETER MINUTA` diretamente; se alterar situação ou tipo de conclusão antes de editar a redação, o texto genérico é limpo e não reaparece automaticamente.
+3. O membro auxiliar também pode editar o conteúdo e `RASCUNHAR minuta`. Uma vez editado ou salvo, o texto passa a ser trabalho do usuário e não sofre limpeza automática. Rascunhos retomados prevalecem integralmente sobre o modelo genérico.
+4. A minuta registra uma apreciação com as mesmas invariantes e a mesma redação que poderão constar da decisão final:
    `necessita mais informações`; ou
    `concluída`, com um dos tipos:
    `cumprida`,
@@ -104,9 +105,9 @@ O processo é orientado por persona. A minuta de decisão do membro auxiliar nun
    `não cumprida`,
    `prejudicada (perda de objeto)` ou
    `encerrada (sem análise de mérito)`.
-4. Para qualquer resultado conclusivo, a minuta também registra se existe providência a ser cumprida pela Secretaria Processual e descreve obrigatoriamente a opção `outra providência`.
-5. A redação da minuta é obrigatória no envio definitivo e deve usar linguagem decisória e impositiva; rascunhos podem permanecer incompletos.
-6. A minuta nunca produz efeito concreto por si só e é encaminhada ao Corregedor Nacional para decisão.
+5. Para qualquer resultado conclusivo, a minuta também registra se existe providência a ser cumprida pela Secretaria Processual e descreve obrigatoriamente a opção `outra providência`.
+6. A redação da minuta é obrigatória no envio definitivo e deve usar linguagem decisória e impositiva; rascunhos podem permanecer incompletos.
+7. A minuta nunca produz efeito concreto por si só e é encaminhada ao Corregedor Nacional para decisão.
 
 ## Decisão da Corregedoria Nacional
 

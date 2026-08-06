@@ -30,6 +30,7 @@ export const renderApreciacaoForm = ({
   title,
   submitLabel,
   initialApreciacao = null,
+  defaultApreciacao = null,
   includeRascunho = false,
   variant = "panel",
   ariaLabel = "",
@@ -39,7 +40,7 @@ export const renderApreciacaoForm = ({
   observacoesPlaceholder = "",
   observacoesRequired = false,
 }) => {
-  const j = initialApreciacao || {};
+  const j = initialApreciacao || defaultApreciacao || {};
   const situacaoValue = j.situacao || SituacaoApreciacao.CONCLUIDA;
   const tipoConclusaoValue = j.tipoConclusao || "";
   const existeProvidenciaValue = j.existeProvidenciaSecretaria ? "true" : "false";
@@ -143,6 +144,33 @@ export const renderApreciacaoForm = ({
       <p class="inline-note" data-role="rascunho-feedback" hidden></p>
     </form>
   `;
+};
+
+export const vincularRedacaoAutomaticaApreciacaoForm = (
+  form,
+  { ativa = false, camposGatilho = ["situacao", "tipoConclusao"] } = {},
+) => {
+  const observacoesInput = form?.querySelector?.('[name="observacoes"]');
+  let redacaoAutomaticaAtiva = Boolean(ativa && observacoesInput);
+  const gatilhos = new Set(camposGatilho);
+
+  const marcarComoPersistida = () => {
+    redacaoAutomaticaAtiva = false;
+  };
+
+  if (!observacoesInput) return { marcarComoPersistida };
+
+  form.addEventListener("input", (event) => {
+    if (event.target.name === "observacoes") redacaoAutomaticaAtiva = false;
+  });
+
+  form.addEventListener("change", (event) => {
+    if (!gatilhos.has(event.target.name)) return;
+    if (redacaoAutomaticaAtiva) observacoesInput.value = "";
+    redacaoAutomaticaAtiva = false;
+  });
+
+  return { marcarComoPersistida };
 };
 
 export const aplicarRegrasApreciacaoForm = (form) => {

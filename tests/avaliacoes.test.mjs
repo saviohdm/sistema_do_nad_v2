@@ -77,6 +77,27 @@ test("rascunho de minuta pode ficar incompleto, mas a submissão definitiva exig
   assert.ok(proposicao.avaliacaoVigenteId);
 });
 
+test("minuta cumprida padrão pode ser submetida diretamente", () => {
+  const proposicao = novaProposicao();
+  const minuta = {
+    situacao: SituacaoApreciacao.CONCLUIDA,
+    tipoConclusao: TipoConclusao.CUMPRIDA,
+    existeProvidenciaSecretaria: false,
+    tipoProvidencia: null,
+    descricaoProvidencia: null,
+    observacoes:
+      "Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.",
+  };
+
+  salvarAvaliacaoMembro(proposicao, minuta);
+
+  assert.equal(proposicao.statusFluxo, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR);
+  const evento = proposicao.historico.find(
+    (item) => item.tipo === TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR,
+  );
+  assert.deepEqual(evento.apreciacao, minuta);
+});
+
 test("acolher clona profundamente e sem transformação a minuta para a decisão do CN", () => {
   const proposicao = novaProposicao();
   const minuta = minutaCompleta();

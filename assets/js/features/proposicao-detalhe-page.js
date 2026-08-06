@@ -28,7 +28,13 @@ import {
   cienciaJaVisualizadaPor,
   getDataVisualizacaoCiencia,
 } from "../domain/correicionados.js";
-import { Labels, SituacaoApreciacao, StatusFluxo, TipoDestinatario } from "../domain/enums.js";
+import {
+  Labels,
+  SituacaoApreciacao,
+  StatusFluxo,
+  TipoConclusao,
+  TipoDestinatario,
+} from "../domain/enums.js";
 import {
   getDestinatario,
   getTipoDestinatario,
@@ -65,6 +71,7 @@ import {
   lerApreciacaoParcial,
   readApreciacaoForm,
   renderApreciacaoForm,
+  vincularRedacaoAutomaticaApreciacaoForm,
 } from "../ui/forms.js";
 import { openEditarMetadadosModal } from "../ui/modal.js";
 import { adicionarEmailDiligencia } from "../domain/caixa-de-saida.js";
@@ -96,6 +103,18 @@ const acaoSolicitada = queryParam("acao");
 
 // Filtro de categoria do histórico unificado; sobrevive aos re-renders da página.
 let filtroHistoricoAtivo = "todos";
+
+const REDACAO_PADRAO_MINUTA_CUMPRIDA =
+  "Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.";
+
+const APRECIACAO_PADRAO_MINUTA_CUMPRIDA = {
+  situacao: SituacaoApreciacao.CONCLUIDA,
+  tipoConclusao: TipoConclusao.CUMPRIDA,
+  existeProvidenciaSecretaria: false,
+  tipoProvidencia: null,
+  descricaoProvidencia: null,
+  observacoes: REDACAO_PADRAO_MINUTA_CUMPRIDA,
+};
 
 const bindHistoricoHandlers = () => {
   document.querySelectorAll("[data-filtro-historico]").forEach((chip) => {
@@ -279,6 +298,13 @@ const bindHandlers = (proposicao) => {
     render();
   });
 
+  const formAvaliacaoMembro = document.querySelector("#form-avaliacao-membro");
+  const redacaoAutomaticaMembro = formAvaliacaoMembro
+    ? vincularRedacaoAutomaticaApreciacaoForm(formAvaliacaoMembro, {
+        ativa: !proposicao.rascunhoAvaliacao,
+      })
+    : null;
+
   // Rascunhos de apreciação (minuta do membro e decisão do CN) compartilham o
   // mesmo par salvar/descartar do form; muda apenas a função de domínio.
   const RASCUNHO_APRECIACAO = {
@@ -307,6 +333,9 @@ const bindHandlers = (proposicao) => {
         acoes.salvar(item, juizoParcial);
         return draft;
       });
+      if (formId === "form-avaliacao-membro") {
+        redacaoAutomaticaMembro?.marcarComoPersistida();
+      }
       const feedback = form.querySelector("[data-role='rascunho-feedback']");
       if (feedback) {
         feedback.hidden = false;
@@ -682,6 +711,7 @@ const renderAcaoMembro = (proposicao, available) => {
         title: "Minuta de decisão",
         submitLabel: "Submeter minuta",
         initialApreciacao: proposicao.rascunhoAvaliacao?.apreciacao || null,
+        defaultApreciacao: APRECIACAO_PADRAO_MINUTA_CUMPRIDA,
         includeRascunho: true,
         variant: "bare",
         observacoesLabel: "Redação da minuta",
