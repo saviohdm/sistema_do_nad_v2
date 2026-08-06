@@ -23,6 +23,57 @@ const createEvent = (id, tipo, usuario, extras = {}) => ({
   ...extras,
 });
 
+const COMPROVACOES_FILA_MEMBRO = {
+  "prop-008": {
+    descricao:
+      "A revisão bimestral dos inquéritos civis foi formalizada por ordem de serviço, com distribuição dos procedimentos por responsável e calendário único de conferência.\n\nA primeira rodada revisou o acervo ativo, identificou expedientes sem movimentação recente e registrou as providências adotadas para cada ocorrência.\n\nOs anexos reúnem o ato normativo e o relatório extraído do sistema, permitindo conferir responsáveis, datas da revisão e encaminhamentos definidos.",
+    data: "2026-04-05T14:00:00Z",
+    anexos: [
+      { nome: "ordem-servico-revisao-bimestral.pdf", tamanhoBytes: 184200, mimeType: "application/pdf", anexadoEm: "2026-04-05T13:55:00Z" },
+      { nome: "relatorio-primeira-revisao.pdf", tamanhoBytes: 362800, mimeType: "application/pdf", anexadoEm: "2026-04-05T13:57:00Z" },
+    ],
+  },
+  "prop-009": {
+    descricao:
+      "O protocolo de atendimento virtual foi implantado em todas as equipes da Promotoria Regional, com roteiro único de triagem, registro e resposta ao cidadão.\n\nA capacitação alcançou servidores e estagiários, e a amostra apresentada demonstra o uso dos campos obrigatórios e dos prazos previstos no novo fluxo.\n\nA documentação inclui o protocolo aprovado, a lista de participantes da capacitação e o relatório de atendimentos realizados após a implantação.",
+    data: "2026-03-28T16:00:00Z",
+    anexos: [
+      { nome: "protocolo-atendimento-virtual.pdf", tamanhoBytes: 246900, mimeType: "application/pdf", anexadoEm: "2026-03-28T15:50:00Z" },
+      { nome: "lista-capacitacao-equipes.pdf", tamanhoBytes: 128400, mimeType: "application/pdf", anexadoEm: "2026-03-28T15:52:00Z" },
+      { nome: "relatorio-atendimentos-virtuais.xlsx", tamanhoBytes: 198300, mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", anexadoEm: "2026-03-28T15:55:00Z" },
+    ],
+  },
+  "prop-010": {
+    descricao:
+      "A trilha de auditoria passou a registrar automaticamente as novas substituições internas desde 1º de abril, vinculando usuário, data, unidade de origem e justificativa da movimentação.\n\nOs logs apresentados permitem reconstruir cada alteração e demonstram que os perfis de acesso foram revisados para impedir edições sem identificação do responsável.\n\nO teste amostral confirmou a cobertura das substituições correntes; os registros retroativos ainda estão em saneamento e serão incorporados em etapa complementar já programada.",
+    data: "2026-04-10T11:30:00Z",
+    anexos: [
+      { nome: "extrato-logs-substituicoes.pdf", tamanhoBytes: 428100, mimeType: "application/pdf", anexadoEm: "2026-04-10T11:20:00Z" },
+      { nome: "plano-saneamento-registros-retroativos.pdf", tamanhoBytes: 207600, mimeType: "application/pdf", anexadoEm: "2026-04-10T11:24:00Z" },
+    ],
+  },
+  "prop-104": {
+    descricao:
+      "A Portaria nº 18/2026 designou a servidora responsável pela consolidação e publicação periódica do relatório de atividades da Promotoria do Recreio.\n\nO primeiro relatório mensal foi publicado no portal institucional com indicadores de acervo, movimentação processual, atendimento ao público e ações extrajudiciais.\n\nA comprovação reúne a portaria de designação, o relatório já divulgado e a captura da página pública em que consta o calendário das próximas atualizações.",
+    data: "2026-05-02T14:00:00Z",
+    anexos: [
+      { nome: "portaria-18-2026.pdf", tamanhoBytes: 164500, mimeType: "application/pdf", anexadoEm: "2026-05-02T13:45:00Z" },
+      { nome: "relatorio-atividades-abril-2026.pdf", tamanhoBytes: 391200, mimeType: "application/pdf", anexadoEm: "2026-05-02T13:48:00Z" },
+      { nome: "captura-calendario-publicacoes.png", tamanhoBytes: 286700, mimeType: "image/png", anexadoEm: "2026-05-02T13:52:00Z" },
+    ],
+  },
+  "prop-111": {
+    descricao:
+      "A Procuradoria-Geral implantou painel institucional para acompanhar ações de prevenção ao adoecimento e melhoria do clima organizacional, com responsáveis, metas e prazos definidos por unidade.\n\nO primeiro ciclo consolidou indicadores de afastamentos, participação em ações preventivas e execução dos planos locais, permitindo identificar áreas que demandam apoio prioritário.\n\nForam apresentados o ato de instituição do painel, o relatório gerencial de julho e a planilha consolidada utilizada na reunião da Administração Superior.",
+    data: "2026-07-29T14:00:00Z",
+    anexos: [
+      { nome: "ato-instituicao-painel.pdf", tamanhoBytes: 196300, mimeType: "application/pdf", anexadoEm: "2026-07-29T13:45:00Z" },
+      { nome: "relatorio-gerencial-julho.pdf", tamanhoBytes: 348900, mimeType: "application/pdf", anexadoEm: "2026-07-29T13:50:00Z" },
+      { nome: "indicadores-clima-organizacional.xlsx", tamanhoBytes: 224700, mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", anexadoEm: "2026-07-29T13:54:00Z" },
+    ],
+  },
+};
+
 const diretorioCnmp = {
   unidades: [
     { id: "und-ba-pgj", nome: "Procuradoria-Geral de Justiça", ramoMP: "MPBA", ramoMPNome: "Ministério Público do Estado da Bahia" },
@@ -115,7 +166,7 @@ export const seedState = {
       usuarioNotificadoEmail: "helena.rocha@mpba.mp.br",
       proposicaoIds: ["prop-001"],
       assunto: "Diligência aberta: PROP-2026-0001",
-      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0001. Acesse o Sistema NAD para apresentar a comprovação até 15/07/2026.",
+      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0001. Acesse o Sistema NAD para apresentar a comprovação até 15/09/2026.",
       linkAcesso: "/pages/correicionado-comprovacoes.html",
       enviadoEm: "2026-05-20T10:00:00Z",
       enviadoPor: "Secretaria Processual da CN",
@@ -232,7 +283,7 @@ export const seedState = {
       usuarioNotificadoEmail: "mauro.nascimento@mprs.mp.br",
       proposicaoIds: ["prop-002"],
       assunto: "Diligência aberta: PROP-2026-0002",
-      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0002. Acesse o Sistema NAD para apresentar a comprovação até 30/06/2026.",
+      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0002. Acesse o Sistema NAD para apresentar a comprovação até 28/08/2026.",
       linkAcesso: "/pages/correicionado-comprovacoes.html",
       enviadoEm: "2026-04-10T11:05:00Z",
       enviadoPor: "Secretaria Processual da CN",
@@ -245,9 +296,74 @@ export const seedState = {
       usuarioNotificadoEmail: "paulo.veiga@mpgo.mp.br",
       proposicaoIds: ["prop-004"],
       assunto: "Diligência aberta: PROP-2026-0004",
-      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0004. Acesse o Sistema NAD para apresentar a comprovação até 20/07/2026.",
+      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0004. Acesse o Sistema NAD para apresentar a comprovação até 30/09/2026.",
       linkAcesso: "/pages/correicionado-comprovacoes.html",
       enviadoEm: "2026-04-14T15:05:00Z",
+      enviadoPor: "Secretaria Processual da CN",
+    },
+    {
+      id: "cx-008-dil",
+      tipo: TipoCaixaSaida.DILIGENCIA,
+      usuarioNotificadoId: "memb-marcelo-andrade",
+      usuarioNotificadoNome: "Dr. Marcelo Andrade",
+      usuarioNotificadoEmail: "marcelo.andrade@mpba.mp.br",
+      proposicaoIds: ["prop-008"],
+      assunto: "Diligência aberta: PROP-2026-0008",
+      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0008. Acesse o Sistema NAD para apresentar a comprovação até 08/04/2026.",
+      linkAcesso: "/pages/correicionado-comprovacoes.html",
+      enviadoEm: "2026-03-08T09:05:00Z",
+      enviadoPor: "Secretaria Processual da CN",
+    },
+    {
+      id: "cx-009-dil",
+      tipo: TipoCaixaSaida.DILIGENCIA,
+      usuarioNotificadoId: "memb-mauro-nascimento",
+      usuarioNotificadoNome: "Dr. Mauro Nascimento",
+      usuarioNotificadoEmail: "mauro.nascimento@mprs.mp.br",
+      proposicaoIds: ["prop-009"],
+      assunto: "Diligência aberta: PROP-2026-0009",
+      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0009. Acesse o Sistema NAD para apresentar a comprovação até 30/03/2026.",
+      linkAcesso: "/pages/correicionado-comprovacoes.html",
+      enviadoEm: "2026-02-25T11:05:00Z",
+      enviadoPor: "Secretaria Processual da CN",
+    },
+    {
+      id: "cx-010-dil",
+      tipo: TipoCaixaSaida.DILIGENCIA,
+      usuarioNotificadoId: "memb-paulo-veiga",
+      usuarioNotificadoNome: "Dr. Paulo Veiga",
+      usuarioNotificadoEmail: "paulo.veiga@mpgo.mp.br",
+      proposicaoIds: ["prop-010"],
+      assunto: "Diligência aberta: PROP-2026-0010",
+      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0010. Acesse o Sistema NAD para apresentar a comprovação até 12/04/2026.",
+      linkAcesso: "/pages/correicionado-comprovacoes.html",
+      enviadoEm: "2026-03-20T10:05:00Z",
+      enviadoPor: "Secretaria Processual da CN",
+    },
+    {
+      id: "cx-104-dil",
+      tipo: TipoCaixaSaida.DILIGENCIA,
+      usuarioNotificadoId: "memb-elisa-torres",
+      usuarioNotificadoNome: "Dra. Elisa Torres",
+      usuarioNotificadoEmail: "elisa.torres@mprj.mp.br",
+      proposicaoIds: ["prop-104"],
+      assunto: "Diligência aberta: PROP-2026-0104",
+      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0104. Acesse o Sistema NAD para apresentar a comprovação até 04/05/2026.",
+      linkAcesso: "/pages/correicionado-comprovacoes.html",
+      enviadoEm: "2026-04-04T10:05:00Z",
+      enviadoPor: "Secretaria Processual da CN",
+    },
+    {
+      id: "cx-111-dil",
+      tipo: TipoCaixaSaida.DILIGENCIA,
+      usuarioNotificadoId: "memb-mariana-tavares",
+      usuarioNotificadoNome: "Dra. Mariana Tavares",
+      usuarioNotificadoEmail: "mariana.tavares@mpsp.mp.br",
+      proposicaoIds: ["prop-111"],
+      assunto: "Diligência aberta: PROP-2026-0111",
+      corpoResumo: "Foi aberta diligência referente à proposição PROP-2026-0111. Acesse o Sistema NAD para apresentar a comprovação até 02/08/2026.",
+      linkAcesso: "/pages/correicionado-comprovacoes.html",
+      enviadoEm: "2026-07-01T10:05:00Z",
       enviadoPor: "Secretaria Processual da CN",
     },
   ],
@@ -263,7 +379,7 @@ export const seedState = {
       descricao: "Instituir rotina formal de controle de prazos e ciência eletrônica.",
       prioridade: "urgente",
       sensivel: false,
-      observacoesGerais: "Diligência inicial aberta; aguardando comprovação do correicionado.",
+      observacoesGerais: "Diligência aberta; aguarda comprovação do correicionado.",
       correicaoId: "corr-2026-BA-PGJ",
       // Contexto de origem na correição, enviado pelo SCI na migração (chave
       // "Contexto" do JSON). Estrutura livre — ainda sem formato padronizado.
@@ -287,7 +403,7 @@ export const seedState = {
         {
           id: "dil-001",
           descricao: "Apresentar evidências da rotina formal de controle de prazos e do registro eletrônico de ciência (capturas de tela, normativos internos e atos de comunicação).",
-          prazo: "2026-07-15",
+          prazo: "2026-09-15",
           status: "aberta",
           criadaEm: "2026-05-20T09:55:00Z",
         },
@@ -300,7 +416,7 @@ export const seedState = {
         createEvent("hist-1-dil", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
           descricao: "Diligência criada com prazo para o correicionado.",
           data: "2026-05-20T09:55:00Z",
-          prazoComprovacao: "2026-07-15",
+          prazoComprovacao: "2026-09-15",
           diligenciaId: "dil-001",
         }),
         createEvent("hist-1-mail", TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, "Secretaria Processual da CN", {
@@ -325,7 +441,7 @@ export const seedState = {
       descricao: "Adequar o fluxo interno de registro de atendimento ao cidadão.",
       prioridade: "normal",
       sensivel: false,
-      observacoesGerais: "Há diligência aberta para comprovação documental.",
+      observacoesGerais: "Diligência aberta; aguarda comprovação documental do correicionado.",
       correicaoId: "corr-2026-leg-002",
       statusFluxo: StatusFluxo.AGUARDANDO_COMPROVACAO,
       apreciacaoDoCN: null,
@@ -335,7 +451,7 @@ export const seedState = {
         {
           id: "dil-002",
           descricao: "Solicitar comprovação documental da implantação do novo fluxo.",
-          prazo: "2026-06-30",
+          prazo: "2026-08-28",
           status: "aberta",
           criadaEm: "2026-04-10T11:00:00Z",
         },
@@ -346,7 +462,7 @@ export const seedState = {
         }),
         createEvent("hist-3", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
           descricao: "Diligência criada com prazo para o correicionado.",
-          prazoComprovacao: "2026-06-30",
+          prazoComprovacao: "2026-08-28",
           diligenciaId: "dil-002",
         }),
         createEvent("hist-3-mail", TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, "Secretaria Processual da CN", {
@@ -445,7 +561,7 @@ export const seedState = {
         {
           id: "dil-004",
           descricao: "Esclarecer escopo dos servidores cobertos pela política.",
-          prazo: "2026-07-20",
+          prazo: "2026-09-30",
           status: "aberta",
           criadaEm: "2026-04-14T15:00:00Z",
         },
@@ -474,7 +590,7 @@ export const seedState = {
         }),
         createEvent("hist-10", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
           descricao: "Nova diligência aberta para complementar instrução.",
-          prazoComprovacao: "2026-07-20",
+          prazoComprovacao: "2026-09-30",
           diligenciaId: "dil-004",
         }),
         createEvent("hist-10-mail", TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, "Secretaria Processual da CN", {
@@ -787,13 +903,31 @@ export const seedState = {
         },
       ],
       historico: [
+        createEvent("hist-008-cri", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Proposição criada a partir do relatório de correição.",
+          data: "2026-02-18T10:00:00Z",
+        }),
+        createEvent("hist-008-ref", TipoHistorico.REFERENDO_CNMP, "CNMP", {
+          descricao: "Proposição referendada pelo Plenário do CNMP.",
+          data: "2026-03-05T15:00:00Z",
+        }),
         createEvent("hist-18", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
           descricao: "Diligência inicial criada.",
+          data: "2026-03-08T09:00:00Z",
           prazoComprovacao: "2026-04-08",
           diligenciaId: "dil-008",
         }),
+        createEvent("hist-008-mail", TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, "Secretaria Processual da CN", {
+          descricao: "E-mail de notificação enviado a Dr. Marcelo Andrade (marcelo.andrade@mpba.mp.br).",
+          data: "2026-03-08T09:05:00Z",
+          usuarioNotificadoId: "memb-marcelo-andrade",
+          usuarioNotificadoEmail: "marcelo.andrade@mpba.mp.br",
+          caixaSaidaId: "cx-008-dil",
+          diligenciaId: "dil-008",
+        }),
         createEvent("hist-19", TipoHistorico.COMPROVACAO, "Correicionado", {
-          descricao: "Comprovação apresentada com ata de reunião.",
+          diligenciaId: "dil-008",
+          ...COMPROVACOES_FILA_MEMBRO["prop-008"],
         }),
       ],
     },
@@ -826,13 +960,31 @@ export const seedState = {
         },
       ],
       historico: [
+        createEvent("hist-009-cri", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Proposição criada a partir do relatório de correição.",
+          data: "2026-02-01T10:00:00Z",
+        }),
+        createEvent("hist-009-ref", TipoHistorico.REFERENDO_CNMP, "CNMP", {
+          descricao: "Proposição referendada pelo Plenário do CNMP.",
+          data: "2026-02-20T15:00:00Z",
+        }),
         createEvent("hist-20", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
           descricao: "Diligência inicial criada.",
+          data: "2026-02-25T11:00:00Z",
           prazoComprovacao: "2026-03-30",
           diligenciaId: "dil-009",
         }),
+        createEvent("hist-009-mail", TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, "Secretaria Processual da CN", {
+          descricao: "E-mail de notificação enviado a Dr. Mauro Nascimento (mauro.nascimento@mprs.mp.br).",
+          data: "2026-02-25T11:05:00Z",
+          usuarioNotificadoId: "memb-mauro-nascimento",
+          usuarioNotificadoEmail: "mauro.nascimento@mprs.mp.br",
+          caixaSaidaId: "cx-009-dil",
+          diligenciaId: "dil-009",
+        }),
         createEvent("hist-21", TipoHistorico.COMPROVACAO, "Correicionado", {
-          descricao: "Comprovação apresentada com relatório técnico.",
+          diligenciaId: "dil-009",
+          ...COMPROVACOES_FILA_MEMBRO["prop-009"],
         }),
       ],
     },
@@ -876,14 +1028,31 @@ export const seedState = {
         },
       ],
       historico: [
+        createEvent("hist-010-cri", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Proposição criada a partir do relatório de correição.",
+          data: "2026-03-01T10:00:00Z",
+        }),
+        createEvent("hist-010-ref", TipoHistorico.REFERENDO_CNMP, "CNMP", {
+          descricao: "Proposição referendada pelo Plenário do CNMP.",
+          data: "2026-03-18T15:00:00Z",
+        }),
         createEvent("hist-22", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
           descricao: "Diligência inicial criada.",
+          data: "2026-03-20T10:00:00Z",
           prazoComprovacao: "2026-04-12",
           diligenciaId: "dil-010",
         }),
+        createEvent("hist-010-mail", TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, "Secretaria Processual da CN", {
+          descricao: "E-mail de notificação enviado a Dr. Paulo Veiga (paulo.veiga@mpgo.mp.br).",
+          data: "2026-03-20T10:05:00Z",
+          usuarioNotificadoId: "memb-paulo-veiga",
+          usuarioNotificadoEmail: "paulo.veiga@mpgo.mp.br",
+          caixaSaidaId: "cx-010-dil",
+          diligenciaId: "dil-010",
+        }),
         createEvent("hist-23", TipoHistorico.COMPROVACAO, "Correicionado", {
-          descricao: "Comprovação apresentada com logs internos.",
-          data: "2026-04-10T11:30:00Z",
+          diligenciaId: "dil-010",
+          ...COMPROVACOES_FILA_MEMBRO["prop-010"],
         }),
         createEvent("hist-23b", TipoHistorico.RASCUNHO_AVALIACAO_SALVO, "Membro Auxiliar da CN", {
           descricao: "Rascunho de avaliação iniciado pelo membro auxiliar.",
@@ -1275,15 +1444,102 @@ export const seedState = {
       apreciacaoDoCN: null,
       avaliacaoVigenteId: null,
       pendenciasSecretaria: [],
-      diligencias: [],
+      diligencias: [
+        {
+          id: "dil-104",
+          descricao: "Comprovar a designação do gestor e a publicação do primeiro relatório periódico de atividades.",
+          prazo: "2026-05-04",
+          status: "comprovada",
+          criadaEm: "2026-04-04T10:00:00Z",
+          comprovadaEm: "2026-05-02T14:00:00Z",
+        },
+      ],
       historico: [
         createEvent("hist-108", TipoHistorico.CRIACAO, "Corregedor Nacional", {
           descricao: "Proposição criada.",
           data: "2026-04-01T10:30:00Z",
         }),
+        createEvent("hist-104-ref", TipoHistorico.REFERENDO_CNMP, "CNMP", {
+          descricao: "Proposição referendada pelo Plenário do CNMP.",
+          data: "2026-04-03T15:00:00Z",
+        }),
+        createEvent("hist-104-dil", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
+          descricao: "Diligência criada para comprovação da designação e da primeira publicação.",
+          data: "2026-04-04T10:00:00Z",
+          prazoComprovacao: "2026-05-04",
+          diligenciaId: "dil-104",
+        }),
+        createEvent("hist-104-mail", TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, "Secretaria Processual da CN", {
+          descricao: "E-mail de notificação enviado a Dra. Elisa Torres (elisa.torres@mprj.mp.br).",
+          data: "2026-04-04T10:05:00Z",
+          usuarioNotificadoId: "memb-elisa-torres",
+          usuarioNotificadoEmail: "elisa.torres@mprj.mp.br",
+          caixaSaidaId: "cx-104-dil",
+          diligenciaId: "dil-104",
+        }),
         createEvent("hist-109", TipoHistorico.COMPROVACAO, "Correicionado", {
-          descricao: "Comprovação documental enviada pelo correicionado.",
-          data: "2026-05-02T14:00:00Z",
+          diligenciaId: "dil-104",
+          ...COMPROVACOES_FILA_MEMBRO["prop-104"],
+        }),
+      ],
+    },
+    {
+      id: "prop-111",
+      numero: "PROP-2026-0111",
+      tipo: "Recomendação",
+      unidadeId: "adm-mpsp-pgj",
+      unidade: "Procuradoria-Geral de Justiça (MPSP)",
+      membroId: null,
+      membro: "",
+      destinatario: {
+        tipo: "administracao_superior",
+        administracaoSuperior: { ramoMP: "MPSP", tipo: "PGJ" },
+      },
+      descricao: "Instituir painel institucional de acompanhamento das ações de prevenção ao adoecimento e de melhoria do clima organizacional.",
+      prioridade: "importante",
+      sensivel: false,
+      observacoesGerais: "Comprovação recebida; aguarda elaboração de minuta pelo membro auxiliar.",
+      correicaoId: "corr-2026-SP-02",
+      statusFluxo: StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO,
+      apreciacaoDoCN: null,
+      avaliacaoVigenteId: null,
+      pendenciasSecretaria: [],
+      diligencias: [
+        {
+          id: "dil-111",
+          descricao: "Comprovar a instituição do painel e apresentar os resultados do primeiro ciclo de acompanhamento.",
+          prazo: "2026-08-02",
+          status: "comprovada",
+          criadaEm: "2026-07-01T10:00:00Z",
+          comprovadaEm: "2026-07-29T14:00:00Z",
+        },
+      ],
+      historico: [
+        createEvent("hist-111-cri", TipoHistorico.CRIACAO, "Corregedor Nacional", {
+          descricao: "Proposição criada a partir do relatório de correição.",
+          data: "2026-06-10T10:00:00Z",
+        }),
+        createEvent("hist-111-ref", TipoHistorico.REFERENDO_CNMP, "CNMP", {
+          descricao: "Proposição referendada pelo Plenário do CNMP.",
+          data: "2026-06-24T15:00:00Z",
+        }),
+        createEvent("hist-111-dil", TipoHistorico.CRIACAO_DILIGENCIA, "Secretaria Processual da CN", {
+          descricao: "Diligência criada para comprovação da instituição e do primeiro ciclo do painel.",
+          data: "2026-07-01T10:00:00Z",
+          prazoComprovacao: "2026-08-02",
+          diligenciaId: "dil-111",
+        }),
+        createEvent("hist-111-mail", TipoHistorico.EMAIL_DILIGENCIA_ENVIADO, "Secretaria Processual da CN", {
+          descricao: "E-mail de notificação enviado a Dra. Mariana Tavares (mariana.tavares@mpsp.mp.br).",
+          data: "2026-07-01T10:05:00Z",
+          usuarioNotificadoId: "memb-mariana-tavares",
+          usuarioNotificadoEmail: "mariana.tavares@mpsp.mp.br",
+          caixaSaidaId: "cx-111-dil",
+          diligenciaId: "dil-111",
+        }),
+        createEvent("hist-111-com", TipoHistorico.COMPROVACAO, "Correicionado", {
+          diligenciaId: "dil-111",
+          ...COMPROVACOES_FILA_MEMBRO["prop-111"],
         }),
       ],
     },

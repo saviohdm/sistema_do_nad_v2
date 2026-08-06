@@ -32,7 +32,7 @@ test("resumo de apreciação preserva todos os parágrafos da fundamentação", 
   assert.match(html, /Fundamento final\./);
 });
 
-test("fila mantém a descrição completa e escapada no DOM com clamp de três linhas", () => {
+test("fila compacta mantém a descrição completa e escapada no DOM com clamp de uma linha", () => {
   const sufixo = "trecho final que não pode ser removido";
   const descricao = `${"Descrição extensa com conteúdo jurídico. ".repeat(12)}<teste> & ${sufixo}`;
   const html = renderFilaProposicaoEditorial(
@@ -48,7 +48,7 @@ test("fila mantém a descrição completa e escapada no DOM com clamp de três l
     { href: "/detalhe" },
   );
 
-  assert.match(html, /text-clamp text-clamp--3/);
+  assert.match(html, /text-clamp text-clamp--1/);
   assert.match(html, new RegExp(sufixo));
   assert.match(html, /&lt;teste&gt; &amp;/);
   assert.doesNotMatch(html, /\.\.\./);

@@ -1030,12 +1030,29 @@ export const renderFilaExcertoMinuta = (avaliacao, { view } = {}) => {
 export const renderFilaExcertoComprovacao = (comprovacao, { view } = {}) => {
   if (!comprovacao) return "";
   const qtdAnexos = comprovacao.anexos?.length || 0;
-  return renderFilaExcerto({
-    overline: "Comprovação do correicionado",
-    texto: comprovacao.descricao || "",
-    apoio: qtdAnexos ? `${qtdAnexos} anexo${qtdAnexos > 1 ? "s" : ""}` : "",
-    view,
-  });
+  const seloAnexos = qtdAnexos
+    ? `${qtdAnexos} anexo${qtdAnexos > 1 ? "s" : ""}`
+    : "Sem anexo";
+  return `
+    <div class="fila-operacional-item__excerto fila-operacional-item__excerto--comprovacao">
+      <div class="fila-operacional-item__excerto-head">
+        <div class="fila-operacional-item__excerto-heading">
+          ${renderIcon("comprovacao", "fila-operacional-item__excerto-icon")}
+          <p class="fila-operacional-item__excerto-overline">Comprovação do correicionado</p>
+        </div>
+        <span class="fila-operacional-item__excerto-selo">${seloAnexos}</span>
+      </div>
+      ${
+        comprovacao.descricao
+          ? `<div class="fila-operacional-item__excerto-texto">${renderFilaTextoPorView(comprovacao.descricao, view, { linhasCartoes: 3 })}</div>`
+          : ""
+      }
+      ${
+        comprovacao.data
+          ? `<p class="fila-operacional-item__excerto-apoio">Recebida em ${formatDateTime(comprovacao.data)}</p>`
+          : ""
+      }
+    </div>`;
 };
 
 export const renderFilaOperacionalHeader = ({
