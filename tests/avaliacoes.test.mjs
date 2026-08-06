@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  MINUTA_PADRAO_CUMPRIDA,
   deferirAvaliacao,
   indeferirAvaliacao,
+  podeSubmeterMinutaPadrao,
   registrarAvaliacaoComForcaDeDecisao,
   removerAvaliacao,
   salvarAvaliacaoMembro,
@@ -18,6 +20,8 @@ import {
 } from "../assets/js/domain/enums.js";
 import {
   confirmarEExecutarDevolucaoMinuta,
+  confirmarEExecutarSubmissaoMinutaPadrao,
+  mensagemSubmissaoMinutaPadrao,
   MENSAGEM_DEVOLUCAO_MINUTA,
 } from "../assets/js/ui/confirmacoes.js";
 
@@ -79,23 +83,49 @@ test("rascunho de minuta pode ficar incompleto, mas a submissão definitiva exig
 
 test("minuta cumprida padrão pode ser submetida diretamente", () => {
   const proposicao = novaProposicao();
-  const minuta = {
-    situacao: SituacaoApreciacao.CONCLUIDA,
-    tipoConclusao: TipoConclusao.CUMPRIDA,
-    existeProvidenciaSecretaria: false,
-    tipoProvidencia: null,
-    descricaoProvidencia: null,
-    observacoes:
-      "Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.",
-  };
-
-  salvarAvaliacaoMembro(proposicao, minuta);
+  salvarAvaliacaoMembro(proposicao, MINUTA_PADRAO_CUMPRIDA);
 
   assert.equal(proposicao.statusFluxo, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR);
   const evento = proposicao.historico.find(
     (item) => item.tipo === TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR,
   );
-  assert.deepEqual(evento.apreciacao, minuta);
+  assert.deepEqual(evento.apreciacao, MINUTA_PADRAO_CUMPRIDA);
+});
+
+test("a ação rápida exige comprovação, fase correta e ausência de trabalho vigente", () => {
+  const elegivel = novaProposicao();
+  elegivel.historico.push({ id: "comp-1", tipo: TipoHistorico.COMPROVACAO });
+  assert.equal(podeSubmeterMinutaPadrao(elegivel), true);
+
+  const semComprovacao = novaProposicao();
+  assert.equal(podeSubmeterMinutaPadrao(semComprovacao), false);
+
+  const comRascunho = structuredClone(elegivel);
+  comRascunho.rascunhoAvaliacao = { apreciacao: MINUTA_PADRAO_CUMPRIDA };
+  assert.equal(podeSubmeterMinutaPadrao(comRascunho), false);
+
+  const comMinutaVigente = structuredClone(elegivel);
+  comMinutaVigente.avaliacaoVigenteId = "minuta-1";
+  assert.equal(podeSubmeterMinutaPadrao(comMinutaVigente), false);
+
+  const foraDaFila = structuredClone(elegivel);
+  foraDaFila.statusFluxo = StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR;
+  assert.equal(podeSubmeterMinutaPadrao(foraDaFila), false);
+});
+
+test("submissão rápida confirmada usa o padrão e sai da fila do membro", () => {
+  const proposicao = novaProposicao();
+  proposicao.historico.push({ id: "comp-1", tipo: TipoHistorico.COMPROVACAO });
+
+  salvarAvaliacaoMembro(proposicao, MINUTA_PADRAO_CUMPRIDA);
+
+  assert.equal(podeSubmeterMinutaPadrao(proposicao), false);
+  assert.equal(proposicao.statusFluxo, StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR);
+  assert.equal(proposicao.rascunhoAvaliacao, null);
+  const evento = proposicao.historico.find(
+    (item) => item.tipo === TipoHistorico.AVALIACAO_MEMBRO_AUXILIAR,
+  );
+  assert.deepEqual(evento.apreciacao, MINUTA_PADRAO_CUMPRIDA);
 });
 
 test("acolher clona profundamente e sem transformação a minuta para a decisão do CN", () => {
@@ -186,6 +216,35 @@ test("cancelar a confirmação não devolve a minuta; confirmar executa uma úni
   const confirmada = confirmarEExecutarDevolucaoMinuta({
     confirmar: () => true,
     devolver,
+  });
+  assert.equal(confirmada, true);
+  assert.equal(execucoes, 1);
+});
+
+test("cancelar a confirmação não submete a minuta padrão", () => {
+  let execucoes = 0;
+  let mensagemRecebida = null;
+  const numero = "PROP-2026-0008";
+  const submeter = () => {
+    execucoes += 1;
+  };
+
+  const cancelada = confirmarEExecutarSubmissaoMinutaPadrao({
+    numero,
+    confirmar: (mensagem) => {
+      mensagemRecebida = mensagem;
+      return false;
+    },
+    submeter,
+  });
+  assert.equal(cancelada, false);
+  assert.equal(execucoes, 0);
+  assert.equal(mensagemRecebida, mensagemSubmissaoMinutaPadrao(numero));
+
+  const confirmada = confirmarEExecutarSubmissaoMinutaPadrao({
+    numero,
+    confirmar: () => true,
+    submeter,
   });
   assert.equal(confirmada, true);
   assert.equal(execucoes, 1);

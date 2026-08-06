@@ -14,6 +14,27 @@ const cloneJuizo = (juizo) => JSON.parse(JSON.stringify(juizo));
 const TIPOS_CONCLUSAO_VALIDOS = new Set(Object.values(TipoConclusao));
 const TIPOS_PROVIDENCIA_VALIDOS = new Set(Object.values(TipoProvidencia));
 
+export const MINUTA_PADRAO_CUMPRIDA = Object.freeze({
+  situacao: SituacaoApreciacao.CONCLUIDA,
+  tipoConclusao: TipoConclusao.CUMPRIDA,
+  existeProvidenciaSecretaria: false,
+  tipoProvidencia: null,
+  descricaoProvidencia: null,
+  observacoes:
+    "Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.",
+});
+
+export const podeSubmeterMinutaPadrao = (proposicao) =>
+  Boolean(
+    proposicao &&
+      proposicao.statusFluxo === StatusFluxo.AGUARDANDO_AVALIACAO_MEMBRO &&
+      !proposicao.rascunhoAvaliacao &&
+      !proposicao.avaliacaoVigenteId &&
+      (proposicao.historico || []).some(
+        (evento) => evento.tipo === TipoHistorico.COMPROVACAO,
+      ),
+  );
+
 const validarApreciacaoDefinitiva = (juizo) => {
   if (!juizo || !Object.values(SituacaoApreciacao).includes(juizo.situacao)) {
     throw new Error("Defina uma situação válida para o ato.");

@@ -10,13 +10,13 @@ Membro Auxiliar da CN (`PERSONAS.MEMBRO`).
 ## Pré-condições
 - Existe proposição disponível para elaboração de minuta.
 - Não existe `rascunhoAvaliacao` ativo para a proposição.
+- Para a ação rápida da fila, existe comprovação registrada e não existe minuta vigente.
 
 ## Fluxo principal
-1. O membro abre o detalhe da proposição por qualquer caminho de navegação.
-2. O formulário apresenta `Situação = Concluída`, `Tipo de conclusão = Cumprida` e `Existe providência da Secretaria? = Não`.
-3. **Redação da minuta** contém “Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.”
-4. Se o modelo corresponde ao caso, o membro clica diretamente em **Submeter minuta**.
-5. A submissão segue a validação e a transição de domínio existentes para `AGUARDANDO_DECISAO_CORREGEDOR`.
+1. Na fila **Minha fila de elaboração de minutas**, o cartão elegível mantém o acesso **Elaborar minuta** e exibe a ação **Submeter minuta**.
+2. O membro clica em **Submeter minuta** e confirma a proposição e o resultado `Concluída · Cumprida`.
+3. O sistema submete a minuta padrão, com `Existe providência da Secretaria? = Não` e a redação “Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.”
+4. A submissão transita para `AGUARDANDO_DECISAO_CORREGEDOR` e o cartão desaparece da fila sem alerta adicional.
 
 ## Fluxos alternativos
 - **Alteração sem edição da redação**: mudar `Situação` ou `Tipo de conclusão` limpa o texto genérico e revela o placeholder existente; voltar às opções anteriores não restaura o modelo nessa abertura.
@@ -24,6 +24,9 @@ Membro Auxiliar da CN (`PERSONAS.MEMBRO`).
 - **Salvar rascunho**: o conteúdo atual passa a ser persistido e não sofre limpeza automática na mesma abertura nem quando retomado.
 - **Retomar rascunho**: os valores salvos, inclusive campos vazios, prevalecem integralmente sobre os padrões.
 - **Descartar rascunho ou iniciar novo ciclo após devolução**: a proposição volta a não ter rascunho e recebe novamente os padrões de minuta nova.
+- **Prazo expirado sem comprovação**: o cartão não exibe a ação rápida; o membro abre o detalhe e redige uma minuta adequada ao caso.
+- **Rascunho existente**: o cartão exibe **Retomar minuta**, ainda que o rascunho esteja completo, e não permite submissão rápida.
+- **Cancelamento**: cancelar a confirmação mantém a proposição e seu estado inalterados.
 
 ## Regras de negócio
 - O preenchimento é um atalho de interface; não cria histórico, não altera status e não produz efeitos antes da submissão.

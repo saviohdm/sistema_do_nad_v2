@@ -94,8 +94,8 @@ O processo é orientado por persona. A minuta de decisão do membro auxiliar nun
 
 ### Membro Auxiliar da CN
 
-1. Após a comprovação do correicionado, o membro auxiliar abre a minuta com `Concluída`, `Cumprida`, sem providência da Secretaria e com a redação genérica editável “Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.”
-2. Se o modelo corresponder ao caso, o membro auxiliar pode `SUBMETER MINUTA` diretamente; se alterar situação ou tipo de conclusão antes de editar a redação, o texto genérico é limpo e não reaparece automaticamente.
+1. Após a comprovação do correicionado, o membro auxiliar pode `SUBMETER MINUTA` diretamente na fila, mediante confirmação, quando não houver rascunho; a ação usa `Concluída`, `Cumprida`, sem providência da Secretaria e a redação genérica “Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.”
+2. O membro também pode abrir o detalhe para revisar o modelo. Se alterar situação ou tipo de conclusão antes de editar a redação, o texto genérico é limpo e não reaparece automaticamente. Casos sem comprovação e casos com rascunho sempre exigem o detalhe.
 3. O membro auxiliar também pode editar o conteúdo e `RASCUNHAR minuta`. Uma vez editado ou salvo, o texto passa a ser trabalho do usuário e não sofre limpeza automática. Rascunhos retomados prevalecem integralmente sobre o modelo genérico.
 4. A minuta registra uma apreciação com as mesmas invariantes e a mesma redação que poderão constar da decisão final:
    `necessita mais informações`; ou

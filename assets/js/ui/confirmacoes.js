@@ -6,3 +6,12 @@ export const confirmarEExecutarDevolucaoMinuta = ({ confirmar, devolver }) => {
   devolver();
   return true;
 };
+
+export const mensagemSubmissaoMinutaPadrao = (numero) =>
+  `Submeter a minuta da proposição ${numero} como “Concluída · Cumprida” ao Corregedor Nacional?`;
+
+export const confirmarEExecutarSubmissaoMinutaPadrao = ({ numero, confirmar, submeter }) => {
+  if (!confirmar(mensagemSubmissaoMinutaPadrao(numero))) return false;
+  submeter();
+  return true;
+};

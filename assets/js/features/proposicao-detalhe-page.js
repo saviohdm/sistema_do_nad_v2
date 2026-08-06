@@ -7,6 +7,7 @@ import { formatDate, formatDateTime, queryParam } from "../app/utils.js";
 
 requireAuth();
 import {
+  MINUTA_PADRAO_CUMPRIDA,
   deferirAvaliacao,
   descartarRascunhoAvaliacao,
   indeferirAvaliacao,
@@ -32,7 +33,6 @@ import {
   Labels,
   SituacaoApreciacao,
   StatusFluxo,
-  TipoConclusao,
   TipoDestinatario,
 } from "../domain/enums.js";
 import {
@@ -103,18 +103,6 @@ const acaoSolicitada = queryParam("acao");
 
 // Filtro de categoria do histórico unificado; sobrevive aos re-renders da página.
 let filtroHistoricoAtivo = "todos";
-
-const REDACAO_PADRAO_MINUTA_CUMPRIDA =
-  "Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.";
-
-const APRECIACAO_PADRAO_MINUTA_CUMPRIDA = {
-  situacao: SituacaoApreciacao.CONCLUIDA,
-  tipoConclusao: TipoConclusao.CUMPRIDA,
-  existeProvidenciaSecretaria: false,
-  tipoProvidencia: null,
-  descricaoProvidencia: null,
-  observacoes: REDACAO_PADRAO_MINUTA_CUMPRIDA,
-};
 
 const bindHistoricoHandlers = () => {
   document.querySelectorAll("[data-filtro-historico]").forEach((chip) => {
@@ -711,7 +699,7 @@ const renderAcaoMembro = (proposicao, available) => {
         title: "Minuta de decisão",
         submitLabel: "Submeter minuta",
         initialApreciacao: proposicao.rascunhoAvaliacao?.apreciacao || null,
-        defaultApreciacao: APRECIACAO_PADRAO_MINUTA_CUMPRIDA,
+        defaultApreciacao: MINUTA_PADRAO_CUMPRIDA,
         includeRascunho: true,
         variant: "bare",
         observacoesLabel: "Redação da minuta",
