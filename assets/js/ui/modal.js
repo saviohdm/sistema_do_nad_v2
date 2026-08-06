@@ -2,6 +2,8 @@ import { Labels, Prioridade } from "../domain/enums.js";
 import { renderClampedText } from "./components.js";
 
 const MODAL_ROOT_ID = "nad-modal-root";
+let focoRetorno = null;
+let keydownHandler = null;
 
 const ensureRoot = () => {
   let root = document.getElementById(MODAL_ROOT_ID);
@@ -16,11 +18,17 @@ const ensureRoot = () => {
 export const closeModal = () => {
   const root = document.getElementById(MODAL_ROOT_ID);
   if (root) root.innerHTML = "";
+  if (keydownHandler) {
+    document.removeEventListener("keydown", keydownHandler);
+    keydownHandler = null;
+  }
+  if (focoRetorno?.isConnected) focoRetorno.focus();
+  focoRetorno = null;
 };
 
 const renderShell = (title, bodyHtml, { size } = {}) => `
   <div class="modal-overlay" data-modal-overlay>
-    <div class="modal-dialog${size === "compact" ? " modal-dialog--compact" : ""}" role="dialog" aria-modal="true" aria-label="${title}">
+    <div class="modal-dialog${size === "compact" ? " modal-dialog--compact" : ""}${size === "relatorio" ? " modal-dialog--relatorio" : ""}" role="dialog" aria-modal="true" aria-label="${title}">
       <header class="modal-header">
         <h2 class="modal-title">${title}</h2>
         <button class="modal-close" type="button" data-modal-close aria-label="Fechar">×</button>
@@ -35,13 +43,27 @@ const bindClose = (root) => {
   root.querySelector("[data-modal-overlay]")?.addEventListener("click", (event) => {
     if (event.target.matches("[data-modal-overlay]")) closeModal();
   });
-  document.addEventListener(
-    "keydown",
-    (event) => {
-      if (event.key === "Escape") closeModal();
-    },
-    { once: true },
-  );
+  if (keydownHandler) document.removeEventListener("keydown", keydownHandler);
+  keydownHandler = (event) => {
+    if (event.key === "Escape") closeModal();
+  };
+  document.addEventListener("keydown", keydownHandler);
+};
+
+export const openModal = ({
+  title,
+  bodyHtml,
+  size,
+  initialFocusSelector = "[data-modal-close]",
+  onMount,
+}) => {
+  const root = ensureRoot();
+  focoRetorno = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  root.innerHTML = renderShell(title, bodyHtml, { size });
+  bindClose(root);
+  if (typeof onMount === "function") onMount(root);
+  setTimeout(() => root.querySelector(initialFocusSelector)?.focus(), 0);
+  return root;
 };
 
 export const openRelatorioFinalModal = ({ correicaoId, ramoMP, proposicoes }) => {

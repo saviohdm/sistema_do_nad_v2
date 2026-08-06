@@ -21,6 +21,8 @@ import {
 } from "../ui/components.js";
 import { confirmarEExecutarDevolucaoMinuta } from "../ui/confirmacoes.js";
 import { CONTEXTO_NAVEGACAO_DECISAO_KEY } from "../ui/fila-contexto-navegacao.js";
+import { criarSnapshotRelatorioDecisao } from "../domain/relatorio-decisao.js";
+import { openRelatorioDecisaoModal } from "../ui/relatorio-decisao-modal.js";
 
 const temAvaliacaoVigente = (proposicao) => Boolean(proposicao.avaliacaoVigenteId);
 const temRascunhoDecisao = (proposicao) => Boolean(proposicao.rascunhoDecisaoCN);
@@ -169,6 +171,38 @@ const handleAcolherMinutasCorreicao = (correicaoId, ctx) => {
   ctx.aplicarFiltros({});
 };
 
+const renderAcoesCabecalhoFila = (ctx) => {
+  const semItens = ctx.filtradas.length === 0;
+  const gerarRelatorio = `
+    <button
+      class="button button--secondary fila-relatorio-button"
+      type="button"
+      data-action="gerar-relatorio-decisao"
+      ${semItens ? 'disabled title="Nenhuma proposição visível para incluir no relatório."' : 'title="Gera PDF e JSON com o recorte atual da fila."'}
+    >Gerar relatório</button>`;
+  const acoesDaCorreicao =
+    ctx.filtros.correicaoId &&
+    !ctx.filtros.destinatarioRef &&
+    !ctx.filtros.unidadeRef &&
+    !ctx.filtros.unidade &&
+    !ctx.filtros.prioridade &&
+    !ctx.filtros.sensivel &&
+    !ctx.filtros.comRascunho &&
+    !ctx.filtros.avaliacao
+      ? renderAcoesCorreicao(ctx.filtros.correicaoId, ctx)
+      : "";
+  return `${gerarRelatorio}${acoesDaCorreicao}`;
+};
+
+const handleGerarRelatorio = (ctx) => {
+  if (!ctx.filtradas.length) return;
+  const snapshot = criarSnapshotRelatorioDecisao({
+    proposicoes: ctx.filtradas,
+    filtros: ctx.filtros,
+  });
+  openRelatorioDecisaoModal(snapshot);
+};
+
 montarFilaNavegavel({
   statusFila: StatusFilaOperacional.DECISAO,
   persona: PERSONAS.CORREGEDOR,
@@ -239,20 +273,16 @@ montarFilaNavegavel({
     ];
   },
   renderCorreicaoRowAcoes: (item, ctx) => renderAcoesCorreicao(item.correicaoId, ctx),
-  renderFilaHeaderActions: (ctx) =>
-    ctx.filtros.correicaoId &&
-    !ctx.filtros.destinatarioRef &&
-    !ctx.filtros.unidadeRef &&
-    !ctx.filtros.unidade &&
-    !ctx.filtros.prioridade &&
-    !ctx.filtros.sensivel &&
-    !ctx.filtros.comRascunho &&
-    !ctx.filtros.avaliacao
-      ? renderAcoesCorreicao(ctx.filtros.correicaoId, ctx)
-      : "",
+  renderFilaHeaderActions: renderAcoesCabecalhoFila,
   renderItens: (filtradas, ctx) =>
     filtradas.map((proposicao, index) => renderCard(proposicao, index, ctx.view)).join(""),
   bindExtra: (ctx) => {
+    document
+      .querySelector("[data-action='gerar-relatorio-decisao']")
+      ?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        handleGerarRelatorio(ctx);
+      });
     document.querySelectorAll("[data-action='acolher-minuta']").forEach((btn) => {
       btn.addEventListener("click", (event) => {
         event.stopPropagation();

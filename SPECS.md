@@ -158,6 +158,15 @@ O **rascunho de criação** da proposição é a exceção estrutural: a entidad
 - A fila operacional de decisão preserva, por sessão, a ordem exata da seleção filtrada. Após acolher, afastar, decidir diretamente ou devolver uma minuta, o detalhe avança para a próxima proposição ainda disponível nessa ordem.
 - A navegação ignora itens posteriores que já tenham saído da mesa de decisão. Ao esgotar a seleção, informa o usuário e retorna à mesma fila filtrada; detalhes abertos fora da fila retornam à sua origem.
 
+#### Relatório da fila Aguardando decisão
+
+- No modo de lista, `Gerar relatório` cria um instantâneo de `ctx.filtradas`: somente as proposições visíveis, na ordem exibida e com os filtros efetivamente aplicados. `filaForcada` e a preferência visual Compacta/Expandida/Cartões não são filtros; os textos exportados são sempre integrais.
+- O modal de conferência exibe filtros, total, sensibilidade e identificador do instantâneo e oferece downloads independentes em PDF e JSON. Fila vazia desabilita a geração; baixar novamente reutiliza o mesmo instantâneo.
+- Os dois formatos contêm a mesma substância: metadados operacionais da proposição, descrição integral, última comprovação (mesmo quando há minuta), metadados dos anexos, minuta vigente completa e eventual rascunho de decisão do Corregedor completo. Não incluem o conteúdo binário dos anexos, `contexto`, `observacoesGerais` nem histórico completo.
+- Proposições sensíveis não são omitidas nem redigidas: recebem marcação individual e aviso global. Os arquivos são classificados como `uso_interno`, sem criptografia própria.
+- O PDF é A4 retrato, paginado e orientado à leitura. O JSON usa `versao_esquema = 1.0`, chaves em português `snake_case`, enumerações `{codigo, rotulo}`, `null`/`[]` para ausências e `texto_consolidado` sem HTML em cada item.
+- O nome-base é pareado: `relatorio-aguardando-decisao_<correicao-ou-todas>_<AAAA-MM-DD_HH-mm>_<N>-itens`. Gerar ou baixar o relatório é operação de leitura e não cria eventos no histórico.
+
 ## Conteúdo da apreciação de valor
 
 A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatórias.
