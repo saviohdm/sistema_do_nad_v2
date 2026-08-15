@@ -144,6 +144,8 @@ O **rascunho de criação** da proposição é a exceção estrutural: a entidad
 - Rascunhos podem ser incompletos e sempre prevalecem integralmente sobre o preenchimento genérico; a submissão definitiva exige situação, conclusão quando cabível, providência consistente e redação não vazia.
 - A minuta nunca produz efeitos concretos por si só.
 - Toda minuta é remetida à baia do `Corregedor Nacional` para decisão.
+- A fila `Minha fila de elaboração de minutas` preserva, por sessão, a ordem exata da seleção filtrada. Quando a minuta é submetida pelo detalhe aberto a partir dessa fila, o sistema avança para a próxima proposição ainda disponível nessa ordem.
+- A navegação ignora itens posteriores que já tenham saído da fila operacional, mas preserva no snapshot os que apenas tiveram seus metadados alterados. Ao esgotar a seleção, informa o membro e retorna à mesma URL filtrada; detalhes abertos fora da fila mantêm seu comportamento de origem.
 
 ### 4. Decisão do Corregedor Nacional
 

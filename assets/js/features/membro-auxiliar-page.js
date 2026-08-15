@@ -16,6 +16,7 @@ import {
   renderFilaProposicaoEditorial,
 } from "../ui/components.js";
 import { confirmarEExecutarSubmissaoMinutaPadrao } from "../ui/confirmacoes.js";
+import { CONTEXTO_NAVEGACAO_MINUTA_KEY } from "../ui/fila-contexto-navegacao.js";
 
 const renderAcoesCard = (proposicao) =>
   podeSubmeterMinutaPadrao(proposicao)
@@ -74,6 +75,7 @@ montarFilaNavegavel({
   activePage: "membro-auxiliar",
   title: "Minha fila de elaboração de minutas",
   storageKey: "nad-membro-auxiliar-filtros",
+  navigationContextKey: CONTEXTO_NAVEGACAO_MINUTA_KEY,
   textos: {
     panoramaTitulo: "Panorama da elaboração de minutas",
     contagemLabel: "Pendentes",

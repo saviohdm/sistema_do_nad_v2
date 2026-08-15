@@ -108,6 +108,7 @@ O processo é orientado por persona. A minuta de decisão do membro auxiliar nun
 5. Para qualquer resultado conclusivo, a minuta também registra se existe providência a ser cumprida pela Secretaria Processual e descreve obrigatoriamente a opção `outra providência`.
 6. A redação da minuta é obrigatória no envio definitivo e deve usar linguagem decisória e impositiva; rascunhos podem permanecer incompletos.
 7. A minuta nunca produz efeito concreto por si só e é encaminhada ao Corregedor Nacional para decisão.
+8. Quando o detalhe foi aberto pela fila filtrada de elaboração de minutas, a submissão avança para a próxima proposição ainda disponível na ordem registrada na sessão. Itens que já saíram da fila são ignorados; ao esgotar a seleção, o sistema avisa e retorna à mesma fila filtrada.
 
 ## Decisão da Corregedoria Nacional
 

@@ -3,7 +3,9 @@ import test from "node:test";
 
 import {
   CAMINHO_FILA_DECISAO,
+  CAMINHO_FILA_MINUTA,
   CONTEXTO_NAVEGACAO_DECISAO_KEY,
+  CONTEXTO_NAVEGACAO_MINUTA_KEY,
   lerContextoNavegacaoFila,
   resolverDestinoNavegacaoFila,
   salvarContextoNavegacaoFila,
@@ -35,6 +37,24 @@ const salvarELer = (ids = ["prop-a", "prop-b", "prop-c"]) => {
   });
 };
 
+const salvarELerMinuta = (ids = ["prop-m1", "prop-m2", "prop-m3"]) => {
+  const storage = criarStorage();
+  assert.equal(
+    salvarContextoNavegacaoFila({
+      storage,
+      key: CONTEXTO_NAVEGACAO_MINUTA_KEY,
+      ids,
+      returnHref: "/pages/membro-auxiliar.html?prioridade=urgente&comRascunho=1&fila=1",
+    }),
+    true,
+  );
+  return lerContextoNavegacaoFila({
+    storage,
+    key: CONTEXTO_NAVEGACAO_MINUTA_KEY,
+    caminhoPermitido: CAMINHO_FILA_MINUTA,
+  });
+};
+
 test("preserva a ordem e a URL exata da fila filtrada", () => {
   const contexto = salvarELer(["prop-c", "prop-a", "prop-b"]);
 
@@ -42,6 +62,49 @@ test("preserva a ordem e a URL exata da fila filtrada", () => {
   assert.equal(
     contexto.returnHref,
     "/pages/corregedor-decisao.html?prioridade=urgente&fila=1",
+  );
+});
+
+test("preserva a ordem e a URL exata da fila filtrada do membro auxiliar", () => {
+  const contexto = salvarELerMinuta(["prop-m3", "prop-m1", "prop-m2"]);
+
+  assert.deepEqual(contexto.ids, ["prop-m3", "prop-m1", "prop-m2"]);
+  assert.equal(
+    contexto.returnHref,
+    "/pages/membro-auxiliar.html?prioridade=urgente&comRascunho=1&fila=1",
+  );
+});
+
+test("mantém independentes os snapshots das filas de decisão e de minutas", () => {
+  const storage = criarStorage();
+  salvarContextoNavegacaoFila({
+    storage,
+    key: CONTEXTO_NAVEGACAO_DECISAO_KEY,
+    ids: ["prop-d1", "prop-d2"],
+    returnHref: "/pages/corregedor-decisao.html?fila=1",
+  });
+  salvarContextoNavegacaoFila({
+    storage,
+    key: CONTEXTO_NAVEGACAO_MINUTA_KEY,
+    ids: ["prop-m1", "prop-m2"],
+    returnHref: "/pages/membro-auxiliar.html?fila=1",
+  });
+
+  assert.deepEqual(
+    lerContextoNavegacaoFila({
+      storage,
+      key: CONTEXTO_NAVEGACAO_DECISAO_KEY,
+      caminhoPermitido: CAMINHO_FILA_DECISAO,
+    }).ids,
+    ["prop-d1", "prop-d2"],
+  );
+  assert.deepEqual(
+    lerContextoNavegacaoFila({
+      storage,
+      key: CONTEXTO_NAVEGACAO_MINUTA_KEY,
+      caminhoPermitido: CAMINHO_FILA_MINUTA,
+    }).ids,
+    ["prop-m1", "prop-m2"],
   );
 });
 
@@ -75,6 +138,17 @@ test("resolve o próximo item válido na ordem registrada", () => {
     nextId: "prop-b",
     returnHref: "/pages/corregedor-decisao.html?prioridade=urgente&fila=1",
   });
+});
+
+test("mantém no snapshot da minuta um item ainda válido mesmo após mudança de metadados", () => {
+  const destino = resolverDestinoNavegacaoFila({
+    contexto: salvarELerMinuta(),
+    currentId: "prop-m1",
+    validIds: ["prop-m2", "prop-m3"],
+  });
+
+  assert.equal(destino.type, "next");
+  assert.equal(destino.nextId, "prop-m2");
 });
 
 test("ignora itens posteriores que já saíram da mesa de decisão", () => {
@@ -139,6 +213,22 @@ test("rejeita URL externa ou de outra página como retorno", () => {
       storage,
       key: CONTEXTO_NAVEGACAO_DECISAO_KEY,
       caminhoPermitido: CAMINHO_FILA_DECISAO,
+    }),
+    null,
+  );
+
+  salvarContextoNavegacaoFila({
+    storage,
+    key: CONTEXTO_NAVEGACAO_MINUTA_KEY,
+    ids: ["prop-m1"],
+    returnHref: "/pages/corregedor-decisao.html?fila=1",
+  });
+
+  assert.equal(
+    lerContextoNavegacaoFila({
+      storage,
+      key: CONTEXTO_NAVEGACAO_MINUTA_KEY,
+      caminhoPermitido: CAMINHO_FILA_MINUTA,
     }),
     null,
   );

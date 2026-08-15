@@ -1,6 +1,8 @@
 export const FILA_NAVEGACAO_VERSION = 1;
 export const CONTEXTO_NAVEGACAO_DECISAO_KEY = "nad-corregedor-decisao-navegacao";
 export const CAMINHO_FILA_DECISAO = "/pages/corregedor-decisao.html";
+export const CONTEXTO_NAVEGACAO_MINUTA_KEY = "nad-membro-auxiliar-navegacao";
+export const CAMINHO_FILA_MINUTA = "/pages/membro-auxiliar.html";
 
 const ORIGEM_INTERNA = "http://nad.local";
 

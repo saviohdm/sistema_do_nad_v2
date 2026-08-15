@@ -53,6 +53,7 @@ import {
   getProposicaoById,
   getUltimaComprovacao,
   listProposicoesAguardandoDecisao,
+  listProposicoesParaAvaliar,
   markPropositionDeleted,
   salvarRascunhoDecisaoCN,
 } from "../domain/proposicoes.js";
@@ -87,7 +88,9 @@ import {
 import { confirmarEExecutarDevolucaoMinuta } from "../ui/confirmacoes.js";
 import {
   CAMINHO_FILA_DECISAO,
+  CAMINHO_FILA_MINUTA,
   CONTEXTO_NAVEGACAO_DECISAO_KEY,
+  CONTEXTO_NAVEGACAO_MINUTA_KEY,
   lerContextoNavegacaoFila,
   resolverDestinoNavegacaoFila,
 } from "../ui/fila-contexto-navegacao.js";
@@ -135,53 +138,81 @@ const voltarParaOrigem = (proposicao) => {
   window.location.href = origem.href(proposicao);
 };
 
-const getContextoNavegacaoDecisao = () =>
-  lerContextoNavegacaoFila({
-    storage: sessionStorage,
+const FILAS_NAVEGAVEIS = {
+  "corregedor-decisao": {
     key: CONTEXTO_NAVEGACAO_DECISAO_KEY,
-    caminhoPermitido: CAMINHO_FILA_DECISAO,
+    caminho: CAMINHO_FILA_DECISAO,
+    getValidIds: () => listProposicoesAguardandoDecisao(state()).map((item) => item.id),
+  },
+  "membro-auxiliar": {
+    key: CONTEXTO_NAVEGACAO_MINUTA_KEY,
+    caminho: CAMINHO_FILA_MINUTA,
+    getValidIds: () => listProposicoesParaAvaliar(state()).map((item) => item.id),
+  },
+};
+
+const getContextoNavegacao = (slug) => {
+  const fila = FILAS_NAVEGAVEIS[slug];
+  if (!fila) return null;
+  return lerContextoNavegacaoFila({
+    storage: sessionStorage,
+    key: fila.key,
+    caminhoPermitido: fila.caminho,
   });
+};
 
 const getHrefRetornoOrigem = (proposicao) => {
-  if (origem?.slug === "corregedor-decisao") {
-    return getContextoNavegacaoDecisao()?.returnHref || origem.href(proposicao);
+  if (FILAS_NAVEGAVEIS[origem?.slug]) {
+    return getContextoNavegacao(origem.slug)?.returnHref || origem.href(proposicao);
   }
   return origem?.href(proposicao) || "proposicoes-lista.html";
 };
 
-const concluirAcaoCorregedor = (proposicao) => {
-  if (origem?.slug === "corregedor-decisao") {
-    const contexto = getContextoNavegacaoDecisao();
-    const validIds = listProposicoesAguardandoDecisao(state()).map((item) => item.id);
+const concluirAcaoNaFila = (proposicao, slugFila) => {
+  if (origem?.slug === slugFila) {
+    const fila = FILAS_NAVEGAVEIS[slugFila];
+    const contexto = getContextoNavegacao(slugFila);
     const destino = resolverDestinoNavegacaoFila({
       contexto,
       currentId: proposicao.id,
-      validIds,
+      validIds: fila.getValidIds(),
     });
 
     if (destino.type === "next") {
       window.location.replace(
-        `/pages/proposicao-detalhe.html?id=${encodeURIComponent(destino.nextId)}&from=corregedor-decisao`,
+        `/pages/proposicao-detalhe.html?id=${encodeURIComponent(destino.nextId)}&from=${slugFila}`,
       );
-      return;
+      return true;
     }
 
     if (destino.type === "last") {
       window.alert("Esta era a última proposição da lista filtrada.");
       window.location.replace(destino.returnHref);
-      return;
+      return true;
     }
 
     if (destino.type === "exhausted") {
       window.alert("Não há outras proposições disponíveis na lista filtrada.");
       window.location.replace(destino.returnHref);
-      return;
+      return true;
     }
 
     window.alert(
       "Não foi possível recuperar o contexto da lista. Você retornará à fila operacional.",
     );
     window.location.replace(origem.href(proposicao));
+    return true;
+  }
+  return false;
+};
+
+const concluirAcaoMembro = (proposicao) => {
+  if (concluirAcaoNaFila(proposicao, "membro-auxiliar")) return;
+  render();
+};
+
+const concluirAcaoCorregedor = (proposicao) => {
+  if (concluirAcaoNaFila(proposicao, "corregedor-decisao")) {
     return;
   }
 
@@ -279,11 +310,7 @@ const bindHandlers = (proposicao) => {
       salvarAvaliacaoMembro(item, juizo);
       return draft;
     });
-    if (origem?.slug === "membro-auxiliar") {
-      voltarParaOrigem(proposicao);
-      return;
-    }
-    render();
+    concluirAcaoMembro(proposicao);
   });
 
   const formAvaliacaoMembro = document.querySelector("#form-avaliacao-membro");
