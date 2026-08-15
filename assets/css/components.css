@@ -1412,6 +1412,20 @@ button.panorama-kpi {
   align-items: start;
 }
 
+.relatorio-modal__escopo {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.relatorio-modal__modo {
+  margin: var(--space-1) 0 0;
+  color: var(--primary-dark);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
 .relatorio-modal__label {
   color: var(--muted);
   font-size: 0.67rem;
@@ -1437,6 +1451,40 @@ button.panorama-kpi {
   color: var(--text-secondary);
   font-size: 0.77rem;
   font-weight: 650;
+}
+
+.relatorio-modal__itens {
+  display: grid;
+  gap: var(--space-2);
+  max-height: 10.5rem;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3) var(--space-2) 2.15rem;
+  overflow-y: auto;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.relatorio-modal__itens li {
+  padding-left: var(--space-1);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.relatorio-modal__itens strong,
+.relatorio-modal__itens span {
+  display: block;
+}
+
+.relatorio-modal__itens strong {
+  color: var(--text);
+}
+
+.relatorio-modal__itens span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.74rem;
 }
 
 .relatorio-modal__identificador {
@@ -1579,6 +1627,99 @@ button.panorama-kpi {
   border-color: rgba(166, 26, 26, 0.3);
 }
 
+.relatorio-action-menu {
+  position: relative;
+}
+
+.relatorio-action-menu__trigger span {
+  margin-left: var(--space-1);
+  font-size: 0.9em;
+  transition: transform 160ms ease;
+}
+
+.relatorio-action-menu__trigger[aria-expanded="true"] span {
+  transform: rotate(180deg);
+}
+
+.relatorio-action-menu__options {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 80;
+  width: min(21rem, calc(100vw - 2rem));
+  padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid rgba(126, 31, 31, 0.2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.relatorio-action-menu__options[hidden] {
+  display: none;
+}
+
+.relatorio-action-menu__options button {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: var(--space-3);
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.relatorio-action-menu__options button:hover,
+.relatorio-action-menu__options button:focus-visible {
+  outline: none;
+  background: var(--surface-warm);
+}
+
+.relatorio-action-menu__options button + button {
+  border-top: 1px solid var(--line);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.relatorio-action-menu__options button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.relatorio-action-menu__options strong {
+  color: var(--primary-dark);
+  font-size: 0.87rem;
+}
+
+.relatorio-action-menu__options span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.relatorio-select-all small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.relatorio-selection-bar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border-color: rgba(126, 31, 31, 0.42);
+  background:
+    linear-gradient(100deg, rgba(166, 26, 26, 0.045), transparent 42%),
+    var(--surface);
+}
+
+.relatorio-selection-bar__actions {
+  justify-content: flex-end;
+}
+
 @media (max-width: 680px) {
   .modal-overlay {
     padding: var(--space-2);
@@ -1612,6 +1753,30 @@ button.panorama-kpi {
 
   .relatorio-modal__footer .button {
     align-self: flex-end;
+  }
+
+  .relatorio-selection-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .relatorio-selection-bar__actions,
+  .relatorio-selection-bar__actions .button {
+    width: 100%;
+  }
+
+  .fila-operacional-header__actions {
+    position: relative;
+  }
+
+  .relatorio-action-menu {
+    position: static;
+  }
+
+  .relatorio-action-menu__options {
+    top: calc(100% + var(--space-2));
+    right: 0;
+    left: 0;
+    width: auto;
   }
 }
 
@@ -1790,7 +1955,7 @@ button.panorama-kpi {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .fila-operacional-header::before {

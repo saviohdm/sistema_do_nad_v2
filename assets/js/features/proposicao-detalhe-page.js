@@ -87,6 +87,11 @@ import {
 } from "../ui/prazo-diligencia-control.js";
 import { confirmarEExecutarDevolucaoMinuta } from "../ui/confirmacoes.js";
 import {
+  criarSnapshotRelatorioDecisao,
+  ModoRecorteRelatorioDecisao,
+} from "../domain/relatorio-decisao.js";
+import { openRelatorioDecisaoModal } from "../ui/relatorio-decisao-modal.js";
+import {
   CAMINHO_FILA_DECISAO,
   CAMINHO_FILA_MINUTA,
   CONTEXTO_NAVEGACAO_DECISAO_KEY,
@@ -228,6 +233,12 @@ const botaoVoltar = (proposicao) =>
     ? `<a class="button button--ghost" href="${getHrefRetornoOrigem(proposicao)}">${origem.voltarLabel}</a>`
     : `<a class="button button--ghost" href="proposicoes-lista.html">Voltar à consulta</a>`;
 
+const botaoRelatorioUnitario = (proposicao, persona) =>
+  persona === PERSONAS.CORREGEDOR &&
+  proposicao.statusFluxo === StatusFluxo.AGUARDANDO_DECISAO_CORREGEDOR
+    ? `<button class="button button--secondary" type="button" data-action="gerar-relatorio-proposicao">Gerar relatório desta proposição</button>`
+    : "";
+
 const renderTrilha = (proposicao) =>
   renderBreadcrumb([
     proposicao.correicao
@@ -243,6 +254,16 @@ const renderTrilha = (proposicao) =>
 
 const bindHandlers = (proposicao) => {
   bindPrazoDiligenciaControls();
+
+  document
+    .querySelector("[data-action='gerar-relatorio-proposicao']")
+    ?.addEventListener("click", () => {
+      const snapshot = criarSnapshotRelatorioDecisao({
+        proposicoes: [proposicao],
+        modoRecorte: ModoRecorteRelatorioDecisao.INDIVIDUAL,
+      });
+      openRelatorioDecisaoModal(snapshot);
+    });
 
   document.querySelector("#form-comprovacao")?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1062,7 +1083,7 @@ const render = () => {
     activePage: activePageParaPersona(origem?.activePage || "proposicoes-lista"),
     title: "Detalhe da proposição",
     breadcrumb: renderTrilha(proposicao),
-    actions: `${baseActions}${botaoVoltar(proposicao)}`,
+    actions: `${baseActions}${botaoRelatorioUnitario(proposicao, persona)}${botaoVoltar(proposicao)}`,
     content: renderDetalheContent({
       proposicao,
       meta: buildMeta(proposicao, persona),

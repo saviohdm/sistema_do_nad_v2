@@ -327,6 +327,7 @@ const blocoProposicao = (item, fusoHorario) => {
 
 export const criarDefinicaoPdfRelatorioDecisao = (snapshot) => {
   const fuso = snapshot.geracao.fuso_horario;
+  const modoRecorte = snapshot.recorte.modo?.rotulo || "Proposições filtradas";
   const filtros = snapshot.recorte.resumo_legivel.map((filtro) => ({
     text: filtro,
     margin: [0, 1, 0, 1],
@@ -343,7 +344,7 @@ export const criarDefinicaoPdfRelatorioDecisao = (snapshot) => {
     info: {
       title: "Relatório da fila Aguardando decisão",
       author: "NAD - Corregedoria Nacional",
-      subject: `Recorte com ${snapshot.recorte.total_proposicoes} proposição(ões)`,
+      subject: `${modoRecorte}: ${snapshot.recorte.total_proposicoes} proposição(ões)`,
       keywords: "NAD, Corregedoria Nacional, decisão, proposições, uso interno",
       creator: "Sistema do NAD",
       creationDate: new Date(snapshot.geracao.gerado_em_iso),
@@ -370,7 +371,7 @@ export const criarDefinicaoPdfRelatorioDecisao = (snapshot) => {
       { text: "NAD · CORREGEDORIA NACIONAL", style: "marca" },
       { text: "Relatório da fila Aguardando decisão", style: "tituloDocumento" },
       {
-        text: "Documento de conferência da seleção vigente na mesa do Corregedor Nacional.",
+        text: `${modoRecorte}. Documento de conferência da mesa do Corregedor Nacional.`,
         style: "subtituloDocumento",
       },
       {

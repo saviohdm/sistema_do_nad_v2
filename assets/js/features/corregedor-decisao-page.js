@@ -21,11 +21,45 @@ import {
 } from "../ui/components.js";
 import { confirmarEExecutarDevolucaoMinuta } from "../ui/confirmacoes.js";
 import { CONTEXTO_NAVEGACAO_DECISAO_KEY } from "../ui/fila-contexto-navegacao.js";
-import { criarSnapshotRelatorioDecisao } from "../domain/relatorio-decisao.js";
+import {
+  criarSnapshotRelatorioDecisao,
+  ModoRecorteRelatorioDecisao,
+} from "../domain/relatorio-decisao.js";
 import { openRelatorioDecisaoModal } from "../ui/relatorio-decisao-modal.js";
+import {
+  atualizarSelecaoVisivel,
+  carregarEstadoSelecaoRelatorio,
+  ordenarProposicoesSelecionadas,
+  reconciliarSelecaoRelatorio,
+  resumirSelecaoVisivel,
+  salvarEstadoSelecaoRelatorio,
+} from "../ui/relatorio-decisao-selecao.js";
 
 const temAvaliacaoVigente = (proposicao) => Boolean(proposicao.avaliacaoVigenteId);
 const temRascunhoDecisao = (proposicao) => Boolean(proposicao.rascunhoDecisaoCN);
+const escapeAttr = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+let estadoSelecaoRelatorio = carregarEstadoSelecaoRelatorio(sessionStorage);
+let focoAposRender = null;
+let removerHandlersMenuRelatorio = () => {};
+
+const persistirEstadoSelecao = (proximoEstado) => {
+  estadoSelecaoRelatorio = salvarEstadoSelecaoRelatorio(sessionStorage, proximoEstado);
+};
+
+const reconciliarSelecao = (proposicoes) => {
+  const reconciliado = reconciliarSelecaoRelatorio(estadoSelecaoRelatorio, proposicoes);
+  if (reconciliado.ids.join("\u0000") !== estadoSelecaoRelatorio.ids.join("\u0000")) {
+    persistirEstadoSelecao(reconciliado);
+  }
+  return proposicoes;
+};
 
 const detalheHref = (proposicao, acao) =>
   `/pages/proposicao-detalhe.html?id=${proposicao.id}&from=corregedor-decisao${acao ? `&acao=${acao}` : ""}`;
@@ -60,9 +94,16 @@ const renderCard = (proposicao, index, view) => {
     : renderFilaExcertoComprovacao(getUltimaComprovacao(proposicao), { view });
   return renderFilaProposicaoEditorial(proposicao, {
     href: detalheHref(proposicao),
+    checkboxHtml: estadoSelecaoRelatorio.ativo
+      ? `<input type="checkbox" data-relatorio-proposicao-checkbox="${escapeAttr(proposicao.id)}" ${
+          estadoSelecaoRelatorio.ids.includes(proposicao.id) ? "checked" : ""
+        } aria-label="Selecionar proposição ${escapeAttr(proposicao.numero)} para o relatório" />`
+      : "",
     badges: statusBadge,
     actions: renderAcoesCard(proposicao),
     excerto,
+    selecionado:
+      estadoSelecaoRelatorio.ativo && estadoSelecaoRelatorio.ids.includes(proposicao.id),
     attributes: `data-proposicao-id="${proposicao.id}"`,
     view,
     index,
@@ -172,14 +213,41 @@ const handleAcolherMinutasCorreicao = (correicaoId, ctx) => {
 };
 
 const renderAcoesCabecalhoFila = (ctx) => {
-  const semItens = ctx.filtradas.length === 0;
+  const semProposicoes = ctx.proposicoes.length === 0;
+  const totalSelecionadas = estadoSelecaoRelatorio.ids.length;
   const gerarRelatorio = `
-    <button
-      class="button button--secondary fila-relatorio-button"
-      type="button"
-      data-action="gerar-relatorio-decisao"
-      ${semItens ? 'disabled title="Nenhuma proposição visível para incluir no relatório."' : 'title="Gera PDF e JSON com o recorte atual da fila."'}
-    >Gerar relatório</button>`;
+    <div class="relatorio-action-menu" data-relatorio-action-menu>
+      <button
+        class="button button--secondary fila-relatorio-button relatorio-action-menu__trigger"
+        type="button"
+        id="relatorio-action-menu-trigger"
+        data-action="toggle-relatorio-menu"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls="relatorio-action-menu-options"
+        ${semProposicoes ? 'disabled title="Nenhuma proposição disponível para incluir no relatório."' : 'title="Escolha entre as proposições filtradas ou uma seleção manual."'}
+      >Gerar relatório <span aria-hidden="true">⌄</span></button>
+      <div class="relatorio-action-menu__options" id="relatorio-action-menu-options" role="menu" hidden>
+        <button type="button" role="menuitem" data-action="gerar-relatorio-filtradas" ${
+          ctx.filtradas.length === 0 ? "disabled" : ""
+        }>
+          <strong>Gerar das filtradas (${ctx.filtradas.length})</strong>
+          <span>Usa exatamente o recorte visível da fila.</span>
+        </button>
+        <button type="button" role="menuitem" data-action="alternar-selecao-relatorio">
+          <strong>${
+            estadoSelecaoRelatorio.ativo
+              ? `Cancelar seleção (${totalSelecionadas})`
+              : "Selecionar proposições…"
+          }</strong>
+          <span>${
+            estadoSelecaoRelatorio.ativo
+              ? "Limpa os itens marcados e encerra o modo de seleção."
+              : "Escolha uma ou algumas proposições nos cartões."
+          }</span>
+        </button>
+      </div>
+    </div>`;
   const acoesDaCorreicao =
     ctx.filtros.correicaoId &&
     !ctx.filtros.destinatarioRef &&
@@ -194,13 +262,70 @@ const renderAcoesCabecalhoFila = (ctx) => {
   return `${gerarRelatorio}${acoesDaCorreicao}`;
 };
 
-const handleGerarRelatorio = (ctx) => {
+const handleGerarRelatorioFiltradas = (ctx) => {
   if (!ctx.filtradas.length) return;
   const snapshot = criarSnapshotRelatorioDecisao({
     proposicoes: ctx.filtradas,
     filtros: ctx.filtros,
+    modoRecorte: ModoRecorteRelatorioDecisao.FILTRADAS,
   });
   openRelatorioDecisaoModal(snapshot);
+};
+
+const handleGerarRelatorioSelecionadas = (ctx) => {
+  const selecionadas = ordenarProposicoesSelecionadas(
+    ctx.proposicoes,
+    estadoSelecaoRelatorio.ids,
+  );
+  if (!selecionadas.length) return;
+  const snapshot = criarSnapshotRelatorioDecisao({
+    proposicoes: selecionadas,
+    modoRecorte: ModoRecorteRelatorioDecisao.SELECIONADAS,
+  });
+  openRelatorioDecisaoModal(snapshot);
+};
+
+const renderSelecionarTodos = (filtradas) => {
+  if (!estadoSelecaoRelatorio.ativo || filtradas.length === 0) return "";
+  const resumo = resumirSelecaoVisivel(filtradas, estadoSelecaoRelatorio.ids);
+  const texto =
+    resumo.estadoTodos === "todos"
+      ? `Desmarcar todas as ${filtradas.length} visíveis`
+      : resumo.estadoTodos === "parcial"
+        ? `${resumo.selecionadasVisiveis} de ${filtradas.length} visíveis selecionadas — marcar restantes`
+        : `Selecionar todas as ${filtradas.length} visíveis`;
+  return `
+    <label class="select-all-row relatorio-select-all">
+      <input id="relatorio-select-all" type="checkbox" data-relatorio-select-all data-select-all-state="${resumo.estadoTodos}" ${
+        resumo.estadoTodos === "todos" ? "checked" : ""
+      } />
+      <span><strong>${texto}</strong><small> A seleção será mantida ao alterar os filtros.</small></span>
+    </label>`;
+};
+
+const renderBarraSelecao = (ctx) => {
+  if (!estadoSelecaoRelatorio.ativo) return "";
+  const resumo = resumirSelecaoVisivel(ctx.filtradas, estadoSelecaoRelatorio.ids);
+  const contador = `${resumo.totalSelecionadas} ${
+    resumo.totalSelecionadas === 1 ? "proposição selecionada" : "proposições selecionadas"
+  }`;
+  return `
+    <div class="batch-bar relatorio-selection-bar" id="relatorio-selection-bar" aria-live="polite">
+      <div class="batch-bar__header">
+        <span class="batch-bar__counter">${contador}</span>
+        ${
+          resumo.ocultas > 0
+            ? `<span class="batch-bar__hint">${resumo.ocultas} ${resumo.ocultas === 1 ? "oculta" : "ocultas"} pelos filtros atuais</span>`
+            : '<span class="batch-bar__hint">Seleção manual para PDF e JSON</span>'
+        }
+      </div>
+      <div class="button-row relatorio-selection-bar__actions">
+        <button class="button" type="button" data-action="gerar-relatorio-selecionadas" ${
+          resumo.totalSelecionadas === 0 ? "disabled" : ""
+        }>Gerar relatório das selecionadas</button>
+        <button class="button button--ghost" type="button" data-action="cancelar-selecao-relatorio">Cancelar seleção</button>
+      </div>
+    </div>`;
 };
 
 montarFilaNavegavel({
@@ -221,7 +346,9 @@ montarFilaNavegavel({
     totalSistemaLabel: "Total aguardando decisão no sistema",
   },
   getProposicoes: (state) =>
-    listProposicoesAguardandoDecisao(state).map((p) => hydrateProposicao(state, p)),
+    reconciliarSelecao(
+      listProposicoesAguardandoDecisao(state).map((p) => hydrateProposicao(state, p)),
+    ),
   rascunho: {
     label: "Somente com rascunho",
     detectar: (proposicao) => Boolean(proposicao.rascunhoDecisaoCN),
@@ -276,13 +403,131 @@ montarFilaNavegavel({
   renderFilaHeaderActions: renderAcoesCabecalhoFila,
   renderItens: (filtradas, ctx) =>
     filtradas.map((proposicao, index) => renderCard(proposicao, index, ctx.view)).join(""),
+  renderFilaTopo: (ctx) => renderSelecionarTodos(ctx.filtradas),
+  renderFilaRodape: renderBarraSelecao,
   bindExtra: (ctx) => {
+    removerHandlersMenuRelatorio();
+    removerHandlersMenuRelatorio = () => {};
+
+    const menuRoot = document.querySelector("[data-relatorio-action-menu]");
+    const menuTrigger = menuRoot?.querySelector("[data-action='toggle-relatorio-menu']");
+    const menu = menuRoot?.querySelector("[role='menu']");
+    const getItensMenu = () =>
+      Array.from(menu?.querySelectorAll("[role='menuitem']:not([disabled])") || []);
+    const fecharMenu = ({ devolverFoco = false } = {}) => {
+      if (!menu || !menuTrigger) return;
+      menu.hidden = true;
+      menuTrigger.setAttribute("aria-expanded", "false");
+      if (devolverFoco) menuTrigger.focus();
+    };
+    const abrirMenu = (foco = "primeiro") => {
+      if (!menu || !menuTrigger) return;
+      menu.hidden = false;
+      menuTrigger.setAttribute("aria-expanded", "true");
+      const itens = getItensMenu();
+      const alvo = foco === "ultimo" ? itens.at(-1) : itens[0];
+      alvo?.focus();
+    };
+
+    const handleClickForaMenu = (event) => {
+      if (menu && !menu.hidden && !menuRoot?.contains(event.target)) fecharMenu();
+    };
+    const handleKeydownMenu = (event) => {
+      if (!menu || menu.hidden) return;
+      const itens = getItensMenu();
+      const atual = itens.indexOf(document.activeElement);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        fecharMenu({ devolverFoco: true });
+      } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        event.preventDefault();
+        let proximo = atual;
+        if (event.key === "Home") proximo = 0;
+        else if (event.key === "End") proximo = itens.length - 1;
+        else if (event.key === "ArrowDown") proximo = (atual + 1 + itens.length) % itens.length;
+        else proximo = (atual - 1 + itens.length) % itens.length;
+        itens[proximo]?.focus();
+      }
+    };
+
+    menuTrigger?.addEventListener("click", () => {
+      if (menu.hidden) abrirMenu();
+      else fecharMenu();
+    });
+    menuTrigger?.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        abrirMenu(event.key === "ArrowUp" ? "ultimo" : "primeiro");
+      }
+    });
+    menu?.addEventListener("keydown", handleKeydownMenu);
+    document.addEventListener("click", handleClickForaMenu);
+    removerHandlersMenuRelatorio = () => {
+      document.removeEventListener("click", handleClickForaMenu);
+    };
+
     document
-      .querySelector("[data-action='gerar-relatorio-decisao']")
-      ?.addEventListener("click", (event) => {
-        event.stopPropagation();
-        handleGerarRelatorio(ctx);
+      .querySelector("[data-action='gerar-relatorio-filtradas']")
+      ?.addEventListener("click", () => {
+        fecharMenu();
+        menuTrigger?.focus();
+        handleGerarRelatorioFiltradas(ctx);
       });
+    document
+      .querySelector("[data-action='alternar-selecao-relatorio']")
+      ?.addEventListener("click", () => {
+        const ativar = !estadoSelecaoRelatorio.ativo;
+        persistirEstadoSelecao({ ativo: ativar, ids: ativar ? estadoSelecaoRelatorio.ids : [] });
+        focoAposRender = ativar ? "selecao" : "menu";
+        ctx.render();
+      });
+
+    document.querySelectorAll("[data-relatorio-proposicao-checkbox]").forEach((checkbox) => {
+      checkbox.addEventListener("change", (event) => {
+        const ids = new Set(estadoSelecaoRelatorio.ids);
+        const id = event.currentTarget.dataset.relatorioProposicaoCheckbox;
+        if (event.currentTarget.checked) ids.add(id);
+        else ids.delete(id);
+        persistirEstadoSelecao({ ativo: true, ids: Array.from(ids) });
+        ctx.render();
+      });
+    });
+
+    const selecionarTodas = document.querySelector("[data-relatorio-select-all]");
+    if (selecionarTodas) {
+      selecionarTodas.indeterminate = selecionarTodas.dataset.selectAllState === "parcial";
+      selecionarTodas.addEventListener("change", (event) => {
+        const ids = atualizarSelecaoVisivel(
+          estadoSelecaoRelatorio.ids,
+          ctx.filtradas,
+          event.currentTarget.checked,
+        );
+        persistirEstadoSelecao({ ativo: true, ids });
+        focoAposRender = "selecao";
+        ctx.render();
+      });
+    }
+
+    document
+      .querySelector("[data-action='gerar-relatorio-selecionadas']")
+      ?.addEventListener("click", () => handleGerarRelatorioSelecionadas(ctx));
+    document
+      .querySelector("[data-action='cancelar-selecao-relatorio']")
+      ?.addEventListener("click", () => {
+        persistirEstadoSelecao({ ativo: false, ids: [] });
+        focoAposRender = "menu";
+        ctx.render();
+      });
+
+    if (focoAposRender) {
+      const seletor =
+        focoAposRender === "selecao"
+          ? "[data-relatorio-select-all], [data-relatorio-proposicao-checkbox]"
+          : "[data-action='toggle-relatorio-menu']";
+      focoAposRender = null;
+      setTimeout(() => document.querySelector(seletor)?.focus(), 0);
+    }
+
     document.querySelectorAll("[data-action='acolher-minuta']").forEach((btn) => {
       btn.addEventListener("click", (event) => {
         event.stopPropagation();

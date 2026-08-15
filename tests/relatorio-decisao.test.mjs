@@ -6,6 +6,7 @@ import { hydrateProposicao } from "../assets/js/domain/correicoes.js";
 import {
   criarNomeBaseRelatorioDecisao,
   criarSnapshotRelatorioDecisao,
+  ModoRecorteRelatorioDecisao,
   serializarRelatorioDecisaoJson,
 } from "../assets/js/domain/relatorio-decisao.js";
 import { criarDefinicaoPdfRelatorioDecisao } from "../assets/js/ui/relatorio-decisao-pdf.js";
@@ -54,7 +55,11 @@ test("snapshot preserva ordem, filtros e textos integrais sem carregar campos fo
     ...opcoesFixas,
   });
 
-  assert.equal(snapshot.versao_esquema, "1.0");
+  assert.equal(snapshot.versao_esquema, "1.1");
+  assert.deepEqual(snapshot.recorte.modo, {
+    codigo: "filtradas",
+    rotulo: "Proposições filtradas",
+  });
   assert.equal(snapshot.id_relatorio, "relatorio-teste-001");
   assert.equal(snapshot.recorte.total_proposicoes, 2);
   assert.equal(snapshot.recorte.contem_sensiveis, true);
@@ -132,12 +137,60 @@ test("JSON é UTF-8 legível, termina em nova linha e usa nome pareado contextua
   const reparsed = JSON.parse(json);
 
   assert.equal(reparsed.proposicoes[0].proposicao.sensivel, true);
-  assert.match(json, /"versao_esquema": "1\.0"/);
+  assert.match(json, /"versao_esquema": "1\.1"/);
   assert.match(json, /Descrição/);
   assert.ok(json.endsWith("\n"));
   assert.equal(
     criarNomeBaseRelatorioDecisao(snapshot),
     "relatorio-aguardando-decisao_corr-2026-rj-03_2026-08-06_12-34_1-itens",
+  );
+});
+
+test("seleção manual ignora filtros circunstanciais e preserva a ordem recebida", () => {
+  const proposicoes = [getProposicao("prop-304"), getProposicao("prop-003")];
+  const snapshot = criarSnapshotRelatorioDecisao({
+    proposicoes,
+    filtros: { correicaoId: "filtro-que-nao-define-a-selecao", sensivel: "nao" },
+    modoRecorte: ModoRecorteRelatorioDecisao.SELECIONADAS,
+    ...opcoesFixas,
+  });
+
+  assert.equal(snapshot.recorte.modo.codigo, "selecionadas");
+  assert.deepEqual(snapshot.proposicoes.map((item) => item.proposicao.id), ["prop-304", "prop-003"]);
+  assert.equal(snapshot.recorte.filtros_aplicados.correicao_id, null);
+  assert.equal(snapshot.recorte.filtros_aplicados.sensivel, null);
+  assert.deepEqual(snapshot.recorte.resumo_legivel, ["2 proposições selecionadas manualmente"]);
+  assert.equal(
+    criarNomeBaseRelatorioDecisao(snapshot),
+    "relatorio-aguardando-decisao_selecionadas_2026-08-06_12-34_2-itens",
+  );
+});
+
+test("recorte individual identifica a proposição e produz nome compartilhável", () => {
+  const proposicao = getProposicao("prop-304");
+  const snapshot = criarSnapshotRelatorioDecisao({
+    proposicoes: [proposicao],
+    modoRecorte: ModoRecorteRelatorioDecisao.INDIVIDUAL,
+    ...opcoesFixas,
+  });
+
+  assert.equal(snapshot.recorte.modo.codigo, "individual");
+  assert.deepEqual(snapshot.recorte.resumo_legivel, ["Proposição: PROP-2026-0304"]);
+  assert.equal(
+    criarNomeBaseRelatorioDecisao(snapshot),
+    "relatorio-aguardando-decisao_prop-2026-0304_2026-08-06_12-34_1-item",
+  );
+});
+
+test("rejeita modo de recorte desconhecido", () => {
+  assert.throws(
+    () =>
+      criarSnapshotRelatorioDecisao({
+        proposicoes: [getProposicao("prop-304")],
+        modoRecorte: "qualquer",
+        ...opcoesFixas,
+      }),
+    /Modo de recorte do relatório inválido/,
   );
 });
 

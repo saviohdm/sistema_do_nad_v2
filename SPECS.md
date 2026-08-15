@@ -162,12 +162,14 @@ O **rascunho de criação** da proposição é a exceção estrutural: a entidad
 
 #### Relatório da fila Aguardando decisão
 
-- No modo de lista, `Gerar relatório` cria um instantâneo de `ctx.filtradas`: somente as proposições visíveis, na ordem exibida e com os filtros efetivamente aplicados. `filaForcada` e a preferência visual Compacta/Expandida/Cartões não são filtros; os textos exportados são sempre integrais.
-- O modal de conferência exibe filtros, total, sensibilidade e identificador do instantâneo e oferece downloads independentes em PDF e JSON. Fila vazia desabilita a geração; baixar novamente reutiliza o mesmo instantâneo.
+- No modo de lista, `Gerar relatório` oferece dois recortes: `Gerar das filtradas (N)`, que usa exatamente `ctx.filtradas`, e `Selecionar proposições…`, que ativa checkboxes nos cartões. O recorte filtrado preserva a ordem exibida e os filtros efetivamente aplicados; `filaForcada` e a preferência Compacta/Expandida/Cartões não são filtros.
+- A seleção manual é cumulativa entre filtros e persiste na sessão. A interface informa itens selecionados ocultos pelo filtro atual, permite selecionar/desmarcar todos os visíveis e descarta IDs que deixem de pertencer à fila. O relatório usa a ordem global da fila, não a ordem dos cliques.
+- No detalhe, o Corregedor pode gerar o relatório individual enquanto a proposição permanecer em `aguardando_decisao_corregedor`.
+- O modal de conferência identifica o modo do recorte, relaciona número, correição e destinatário dos itens incluídos e oferece downloads independentes em PDF e JSON. Fila vazia ou seleção vazia desabilita a geração; baixar novamente reutiliza o mesmo instantâneo e fechar o modal não limpa a seleção.
 - Os dois formatos contêm a mesma substância: metadados operacionais da proposição, descrição integral, última comprovação (mesmo quando há minuta), metadados dos anexos, minuta vigente completa e eventual rascunho de decisão do Corregedor completo. Não incluem o conteúdo binário dos anexos, `contexto`, `observacoesGerais` nem histórico completo.
 - Proposições sensíveis não são omitidas nem redigidas: recebem marcação individual e aviso global. Os arquivos são classificados como `uso_interno`, sem criptografia própria.
-- O PDF é A4 retrato, paginado e orientado à leitura. O JSON usa `versao_esquema = 1.0`, chaves em português `snake_case`, enumerações `{codigo, rotulo}`, `null`/`[]` para ausências e `texto_consolidado` sem HTML em cada item.
-- O nome-base é pareado: `relatorio-aguardando-decisao_<correicao-ou-todas>_<AAAA-MM-DD_HH-mm>_<N>-itens`. Gerar ou baixar o relatório é operação de leitura e não cria eventos no histórico.
+- O PDF é A4 retrato, paginado e orientado à leitura. O JSON usa `versao_esquema = 1.1`, registra `recorte.modo` (`filtradas`, `selecionadas` ou `individual`), mantém `filtros_aplicados`, usa chaves em português `snake_case`, enumerações `{codigo, rotulo}`, `null`/`[]` para ausências e `texto_consolidado` sem HTML em cada item. Nos modos manual e individual, filtros circunstanciais não são apresentados como critério de inclusão.
+- O nome-base é pareado: filtradas preservam `relatorio-aguardando-decisao_<correicao-ou-todas>_<AAAA-MM-DD_HH-mm>_<N>-itens`; seleção manual usa `..._selecionadas_..._<N>-itens`; individual usa `..._<numero-da-proposicao>_..._1-item`. Gerar ou baixar o relatório é operação de leitura e não cria eventos no histórico.
 
 ## Conteúdo da apreciação de valor
 

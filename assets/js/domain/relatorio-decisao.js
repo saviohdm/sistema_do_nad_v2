@@ -3,7 +3,19 @@ import { getDestinatario, getTipoDestinatario } from "./destinatario.js";
 import { getDestinatarioDisplay, getDestinatarioRef } from "./filas-operacionais.js";
 import { getAvaliacaoVigente, getUltimaComprovacao } from "./proposicoes.js";
 
-export const VERSAO_ESQUEMA_RELATORIO_DECISAO = "1.0";
+export const VERSAO_ESQUEMA_RELATORIO_DECISAO = "1.1";
+
+export const ModoRecorteRelatorioDecisao = Object.freeze({
+  FILTRADAS: "filtradas",
+  SELECIONADAS: "selecionadas",
+  INDIVIDUAL: "individual",
+});
+
+const ROTULOS_MODO_RECORTE = Object.freeze({
+  [ModoRecorteRelatorioDecisao.FILTRADAS]: "Proposições filtradas",
+  [ModoRecorteRelatorioDecisao.SELECIONADAS]: "Proposições selecionadas",
+  [ModoRecorteRelatorioDecisao.INDIVIDUAL]: "Proposição individual",
+});
 
 const normalizarTexto = (value) => {
   if (value === null || value === undefined) return null;
@@ -261,7 +273,7 @@ const mapearProposicao = (proposicao, ordem, fusoHorario) => {
   return item;
 };
 
-const mapearFiltros = (filtros, proposicoes) => {
+const mapearFiltros = (filtros, proposicoes, modoRecorte) => {
   const primeira = proposicoes[0] || null;
   const temDestinatario = Boolean(
     filtros.destinatarioRef || filtros.unidadeRef || filtros.unidade,
@@ -283,7 +295,15 @@ const mapearFiltros = (filtros, proposicoes) => {
   if (sensivel !== null) resumo.push(`Sensível: ${sensivel ? "Sim" : "Não"}`);
   if (filtros.comRascunho) resumo.push("Somente com rascunho de decisão");
   if (minuta) resumo.push(`Minuta do membro: ${minuta.rotulo}`);
-  if (resumo.length === 0) resumo.push("Toda a fila Aguardando decisão");
+  if (modoRecorte === ModoRecorteRelatorioDecisao.SELECIONADAS) {
+    resumo.push(
+      `${proposicoes.length} ${proposicoes.length === 1 ? "proposição selecionada" : "proposições selecionadas"} manualmente`,
+    );
+  } else if (modoRecorte === ModoRecorteRelatorioDecisao.INDIVIDUAL) {
+    resumo.push(`Proposição: ${proposicoes[0]?.numero || "não identificada"}`);
+  } else if (resumo.length === 0) {
+    resumo.push("Toda a fila Aguardando decisão");
+  }
 
   return {
     filtros_aplicados: {
@@ -301,6 +321,7 @@ const mapearFiltros = (filtros, proposicoes) => {
 export const criarSnapshotRelatorioDecisao = ({
   proposicoes,
   filtros = {},
+  modoRecorte = ModoRecorteRelatorioDecisao.FILTRADAS,
   agora = new Date(),
   idRelatorio = criarIdRelatorio(),
   fusoHorario,
@@ -308,8 +329,13 @@ export const criarSnapshotRelatorioDecisao = ({
   const lista = Array.isArray(proposicoes) ? proposicoes : [];
   const data = agora instanceof Date ? new Date(agora.getTime()) : new Date(agora);
   if (Number.isNaN(data.getTime())) throw new Error("Data de geração inválida.");
+  if (!ROTULOS_MODO_RECORTE[modoRecorte]) {
+    throw new Error("Modo de recorte do relatório inválido.");
+  }
   const fuso = resolverFusoHorario(fusoHorario);
-  const recorte = mapearFiltros(filtros, lista);
+  const filtrosDoRecorte =
+    modoRecorte === ModoRecorteRelatorioDecisao.FILTRADAS ? filtros : {};
+  const recorte = mapearFiltros(filtrosDoRecorte, lista, modoRecorte);
   const itens = lista.map((proposicao, index) => mapearProposicao(proposicao, index + 1, fuso));
 
   return {
@@ -324,6 +350,10 @@ export const criarSnapshotRelatorioDecisao = ({
       gerado_por: "Corregedor Nacional",
     },
     recorte: {
+      modo: {
+        codigo: modoRecorte,
+        rotulo: ROTULOS_MODO_RECORTE[modoRecorte],
+      },
       total_proposicoes: itens.length,
       contem_sensiveis: itens.some((item) => item.proposicao.sensivel),
       ...recorte,
@@ -356,8 +386,17 @@ const slugArquivo = (value) =>
     .replace(/^-|-$/g, "") || "todas";
 
 export const criarNomeBaseRelatorioDecisao = (snapshot) => {
-  const correicao = snapshot.recorte.filtros_aplicados.correicao_id || "todas";
   const quantidade = snapshot.recorte.total_proposicoes;
+  const sufixoQuantidade = `${quantidade}-${quantidade === 1 ? "item" : "itens"}`;
+  const modo = snapshot.recorte.modo?.codigo || ModoRecorteRelatorioDecisao.FILTRADAS;
+  if (modo === ModoRecorteRelatorioDecisao.SELECIONADAS) {
+    return `relatorio-aguardando-decisao_selecionadas_${partesDataArquivo(snapshot)}_${sufixoQuantidade}`;
+  }
+  if (modo === ModoRecorteRelatorioDecisao.INDIVIDUAL) {
+    const numero = snapshot.proposicoes[0]?.proposicao?.numero || "proposicao";
+    return `relatorio-aguardando-decisao_${slugArquivo(numero)}_${partesDataArquivo(snapshot)}_1-item`;
+  }
+  const correicao = snapshot.recorte.filtros_aplicados.correicao_id || "todas";
   return `relatorio-aguardando-decisao_${slugArquivo(correicao)}_${partesDataArquivo(snapshot)}_${quantidade}-itens`;
 };
 

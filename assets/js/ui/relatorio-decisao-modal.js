@@ -95,6 +95,26 @@ const renderFiltros = (snapshot) =>
     .map((filtro) => `<li>${escapeHtml(filtro)}</li>`)
     .join("");
 
+const renderItensIncluidos = (snapshot) =>
+  snapshot.proposicoes
+    .map((item) => {
+      const proposicao = item.proposicao;
+      const contexto = [proposicao.correicao_id, proposicao.destinatario?.nome]
+        .filter(Boolean)
+        .join(" · ");
+      return `<li><strong>${escapeHtml(proposicao.numero || proposicao.id)}</strong>${
+        contexto ? `<span>${escapeHtml(contexto)}</span>` : ""
+      }</li>`;
+    })
+    .join("");
+
+const getTituloModal = (snapshot) => {
+  const modo = snapshot.recorte.modo?.codigo;
+  if (modo === "selecionadas") return "Gerar relatório das selecionadas";
+  if (modo === "individual") return "Gerar relatório da proposição";
+  return "Gerar relatório das filtradas";
+};
+
 const atualizarStatus = (root, formato, { estado, mensagem }) => {
   const status = root.querySelector(`[data-relatorio-status="${formato}"]`);
   if (!status) return;
@@ -142,7 +162,7 @@ export const openRelatorioDecisaoModal = (snapshot) => {
         <div class="relatorio-modal__metricas" aria-label="Resumo do relatório">
           <div><strong>${total}</strong><span>${total === 1 ? "proposição" : "proposições"}</span></div>
           <div><strong>${snapshot.recorte.contem_sensiveis ? "Sim" : "Não"}</strong><span>contém sensíveis</span></div>
-          <div><strong>1.0</strong><span>esquema JSON</span></div>
+          <div><strong>${escapeHtml(snapshot.versao_esquema)}</strong><span>esquema JSON</span></div>
         </div>
       </div>
 
@@ -153,9 +173,16 @@ export const openRelatorioDecisaoModal = (snapshot) => {
       }
 
       <div class="relatorio-modal__recorte">
-        <div>
-          <p class="relatorio-modal__label">Filtros aplicados</p>
+        <div class="relatorio-modal__escopo">
+          <div>
+            <p class="relatorio-modal__label">Recorte do relatório</p>
+            <p class="relatorio-modal__modo">${escapeHtml(snapshot.recorte.modo?.rotulo || "Proposições filtradas")}</p>
+          </div>
           <ul class="relatorio-modal__filtros">${renderFiltros(snapshot)}</ul>
+          <div>
+            <p class="relatorio-modal__label">Proposições incluídas</p>
+            <ol class="relatorio-modal__itens">${renderItensIncluidos(snapshot)}</ol>
+          </div>
         </div>
         <div class="relatorio-modal__identificador">
           <span>Instantâneo</span>
@@ -192,7 +219,7 @@ export const openRelatorioDecisaoModal = (snapshot) => {
   `;
 
   return openModal({
-    title: "Gerar relatório da fila",
+    title: getTituloModal(snapshot),
     bodyHtml,
     size: "relatorio",
     initialFocusSelector: '[data-download-relatorio="pdf"]',
