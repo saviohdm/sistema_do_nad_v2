@@ -13,7 +13,7 @@ const baseOptions = {
 };
 
 const REDACAO_PADRAO =
-  "Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.";
+  "Diante da resposta apresentada, sugere-se considerar atendida a proposição, sem prejuízo de reanálise caso surjam fatos que a justifiquem.";
 
 const apreciacaoPadrao = {
   situacao: SituacaoApreciacao.CONCLUIDA,

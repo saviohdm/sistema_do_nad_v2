@@ -21,7 +21,7 @@ export const MINUTA_PADRAO_CUMPRIDA = Object.freeze({
   tipoProvidencia: null,
   descricaoProvidencia: null,
   observacoes:
-    "Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.",
+    "Diante da resposta apresentada, sugere-se considerar atendida a proposição, sem prejuízo de reanálise caso surjam fatos que a justifiquem.",
 });
 
 export const podeSubmeterMinutaPadrao = (proposicao) =>

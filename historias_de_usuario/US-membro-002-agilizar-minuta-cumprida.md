@@ -15,7 +15,7 @@ Membro Auxiliar da CN (`PERSONAS.MEMBRO`).
 ## Fluxo principal
 1. Na fila **Minha fila de elaboração de minutas**, o cartão elegível mantém o acesso **Elaborar minuta** e exibe a ação **Submeter minuta**.
 2. O membro clica em **Submeter minuta** e confirma a proposição e o resultado `Concluída · Cumprida`.
-3. O sistema submete a minuta padrão, com `Existe providência da Secretaria? = Não` e a redação “Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.”
+3. O sistema submete a minuta padrão, com `Existe providência da Secretaria? = Não` e a redação “Diante da resposta apresentada, sugere-se considerar atendida a proposição, sem prejuízo de reanálise caso surjam fatos que a justifiquem.”
 4. A submissão transita para `AGUARDANDO_DECISAO_CORREGEDOR` e o cartão desaparece da fila sem alerta adicional.
 
 ## Fluxos alternativos

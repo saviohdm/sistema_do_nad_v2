@@ -137,7 +137,7 @@ O **rascunho de criação** da proposição é a exceção estrutural: a entidad
 ### 3. Minuta do membro auxiliar
 
 - O `Membro Auxiliar da CN` pratica `RASCUNHAR minuta` e `SUBMETER minuta`.
-- Toda minuta nova abre, em qualquer caminho de acesso do membro, com `situação = concluída`, `tipoConclusao = cumprida`, sem providência da Secretaria e com a redação genérica editável: “Acolho a comprovação apresentada, por demonstrar o cumprimento integral da proposição do CNMP.” Esse preenchimento é somente um atalho de interface e permite submissão direta.
+- Toda minuta nova abre, em qualquer caminho de acesso do membro, com `situação = concluída`, `tipoConclusao = cumprida`, sem providência da Secretaria e com a redação genérica editável: “Diante da resposta apresentada, sugere-se considerar atendida a proposição, sem prejuízo de reanálise caso surjam fatos que a justifiquem.” Esse preenchimento é somente um atalho de interface e permite submissão direta.
 - Na fila `Minha fila de elaboração de minutas`, proposições com comprovação registrada, sem rascunho e sem minuta vigente exibem a ação rápida `Submeter minuta`. Após confirmação identificando a proposição e o resultado `Concluída · Cumprida`, a minuta padrão é submetida e o cartão sai da fila. Casos sem comprovação ou com rascunho exigem abertura do detalhe.
 - Ao alterar situação ou tipo de conclusão, a redação genérica é limpa somente se ainda não tiver sido editada. O preenchimento não é restaurado na mesma abertura. Depois de salvo, todo conteúdo do rascunho é tratado como trabalho do usuário.
 - A minuta deve registrar todas as invariantes exigidas para a decisão final e conter redação obrigatória em linguagem decisória e impositiva.
