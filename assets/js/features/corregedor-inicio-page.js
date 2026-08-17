@@ -131,7 +131,7 @@ const servicosSection = `
     </div>
     <p class="inicio-consultas">
       <a href="proposicoes-lista.html">Consulta de proposições →</a>
-      <a href="dashboard.html">Estatísticas →</a>
+      <a href="dashboard.html">Produtividade →</a>
     </p>
   </section>
 `;

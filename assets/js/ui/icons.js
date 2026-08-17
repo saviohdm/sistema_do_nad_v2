@@ -37,6 +37,10 @@ const PATHS = {
     <path d="M9.5 16.5v-11" />
     <path d="M14.5 16.5v-8" />
     <path d="M3 17.5h14" />`,
+  situacao: `
+    <circle cx="10" cy="10" r="6.5" />
+    <path d="M10 3.5v6.5h6.5" />
+    <path d="m10 10-4.6 4.6" />`,
   recolher: `
     <path d="m11 6-4 4 4 4" />
     <path d="m15.5 6-4 4 4 4" />`,

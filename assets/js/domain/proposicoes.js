@@ -593,6 +593,7 @@ export const criarProposicao = (
     novaProposicao,
     buildHistoryEvent(TipoHistorico.CRIACAO, "Corregedor Nacional", {
       descricao: descricaoCriacao,
+      entradaFluxo: !comoRascunho && correicaoJaReferendada,
     }),
   );
 
@@ -620,6 +621,7 @@ export const confirmarRascunhoCN = (state, proposicao) => {
   appendHistory(
     proposicao,
     buildHistoryEvent(TipoHistorico.RASCUNHO_CN_CONFIRMADO, "Corregedor Nacional", {
+      entradaFluxo: correicaoJaReferendada,
       descricao: converterAgora
         ? "Rascunho confirmado pela Corregedoria Nacional (correição já referendada)."
         : correicaoJaReferendada
@@ -744,6 +746,7 @@ export const referendarCorreicao = (state, correicaoId, usuario = "Corregedor Na
         buildHistoryEvent(TipoHistorico.REFERENDO_CNMP, usuario, {
           descricao: "Correição referendada pelo CNMP.",
           correicaoId,
+          entradaFluxo: true,
         }),
       );
       converterEncaminhamento(proposicao, usuario);
@@ -757,6 +760,7 @@ export const referendarCorreicao = (state, correicaoId, usuario = "Corregedor Na
         descricao:
           "Correição referendada pelo CNMP; proposição encaminhada à Secretaria Processual.",
         correicaoId,
+        entradaFluxo: true,
       }),
     );
     resultado.encaminhadas += 1;
@@ -770,6 +774,7 @@ export const encaminharParaSecretaria = (proposicao) => {
     proposicao,
     buildHistoryEvent(TipoHistorico.CRIACAO, "Corregedor Nacional", {
       descricao: "Proposição encaminhada para a Secretaria Processual.",
+      entradaFluxo: true,
     }),
   );
   return proposicao;

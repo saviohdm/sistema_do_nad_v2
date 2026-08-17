@@ -263,6 +263,17 @@ if (typeof window !== "undefined") {
 // ---------------------------------------------------------------------------
 
 const SIDEBAR_RECOLHIDA_KEY = "nad-sidebar-recolhida";
+const MOBILE_NAV_MEDIA_QUERY = "(max-width: 720px)";
+const MOBILE_NAV_OPEN_CLASS = "app-shell--mobile-nav-open";
+const MOBILE_NAV_BODY_CLASS = "app-mobile-nav-open";
+const MOBILE_NAV_FOCUSABLE = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
 
 const isSidebarRecolhida = () => localStorage.getItem(SIDEBAR_RECOLHIDA_KEY) === "1";
 
@@ -284,6 +295,141 @@ const handleToggleSidebar = () => {
 if (typeof window !== "undefined") {
   window.__nadToggleSidebar = handleToggleSidebar;
 }
+
+// ---------------------------------------------------------------------------
+// Navegação mobile: gaveta efêmera e fechada a cada montagem. O estado não é
+// persistido e não interfere no trilho recolhível usado somente no desktop.
+// ---------------------------------------------------------------------------
+
+export const initMobileNavigation = () => {
+  const shell = document.querySelector(".app-shell");
+  const sidebar = document.querySelector("[data-mobile-sidebar]");
+  const toggle = document.querySelector("[data-mobile-nav-toggle]");
+  const closeButton = document.querySelector("[data-mobile-nav-close]");
+  const backdrop = document.querySelector("[data-mobile-nav-backdrop]");
+  if (!shell || !sidebar || !toggle || !closeButton || !backdrop) return () => {};
+
+  const mobileMedia = window.matchMedia(MOBILE_NAV_MEDIA_QUERY);
+  let focusBeforeOpen = null;
+
+  const isOpen = () => shell.classList.contains(MOBILE_NAV_OPEN_CLASS);
+
+  const getFocusableItems = () =>
+    Array.from(sidebar.querySelectorAll(MOBILE_NAV_FOCUSABLE)).filter(
+      (element) =>
+        !element.hidden &&
+        element.getAttribute("aria-hidden") !== "true" &&
+        element.getClientRects().length > 0,
+    );
+
+  const setMobileA11yState = (open) => {
+    toggle.setAttribute("aria-expanded", String(open));
+    sidebar.setAttribute("aria-hidden", String(!open));
+    sidebar.inert = !open;
+    sidebar.toggleAttribute("inert", !open);
+    backdrop.setAttribute("aria-hidden", String(!open));
+  };
+
+  const closeMobileNavigation = ({ restoreFocus = true } = {}) => {
+    if (!mobileMedia.matches) return;
+    const wasOpen = isOpen();
+    shell.classList.remove(MOBILE_NAV_OPEN_CLASS);
+    document.body.classList.remove(MOBILE_NAV_BODY_CLASS);
+    toggle.setAttribute("aria-expanded", "false");
+
+    if (wasOpen && restoreFocus && focusBeforeOpen?.focus) {
+      focusBeforeOpen.focus();
+    } else if (!restoreFocus && sidebar.contains(document.activeElement)) {
+      document.activeElement?.blur?.();
+    }
+
+    sidebar.setAttribute("aria-hidden", "true");
+    sidebar.inert = true;
+    sidebar.setAttribute("inert", "");
+    backdrop.setAttribute("aria-hidden", "true");
+  };
+
+  const openMobileNavigation = () => {
+    if (!mobileMedia.matches || isOpen()) return;
+    focusBeforeOpen = document.activeElement;
+    shell.classList.add(MOBILE_NAV_OPEN_CLASS);
+    document.body.classList.add(MOBILE_NAV_BODY_CLASS);
+    setMobileA11yState(true);
+    closeButton.focus();
+  };
+
+  const handleToggle = () => {
+    if (isOpen()) closeMobileNavigation();
+    else openMobileNavigation();
+  };
+
+  const handleSidebarClick = (event) => {
+    if (event.target.closest("a[href]")) {
+      closeMobileNavigation({ restoreFocus: false });
+    }
+  };
+
+  const handleKeydown = (event) => {
+    if (!mobileMedia.matches || !isOpen()) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMobileNavigation();
+      return;
+    }
+    if (event.key !== "Tab") return;
+
+    const focusableItems = getFocusableItems();
+    if (!focusableItems.length) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusableItems[0];
+    const last = focusableItems[focusableItems.length - 1];
+    const focusIsInside = sidebar.contains(document.activeElement);
+    if (event.shiftKey && (!focusIsInside || document.activeElement === first)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (!focusIsInside || document.activeElement === last)) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const syncWithViewport = () => {
+    shell.classList.remove(MOBILE_NAV_OPEN_CLASS);
+    document.body.classList.remove(MOBILE_NAV_BODY_CLASS);
+    toggle.setAttribute("aria-expanded", "false");
+    backdrop.setAttribute("aria-hidden", "true");
+    if (mobileMedia.matches) {
+      sidebar.setAttribute("aria-hidden", "true");
+      sidebar.inert = true;
+      sidebar.setAttribute("inert", "");
+    } else {
+      sidebar.removeAttribute("aria-hidden");
+      sidebar.inert = false;
+      sidebar.removeAttribute("inert");
+    }
+  };
+
+  toggle.addEventListener("click", handleToggle);
+  closeButton.addEventListener("click", closeMobileNavigation);
+  backdrop.addEventListener("click", closeMobileNavigation);
+  sidebar.addEventListener("click", handleSidebarClick);
+  document.addEventListener("keydown", handleKeydown);
+  mobileMedia.addEventListener("change", syncWithViewport);
+  syncWithViewport();
+
+  return () => {
+    toggle.removeEventListener("click", handleToggle);
+    closeButton.removeEventListener("click", closeMobileNavigation);
+    backdrop.removeEventListener("click", closeMobileNavigation);
+    sidebar.removeEventListener("click", handleSidebarClick);
+    document.removeEventListener("keydown", handleKeydown);
+    mobileMedia.removeEventListener("change", syncWithViewport);
+    document.body.classList.remove(MOBILE_NAV_BODY_CLASS);
+  };
+};
 
 const renderNavItem = (item, activePage) => {
   const ativo = pageSlug(item.href) === activePage;
@@ -331,10 +477,37 @@ export const renderAppShell = ({ activePage, title, content, actions = "", bread
 
   return `
     <div class="app-shell${recolhida ? " app-shell--nav-recolhida" : ""}">
-      <aside class="sidebar">
+      <header class="mobile-topbar">
+        <button
+          class="mobile-topbar__menu"
+          type="button"
+          data-mobile-nav-toggle
+          aria-controls="app-sidebar"
+          aria-expanded="false"
+          aria-label="Abrir menu"
+        >
+          <span class="mobile-menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+        </button>
+        <div class="mobile-topbar__identity">
+          <a class="mobile-topbar__brand" href="${getHomeForPersona()}" title="Ir para a página inicial">NAD</a>
+          <span class="mobile-topbar__page" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+        </div>
+        <span class="mobile-topbar__balance" aria-hidden="true"></span>
+      </header>
+      <aside class="sidebar" id="app-sidebar" data-mobile-sidebar>
         <div class="sidebar__brand">
-          <p class="sidebar__title"><a href="${getHomeForPersona()}" title="Ir para a página inicial">NAD</a></p>
-          <p class="sidebar__subtitle">Acompanhamento de Determinações</p>
+          <div class="sidebar__brand-copy">
+            <p class="sidebar__title"><a href="${getHomeForPersona()}" title="Ir para a página inicial">NAD</a></p>
+            <p class="sidebar__subtitle">Acompanhamento de Determinações</p>
+          </div>
+          <button
+            class="sidebar__mobile-close"
+            type="button"
+            data-mobile-nav-close
+            aria-label="Fechar menu"
+          >
+            <span aria-hidden="true"></span>
+          </button>
         </div>
         <nav aria-label="Menu principal">
           ${navGroups.map((grupo) => renderNavGroup(grupo, activePage)).join("")}
@@ -355,6 +528,7 @@ export const renderAppShell = ({ activePage, title, content, actions = "", bread
           </button>
         </div>
       </aside>
+      <div class="mobile-nav-backdrop" data-mobile-nav-backdrop aria-hidden="true"></div>
       <main class="page">
         <header class="page-header">
           <div class="page-header__content">

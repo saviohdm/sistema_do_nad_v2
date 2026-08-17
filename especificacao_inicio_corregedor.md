@@ -24,8 +24,8 @@ Esta especificação define:
    de **Avisos** vigentes. Sem gráficos, sem lista de casos individuais, sem dado pessoal.
 2. **Navegação em 5 grupos** — Início · Filas operacionais · Serviços · Consulta · Estatísticas —
    com ícones, badges de pendência nas duas filas e sidebar **recolhível** (estado persistido).
-3. **"Estatísticas"** — o antigo Dashboard do CN, demovido para o último grupo da navegação,
-   contendo exclusivamente o Panorama atual (4 cartões gráficos, inalterados).
+3. **"Estatísticas"** — seção final da navegação, com **Produtividade** (série mensal e PDF) e
+   **Situação** (o Panorama atual de 4 cartões recuperado do antigo Dashboard).
 
 Princípios: a homepage é ponto de entrada de trabalho, não painel decorativo; urgência antes de
 rotina; cada informação leva a uma ação; zero duplicação de números; dados sensíveis minimizados;
@@ -63,7 +63,7 @@ em vez de uma fila única embutida.
 2. **Hero contextual** — dateline, saudação, headline dinâmica. Responde "onde estou / o que fazer agora".
 3. **Filas operacionais** — 2 cards de mesmo peso com os KPIs de pendência. Responde "o que exige minha ação".
 4. **Serviços** — links discretos (Correições · Criar proposição · Administração Superior) + linha de
-   links-texto para Consulta e Estatísticas. Responde "onde ficam as demais funções".
+   links-texto para Consulta e Produtividade. Responde "onde ficam as demais funções".
 5. **Avisos** — vigentes de severidade `alerta`/`informativo`. Seção omitida quando vazia.
 
 ### D.2 Navegação lateral do CN (5 grupos)
@@ -78,7 +78,9 @@ SERVIÇOS
   Criar proposição
   Administração Superior
 Consulta de proposições  (lupa)
-Estatísticas             (gráfico)       ← antigo Dashboard, demovido
+ESTATÍSTICAS
+  Produtividade          (gráfico)       ← rota legada dashboard.html
+  Situação               (panorama)      ← retrato operacional atual
 ```
 
 As demais personas mantêm menus planos (renderizados como um grupo único sem rótulo).
@@ -128,7 +130,7 @@ As demais personas mantêm menus planos (renderizados como um grupo único sem r
 
 - **Propósito**: dar acesso de segunda linha às funções-cadastro sem competir com as filas.
 - **Conteúdo**: 3 links com ícone (Correições · Criar proposição · Administração Superior) e linha
-  de links-texto "Consulta de proposições →" / "Estatísticas →".
+  de links-texto "Consulta de proposições →" / "Produtividade →".
 - **Regras**: visual discreto (sem números, sem cards grandes). Duplicação consciente da sidebar
   para reforço de modelo mental na primeira dobra da adoção.
 - **Permissões**: itens fixos do CN (menu já é por persona).
@@ -166,16 +168,21 @@ As demais personas mantêm menus planos (renderizados como um grupo único sem r
   ícones exibem a inicial do rótulo.
 - **Acessibilidade**: botão com `aria-expanded` e rótulo alternante "Recolher menu"/"Expandir
   menu"; navegação 100% por teclado; `aria-current="page"` preservado.
-- **Responsivo**: o recolhimento é utilidade de desktop; navegação mobile real fica para release futura (ver L).
+- **Responsivo**: o recolhimento permanece uma utilidade de desktop. Em até `720px`, uma barra
+  superior compacta abre a navegação como gaveta sobre o conteúdo; ela fecha por botão, backdrop,
+  `Escape` ou seleção de destino, contém o foco e não persiste estado entre páginas.
 
-### E.6 Página Estatísticas (antigo Dashboard do CN)
+### E.6 Seção Estatísticas
 
-- **Propósito**: visão agregada opcional ("como está o acervo"), fora do fluxo de trabalho diário.
-- **Conteúdo**: exclusivamente o Panorama atual — donuts Proposições ativas×inativas, Correições
-  ativas×inativas, Proposições ativas por persona responsável e o cartão de Providências paralelas
-  — **inalterados** ([dashboard-page.js](assets/js/features/dashboard-page.js)).
-- **Mudanças**: perde o hero (migrou para o Início); título "Estatísticas" para o CN (a Secretaria
-  permanece vendo "Dashboard"); entrada de menu no último grupo.
+- **Produtividade**: permanece em `dashboard.html`, com recorte mensal, indicadores de atos e PDF
+  institucional; título da página alterado para “Produtividade”.
+- **Situação**: nova página `estatisticas-situacao.html`, com o retrato operacional de todo o
+  acervo: proposições, correições, responsabilidades por persona e proposições com providência
+  paralela aberta.
+- **Navegação**: “Estatísticas” é rótulo não clicável do grupo; as duas páginas são itens filhos,
+  exclusivas do Corregedor e marcadas individualmente com `aria-current="page"`.
+- **Metodologia da Situação**: preserva a atividade operacional histórica, admite sobreposição de
+  responsabilidades e não oferece filtros, exportação ou acesso à fila da Secretaria.
 
 ## F. Wireframe textual — desktop
 
@@ -203,9 +210,10 @@ As demais personas mantêm menus planos (renderizados como um grupo único sem r
 │ ⌂ Admin. Sup.│                                                            │
 │              │  SERVIÇOS                                                  │
 │ 🔍 Consulta   │  ▤ Correições  ✚ Criar proposição  ⌂ Administração Sup.   │
-│              │  Consulta de proposições →   Estatísticas →                │
-│ 📊 Estatíst.  │                                                            │
-│              │  AVISOS                                                    │
+│              │  Consulta de proposições →   Produtividade →                │
+│ ESTATÍSTICAS │                                                            │
+│ 📊 Produtiv. │  AVISOS                                                    │
+│ ◔ Situação   │                                                            │
 │ [« Recolher] │  [Informativo] Novo tipo de proposição: Encaminhamento     │
 │              │  Vigente até 30/09/2026 — Proposições do tipo Encaminha-   │
 │              │  mento geram providência automática após o referendo. …    │
@@ -243,15 +251,15 @@ Prioridade: atenção → filas → serviços → avisos. Uma coluna; sem encolh
 │ SERVIÇOS                     │
 │ Correições · Criar proposição│
 │ Administração Superior       │
-│ Consulta →    Estatísticas → │
+│ Consulta →    Produtividade → │
 │                              │
 │ AVISOS                       │
 │ [Informativo] Encaminhamento │
 └──────────────────────────────┘
 ```
 
-Nota: o protótipo atual não possui navegação mobile do shell (sidebar em grid fixo); a adaptação
-plena do shell é release futura (ver L). Os componentes da página já nascem fluidos.
+No protótipo, a barra superior mantém o conteúdo visível na primeira dobra e abre esse mesmo menu
+como gaveta bordô. Acima de `720px`, o shell preserva a navegação lateral e o recolhimento atuais.
 
 ## H. Design de conteúdo (rótulos e mensagens)
 
@@ -264,12 +272,12 @@ plena do shell é release futura (ver L). Os componentes da página já nascem f
 | CTA dos cards | "Abrir fila" |
 | Estado vazio do card | "Em dia — nenhuma pendência." |
 | Seção de serviços | "Serviços" |
-| Links de consulta/estatística | "Consulta de proposições →" · "Estatísticas →" |
+| Links de consulta/estatística | "Consulta de proposições →" · "Produtividade →" |
 | Seção de avisos | "Avisos" |
 | Severidades | "Crítico" · "Alerta" · "Informativo" |
 | Vigência | "Vigente até dd/mm/aaaa" |
 | Botão da sidebar | "Recolher menu" / "Expandir menu" |
-| Estatísticas (ex-Dashboard) | Título "Estatísticas"; seção interna permanece "Panorama" |
+| Estatísticas | Antetítulo “Estatísticas”; páginas “Produtividade” e “Situação” |
 | Headline vazia | "Sua mesa está limpa. Bom trabalho." |
 
 Proibições (herdadas do briefing): sem linguagem de marketing, sem jargão de banco de dados, sem
@@ -311,20 +319,20 @@ abreviações não explicadas, sem porcentagens sem significado operacional, sem
 | Badges de menu das 2 filas | **Frontend menor** — mecanismo `computeBadgeValue`/`renderNavBadge` já existe; só novas chaves |
 | Sidebar: grupos + ícones + recolher | **Frontend menor** — render do shell + CSS + persistência local |
 | Avisos (modelo + domínio + render) | **Desenvolvimento novo (frontend)** — não existia mecanismo; no protótipo é seed + filtro de vigência |
-| Estatísticas (demoção do Dashboard) | **Configuração/conteúdo** — remoção do hero e retitulação; Panorama intacto |
+| Estatísticas | **Desenvolvimento funcional** — Produtividade mensal/PDF (US-corregedor-008) e Situação atual em quatro cartões (US-corregedor-009) |
 | Reseed (`STORAGE_KEY` v5→v6) | **Configuração** — chave já versionada |
 | Gestão de avisos por interface (CRUD) | **Desenvolvimento futuro** — fora desta entrega |
 | Sair/Ajuda/identidade institucional no shell | **Desenvolvimento futuro** — requer conteúdo e/ou auth real |
-| Navegação mobile do shell | **Desenvolvimento futuro** |
+| Navegação mobile do shell | **Frontend compartilhado** — barra sticky + gaveta acessível até 720 px |
 
 ## L. Prioridades de implementação
 
 **Essencial (esta entrega)**: página Início completa (hero, 2 cards, serviços, avisos), navegação
-em 5 grupos com ícones/badges/recolher, Estatísticas Panorama-only, seed de avisos + v6,
-acessibilidade embutida, US e documentação.
+em 5 grupos com ícones/badges/recolher, gaveta mobile até 720 px, seção Estatísticas com
+Produtividade e Situação, seed de avisos + v6, acessibilidade embutida, US e documentação.
 
 **Importante (release posterior)**: "Sair" e identidade institucional no shell; Ajuda/explicação de
-status; navegação mobile do shell; gestão de avisos; aplicar a ordenação `listMesaDecisaoCN`
+status; gestão de avisos; aplicar a ordenação `listMesaDecisaoCN`
 (sensível → prioridade → tempo de espera) à própria fila de decisão; campo `audiencia` nos avisos
 (pré-requisito para exibi-los ao Correicionado). ~~Homepage das demais personas~~ → entregue na
 Fase 2 para a Secretaria (ver Adendo); para Membro/Correicionado decidiu-se conscientemente NÃO
@@ -350,13 +358,16 @@ filas a 1 clique); campo de busca na home (Consulta na sidebar basta); bloco de 
 7. Sidebar do CN exibe os 5 grupos com ícones; badges das 2 filas refletem as contagens e somem
    quando zero; item ativo marcado com `aria-current="page"`.
 8. Recolher/expandir funciona por mouse e teclado e persiste após recarregar a página.
-9. "Estatísticas" exibe apenas o Panorama (4 cartões), com título "Estatísticas".
+9. “Estatísticas” é um grupo com “Produtividade” e “Situação”; a primeira preserva o relatório
+   mensal/PDF e a segunda exibe os 4 cartões do Panorama atual.
 10. Regressão: Secretaria continua aterrissando no Dashboard atual (título "Dashboard", menu plano
     idêntico); Membro e Correicionado inalterados.
 11. Nenhum dado de caso individual, nome próprio ou conteúdo sensível na home.
 12. Teclado: todos os interativos da home alcançáveis e acionáveis; foco sempre visível.
-13. Sem erros no console em login → Início → filas → Estatísticas → troca de persona.
+13. Sem erros no console em login → Início → Produtividade → Situação → troca de persona.
 14. Larguras 375 px, 768 px e 1280 px sem rolagem horizontal do body.
+15. Em até 720 px, o conteúdo aparece antes da navegação; a gaveta fecha por botão, backdrop,
+    `Escape` ou link, contém o foco e devolve-o ao acionador quando aplicável.
 
 ## N. Perguntas de descoberta (para o produto real, além do protótipo)
 

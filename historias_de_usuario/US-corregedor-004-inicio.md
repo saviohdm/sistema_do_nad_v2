@@ -18,14 +18,14 @@ Corregedor Nacional (`PERSONAS.CORREGEDOR`).
    "correições prontas para referendar" + "rascunhos de criação a confirmar").
 3. Clica no número, num secundário (fila já filtrada) ou em **Abrir fila**.
 4. Alternativamente usa **Serviços** (Correições · Criar proposição · Administração Superior) ou os
-   links de Consulta e Estatísticas.
+   links de Consulta e Produtividade.
 5. Lê os **Avisos** vigentes (badge textual de severidade + vigência); aviso `critico` aparece como
    banner `role="alert"` acima do hero.
 
 ## Fluxos alternativos
 - **Sidebar em 5 grupos** (Início / Filas operacionais / Serviços / Consulta / Estatísticas), com
   ícones e badges de pendência nas duas filas; botão **Recolher menu** persiste o estado por navegador.
-- **Estatísticas**: o antigo Dashboard, demovido, contendo apenas o Panorama (4 cartões gráficos).
+- **Estatísticas**: grupo exclusivo do CN com **Produtividade** e **Situação**.
 - **Outra persona acessa a URL**: redirecionada para sua própria home (`getHomeForPersona`).
 
 ## Regras de negócio
@@ -44,4 +44,5 @@ Corregedor Nacional (`PERSONAS.CORREGEDOR`).
 - [corregedor-inicio-page.js](../assets/js/features/corregedor-inicio-page.js) — controlador da página
 - [avisos.js](../assets/js/domain/avisos.js) — `listAvisosVigentes`
 - [layout.js](../assets/js/ui/layout.js) — grupos de menu, badges do CN e sidebar recolhível
-- [dashboard-page.js](../assets/js/features/dashboard-page.js) — visão CN reduzida a "Estatísticas"
+- [dashboard-page.js](../assets/js/features/dashboard-page.js) — página Produtividade
+- [estatisticas-situacao-page.js](../assets/js/features/estatisticas-situacao-page.js) — página Situação

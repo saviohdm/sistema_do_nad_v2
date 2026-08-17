@@ -1,9 +1,13 @@
-import { renderAppShell } from "../ui/layout.js";
+import { initMobileNavigation, renderAppShell } from "../ui/layout.js";
 import { loadState, resetState } from "./store.js";
+
+let disposeMobileNavigation = null;
 
 export const mountPage = ({ activePage, title, content, actions, breadcrumb }) => {
   const app = document.querySelector("#app");
+  disposeMobileNavigation?.();
   app.innerHTML = renderAppShell({ activePage, title, content, actions, breadcrumb });
+  disposeMobileNavigation = initMobileNavigation();
 
   const resetButton = document.querySelector("[data-reset-state]");
   if (resetButton) {

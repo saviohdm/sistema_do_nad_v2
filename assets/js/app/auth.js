@@ -82,7 +82,11 @@ const PERSONA_MENU_OVERRIDES = {
       items: [{ href: "proposicoes-lista.html", label: "Consulta de proposições", icon: "lupa" }],
     },
     {
-      items: [{ href: "dashboard.html", label: "Estatísticas", icon: "grafico" }],
+      label: "Estatísticas",
+      items: [
+        { href: "dashboard.html", label: "Produtividade", icon: "grafico" },
+        { href: "estatisticas-situacao.html", label: "Situação", icon: "situacao" },
+      ],
     },
   ],
   [PERSONAS.SECRETARIA]: [

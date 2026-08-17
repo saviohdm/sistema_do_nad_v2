@@ -227,6 +227,7 @@ export const removerAvaliacao = (proposicao, usuario = "Corregedor Nacional") =>
   if (!proposicao.avaliacaoVigenteId) return proposicao;
 
   const avaliacaoId = proposicao.avaliacaoVigenteId;
+  const avaliacaoRemovida = proposicao.historico.find((evento) => evento.id === avaliacaoId);
   removeHistoryEvent(proposicao, avaliacaoId);
   proposicao.avaliacaoVigenteId = null;
   proposicao.rascunhoDecisaoCN = null;
@@ -238,6 +239,7 @@ export const removerAvaliacao = (proposicao, usuario = "Corregedor Nacional") =>
     buildHistoryEvent(TipoHistorico.AVALIACAO_REMOVIDA, usuario, {
       descricao: "Minuta devolvida pelo Corregedor Nacional.",
       avaliacaoRemovidaId: avaliacaoId,
+      minutaSubmetidaEm: avaliacaoRemovida?.data || null,
     }),
   );
 

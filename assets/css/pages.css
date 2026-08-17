@@ -1821,3 +1821,876 @@ a.fila-card__sec:focus-visible {
     font-size: 2.5rem;
   }
 }
+
+/* =========================================================================
+   Relatório estatístico - painel editorial da produtividade correicional.
+   A composição usa o branco do papel, vinho institucional e uma grade precisa
+   para aproximar a leitura em tela do documento apresentado em sessão.
+   ========================================================================= */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.estat-controles {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  margin: calc(var(--space-2) * -1) 0 var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: 0 8px 24px rgba(60, 30, 28, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.estat-filtros {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.estat-filtros label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.estat-filtros select {
+  min-width: 132px;
+  border-color: #cfc3bd;
+  background: #fffdfa;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 650;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.estat-download {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+}
+
+.estat-download p {
+  margin: 0;
+  max-width: 34ch;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-align: right;
+}
+
+.estat-relatorio {
+  --estat-papel: #fffdfa;
+  --estat-tinta: #282223;
+  --estat-vinho: #8f1d24;
+  --estat-vinho-escuro: #5f1117;
+  --estat-linha: #ded5d0;
+  --estat-quente: #f6efeb;
+  display: grid;
+  gap: var(--space-5);
+  color: var(--estat-tinta);
+}
+
+.estat-capa {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.6fr);
+  gap: var(--space-6);
+  overflow: hidden;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border-top: 4px solid var(--estat-vinho);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background:
+    linear-gradient(90deg, rgba(143, 29, 36, 0.04) 1px, transparent 1px) 0 0 / 38px 38px,
+    linear-gradient(rgba(143, 29, 36, 0.04) 1px, transparent 1px) 0 0 / 38px 38px,
+    var(--estat-papel);
+  box-shadow: 0 14px 42px rgba(69, 31, 29, 0.09);
+}
+
+.estat-capa::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -90px;
+  right: 8%;
+  width: 260px;
+  aspect-ratio: 1;
+  border: 54px solid rgba(143, 29, 36, 0.055);
+  border-radius: 50%;
+}
+
+.estat-capa__marca,
+.estat-overline {
+  margin: 0 0 var(--space-2);
+  color: var(--estat-vinho);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.estat-capa h2 {
+  max-width: 18ch;
+  margin: 0;
+  color: var(--estat-vinho-escuro);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 4.25rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+}
+
+.estat-capa h2 + p {
+  max-width: 62ch;
+  margin: var(--space-4) 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-style: italic;
+}
+
+.estat-capa__periodo {
+  align-self: end;
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--estat-linha);
+}
+
+.estat-capa__periodo span,
+.estat-capa__periodo small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.estat-capa__periodo strong {
+  color: var(--estat-vinho-escuro);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.estat-indicadores {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--estat-linha);
+  border-radius: var(--radius-lg);
+  background: var(--estat-linha);
+  box-shadow: var(--shadow);
+}
+
+.estat-kpi {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-5);
+  background: var(--estat-papel);
+  animation: estat-entrada 440ms ease both;
+  animation-delay: var(--estat-delay);
+}
+
+.estat-kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--estat-cor);
+}
+
+.estat-kpi__rotulo {
+  min-height: 2.2em;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.estat-kpi__corpo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.estat-kpi__valor {
+  color: var(--estat-cor);
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4vw, 3.6rem);
+  font-weight: 500;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.estat-kpi__mes {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.estat-kpi__meta {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.estat-kpi__variacao {
+  color: var(--muted);
+}
+
+.estat-kpi__variacao--alta {
+  color: var(--success);
+}
+
+.estat-kpi__variacao--queda {
+  color: var(--danger);
+}
+
+.estat-painel {
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--estat-linha);
+  border-radius: var(--radius-lg);
+  background: var(--estat-papel);
+  box-shadow: 0 10px 30px rgba(65, 36, 34, 0.065);
+}
+
+.estat-painel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--estat-vinho);
+}
+
+.estat-painel__header h2 {
+  margin: 0;
+  color: var(--estat-vinho-escuro);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  font-weight: 500;
+}
+
+.estat-painel__numero {
+  color: var(--estat-vinho);
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.estat-painel--serie {
+  overflow: hidden;
+}
+
+.estat-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-4);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.estat-legenda span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.estat-legenda i,
+.estat-tabela i {
+  display: inline-block;
+  width: 0.62rem;
+  height: 0.62rem;
+  margin-right: 0.45rem;
+  border-radius: 1px;
+  background: var(--estat-cor);
+}
+
+.estat-serie {
+  display: grid;
+  grid-template-columns: repeat(var(--estat-meses, 12), minmax(42px, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(42px, 1fr);
+  align-items: end;
+  min-height: 245px;
+  padding: var(--space-3) var(--space-3) 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--estat-linha);
+  background:
+    repeating-linear-gradient(to top, transparent 0, transparent 60px, rgba(143, 29, 36, 0.07) 60px, rgba(143, 29, 36, 0.07) 61px);
+}
+
+.estat-serie__mes {
+  display: grid;
+  grid-template-rows: 20px 190px 28px;
+  justify-items: center;
+  min-width: 44px;
+}
+
+.estat-serie__total,
+.estat-serie__rotulo {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+.estat-serie__trilho {
+  display: flex;
+  align-items: end;
+  width: clamp(20px, 3vw, 34px);
+  height: 190px;
+}
+
+.estat-serie__barra {
+  display: flex;
+  flex-direction: column-reverse;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 0 1px rgba(95, 17, 23, 0.08);
+  transition: height 420ms ease;
+}
+
+.estat-serie__barra span {
+  display: block;
+  min-height: 0;
+}
+
+.estat-tabela-wrap {
+  overflow-x: auto;
+  margin-top: var(--space-5);
+}
+
+.estat-tabela {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  font-size: 0.77rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.estat-tabela th,
+.estat-tabela td {
+  padding: 0.58rem 0.65rem;
+  border-bottom: 1px solid var(--estat-linha);
+  text-align: center;
+}
+
+.estat-tabela thead th {
+  color: var(--muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.estat-tabela th:first-child {
+  min-width: 190px;
+  text-align: left;
+}
+
+.estat-tabela tbody tr:nth-child(even) {
+  background: rgba(246, 239, 235, 0.55);
+}
+
+.estat-tabela td:last-child {
+  color: var(--estat-vinho-escuro);
+  background: var(--estat-quente);
+}
+
+.estat-dupla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.estat-barras {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.estat-barra {
+  display: grid;
+  gap: 0.45rem;
+  animation: estat-entrada 400ms ease both;
+  animation-delay: var(--estat-delay);
+}
+
+.estat-barra__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 0.8rem;
+}
+
+.estat-barra__meta span {
+  color: var(--text-secondary);
+}
+
+.estat-barra__meta strong {
+  color: var(--estat-vinho-escuro);
+  font-variant-numeric: tabular-nums;
+}
+
+.estat-barra__trilho {
+  height: 0.42rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eee7e2;
+}
+
+.estat-barra__trilho span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+}
+
+.estat-fecho {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: var(--space-5);
+}
+
+.estat-sintese,
+.estat-providencias {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+}
+
+.estat-sintese {
+  border-left: 4px solid var(--estat-vinho);
+  background: var(--estat-quente);
+}
+
+.estat-sintese > p:last-child {
+  max-width: 100ch;
+  margin: 0;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  line-height: 1.6;
+}
+
+.estat-providencias {
+  display: grid;
+  align-content: center;
+  border: 1px solid #cad5cd;
+  background: #f0f6f2;
+}
+
+.estat-providencias span {
+  color: #52705e;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.estat-providencias strong {
+  color: var(--success);
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.estat-providencias p {
+  margin: 0;
+  color: #52705e;
+  font-size: 0.8rem;
+}
+
+.estat-qualidade {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--estat-linha);
+  border-radius: var(--radius-md);
+  background: var(--estat-papel);
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.estat-qualidade summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.estat-qualidade ul {
+  margin-bottom: 0;
+}
+
+@keyframes estat-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estat-kpi,
+  .estat-barra {
+    animation: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .estat-indicadores {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .estat-dupla {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .estat-controles,
+  .estat-filtros {
+    align-items: stretch;
+  }
+
+  .estat-controles {
+    position: static;
+    flex-direction: column;
+  }
+
+  .estat-filtros {
+    flex-wrap: wrap;
+  }
+
+  .estat-download {
+    justify-items: stretch;
+  }
+
+  .estat-download p {
+    max-width: none;
+    text-align: left;
+  }
+
+  .estat-capa {
+    grid-template-columns: 1fr;
+  }
+
+  .estat-capa__periodo {
+    padding: var(--space-4) 0 0;
+    border-top: 1px solid var(--estat-linha);
+    border-left: 0;
+  }
+
+  .estat-indicadores {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .estat-painel__header {
+    flex-direction: column;
+  }
+
+  .estat-legenda {
+    justify-content: flex-start;
+  }
+
+  .estat-fecho {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .estat-filtros,
+  .estat-filtros label,
+  .estat-filtros select,
+  .estat-filtros .button {
+    width: 100%;
+  }
+
+  .estat-indicadores {
+    grid-template-columns: 1fr;
+  }
+
+  .estat-kpi__rotulo {
+    min-height: auto;
+  }
+}
+
+/* =========================================================================
+   Estatísticas · Situação — retrato operacional do acervo atual.
+   A moldura editorial aproxima a página da Produtividade sem transformar
+   o panorama instantâneo em um segundo relatório temporal.
+   ========================================================================= */
+
+.situacao-dashboard {
+  --situacao-papel: #fffdfa;
+  --situacao-vinho: #8f1d24;
+  --situacao-vinho-escuro: #5f1117;
+  --situacao-linha: #ded5d0;
+  --situacao-quente: #f6efeb;
+  display: grid;
+  gap: var(--space-6);
+}
+
+.situacao-intro {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.65fr);
+  gap: var(--space-6);
+  overflow: hidden;
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  border-top: 4px solid var(--situacao-vinho);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background:
+    linear-gradient(90deg, rgba(143, 29, 36, 0.04) 1px, transparent 1px) 0 0 / 38px 38px,
+    linear-gradient(rgba(143, 29, 36, 0.04) 1px, transparent 1px) 0 0 / 38px 38px,
+    var(--situacao-papel);
+  box-shadow: 0 14px 42px rgba(69, 31, 29, 0.09);
+}
+
+.situacao-intro::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -84px;
+  right: 8%;
+  width: 240px;
+  aspect-ratio: 1;
+  border: 48px solid rgba(143, 29, 36, 0.055);
+  border-radius: 50%;
+}
+
+.situacao-overline {
+  margin: 0 0 var(--space-2);
+  color: var(--situacao-vinho);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.situacao-intro h2,
+.situacao-secao-cabecalho h2 {
+  margin: 0;
+  color: var(--situacao-vinho-escuro);
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.situacao-intro h2 {
+  font-size: clamp(2rem, 4vw, 3.7rem);
+  line-height: 1;
+}
+
+.situacao-intro__texto > p:last-child {
+  max-width: 66ch;
+  margin: var(--space-4) 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.situacao-intro__carimbo {
+  align-self: end;
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--situacao-linha);
+}
+
+.situacao-intro__carimbo span,
+.situacao-intro__carimbo small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.situacao-intro__carimbo strong {
+  color: var(--situacao-vinho-escuro);
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 500;
+}
+
+.situacao-panorama {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.situacao-secao-cabecalho {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--situacao-vinho);
+}
+
+.situacao-secao-cabecalho h2 {
+  font-size: clamp(1.55rem, 2.5vw, 2rem);
+}
+
+.situacao-secao-cabecalho > p {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.situacao-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.situacao-grid .chart-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 270px;
+  border-color: var(--situacao-linha);
+  background: var(--situacao-papel);
+  box-shadow: 0 10px 28px rgba(69, 31, 29, 0.075);
+  animation: situacao-entrada 420ms ease both;
+}
+
+.situacao-grid .chart-card:nth-child(2) {
+  animation-delay: 55ms;
+}
+
+.situacao-grid .chart-card:nth-child(3) {
+  animation-delay: 110ms;
+}
+
+.situacao-grid .chart-card:nth-child(4) {
+  animation-delay: 165ms;
+}
+
+.situacao-grid .chart-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--situacao-vinho);
+}
+
+.situacao-grid .chart-card__title {
+  color: var(--situacao-vinho-escuro);
+  font-weight: 500;
+}
+
+.situacao-grid .chart-card__total,
+.situacao-grid .chart-card__solo-value {
+  color: var(--situacao-vinho-escuro);
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.situacao-metodologia {
+  padding: var(--space-5);
+  border-left: 4px solid var(--situacao-vinho);
+  border-radius: var(--radius-md);
+  background: var(--situacao-quente);
+}
+
+.situacao-metodologia__colunas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+}
+
+.situacao-metodologia__colunas p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+@keyframes situacao-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .situacao-grid .chart-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .situacao-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .situacao-intro {
+    grid-template-columns: 1fr;
+  }
+
+  .situacao-intro__carimbo {
+    padding: var(--space-4) 0 0;
+    border-top: 1px solid var(--situacao-linha);
+    border-left: 0;
+  }
+
+  .situacao-secao-cabecalho {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .situacao-secao-cabecalho > p {
+    max-width: none;
+    text-align: left;
+  }
+
+  .situacao-metodologia__colunas {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+}

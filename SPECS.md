@@ -446,3 +446,29 @@ A apreciação de valor da Corregedoria Nacional possui duas camadas obrigatóri
 - Concluir proposição como `cumprida` com criação de providência paralela personalizada.
 - Referendar correição contendo proposição do tipo `Encaminhamento`: baixa definitiva imediata + criação de pendência de providência com a descrição do encaminhamento.
 - Criar (ou confirmar rascunho de) `Encaminhamento` em correição já referendada, com conversão imediata na criação.
+
+## Seção Estatísticas
+
+A seção **Estatísticas** é exclusiva do Corregedor Nacional e contém duas páginas somente leitura: **Produtividade**, na rota legada `dashboard.html`, e **Situação**, em `estatisticas-situacao.html`. A primeira mede atos no tempo; a segunda retrata o estado operacional atual de todo o acervo.
+
+### Produtividade
+
+A página apresenta o consolidado nacional da produtividade das proposições e gera um PDF institucional de duas páginas A4 paisagem. O recorte é sempre um exercício de janeiro até um mês completamente encerrado; o padrão é o último mês fechado no fuso de Brasília.
+
+Os cinco marcos mensais são proposições ativadas no fluxo, diligências expedidas, minutas submetidas, decisões do Corregedor e baixas após ciência. A unidade é o ato praticado, portanto novos ciclos da mesma proposição contam novamente. Apagamentos e conversões administrativas não são baixas produtivas. As decisões compreendem acolhimento, afastamento e decisão direta.
+
+O resultado decisório usa as invariantes da apreciação: necessita mais informações, cumprida, parcialmente cumprida, não cumprida, prejudicada por perda de objeto e encerrada sem análise de mérito. Evento decisório sem apreciação classificável é informado como **sem classificação**, sem ser descartado silenciosamente.
+
+O acervo é um retrato do instante da geração e abrange todas as proposições cujo `statusFluxo` não é `baixa_definitiva`, independentemente do exercício de ingresso. Providências paralelas com status `pendente` são contadas em separado e não integram o acervo principal.
+
+O objeto puro `criarSnapshotRelatorioEstatistico` é a fonte única da tela e do PDF. A geração é somente leitura, não cria histórico e não persiste arquivos. Eventos que ativam a proposição registram `entradaFluxo: true`. Quando uma minuta é devolvida, o tombstone preserva somente `minutaSubmetidaEm`, além do identificador legado, para permitir a contagem sem conservar conteúdo material.
+
+### Situação
+
+A página apresenta quatro indicadores instantâneos, sem filtro ou exportação: proposições ativas e inativas, correições ativas e inativas, responsabilidades ativas por persona e proposições com providência paralela aberta. O universo é nacional, inclui todos os exercícios e é calculado quando a página é carregada.
+
+Uma proposição somente é inativa quando seu ciclo estiver encerrado e todas as providências paralelas estiverem cumpridas. Uma correição somente é inativa quando todas as suas proposições forem inativas. Responsabilidades podem se sobrepor quando o fluxo principal e uma providência da Secretaria coexistem. O último cartão conta proposições distintas afetadas, enquanto o KPI de Produtividade conta cada providência pendente.
+
+O objeto puro `criarSnapshotSituacao` é a fonte única da página. O carimbo usa o fuso de Brasília, e a consulta não altera o estado, não cria eventos e não oferece acesso à fila operacional da Secretaria.
+
+Ver [US-corregedor-008](historias_de_usuario/US-corregedor-008-relatorio-estatistico-proposicoes.md) e [US-corregedor-009](historias_de_usuario/US-corregedor-009-estatisticas-situacao.md).

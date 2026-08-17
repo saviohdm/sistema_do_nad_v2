@@ -28,7 +28,7 @@ Secretaria Processual da CN (`PERSONAS.SECRETARIA`).
 - **Sidebar em grupos** (Início / Filas operacionais / Serviços / Consulta) com ícones e badges
   nas três filas (grupos prontos p/ diligência · grupos prontos p/ ciência · providências pendentes).
 - **Acesso a `dashboard.html`**: a Secretaria é redirecionada para o Início (a página segue
-  existindo como "Estatísticas" do CN e fallback legado).
+  existindo como "Produtividade" do CN e fallback legado).
 - **Outra persona acessa a URL**: redirecionada para sua própria home.
 
 ## Regras de negócio
